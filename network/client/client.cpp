@@ -4,16 +4,64 @@
 #include <cstring>
 #include <string>
 #include <pthread.h>
+#include <map>
 
 #include "chat_screen.hpp"
 
 static ChatScreen chatScreen;
+static int CLIENT_ID = -1;
+
+class ClientData {
+  private:
+    int m_id;
+    std::string m_username;
+
+  public:
+    ClientData(int id) : m_id(id) {}
+    void SetUsername(std::string username) { m_username = username; }
+
+    int GetID(){ return m_id; }
+    std::string GetUsername() { return m_username; }
+};
+
+std::map<int, ClientData*> client_map;
+
 
 void SendPacket(ENetPeer* peer,const char* data)
 {
   ENetPacket* packet = enet_packet_create(data,strlen(data) + 1,ENET_PACKET_FLAG_RELIABLE);
   enet_peer_send(peer,0,packet);
   printf("packet sent");
+}
+
+void ParseData(char* data) {\
+  int data_type;
+  int id;
+  sscanf(data, "%d|%d", &data_type, &id);
+
+  switch (data_type) {
+    case 1:
+      if (id != CLIENT_ID) {
+       char msg[80]; 
+       sscanf(data, "%*d|%*d|%[^|]", &msg);
+       chatScreen.PostMessage(client_map[id]->GetUsername().c_str(), msg); 
+      }
+      break;
+    case 2:
+      if (id != CLIENT_ID) {
+       char username[80]; 
+       sscanf(data, "%*d|%*d|%[^|]", &username);
+
+       client_map[id] = new ClientData(id);
+       client_map[id]->SetUsername(username);
+      }
+      break;
+    case 3:
+      CLIENT_ID = id;
+      break;
+
+    
+  }
 }
 
 void* MsgLoop(ENetHost* client) { 
@@ -96,7 +144,10 @@ int main(int argc, char ** argv){
 
     std::string msg = chatScreen.CheckBoxInput();
     chatScreen.PostMessage(username,msg.c_str());
-    SendPacket(peer, msg.c_str());
+
+    char message_data[80] = "1|";
+    strcat(message_data, msg.c_str());
+    SendPacket(peer, message_data);
 
     if (msg == "/exit") {
      running = false; 

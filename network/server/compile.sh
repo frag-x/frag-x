@@ -1,2 +1,2 @@
 #!/bin/bash
-g++ server.cpp -o server.out -lenet -fpermissive
+g++ server.cpp -o server.out -lenet -lm -fpermissive

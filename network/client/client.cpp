@@ -70,13 +70,8 @@ void* MsgLoop(ENetHost* client) {
    while (enet_host_service(client, &event, 1000) > 0 ) {
     switch (event.type) {
       case ENET_EVENT_TYPE_RECEIVE:
-        printf ("A packet of length %u containing %s was received from %x:%u on channel %u.\n",
-                event.packet -> dataLength,
-                event.packet -> data,
-                event.peer -> address.host,
-                event.peer -> address.port,
-                event.channelID);
 
+        ParseData(event.packet->data);
         enet_packet_destroy(event.packet);
 
         break;
@@ -110,7 +105,7 @@ int main(int argc, char ** argv){
   ENetEvent event;
   ENetPeer* peer;
 
-  enet_address_set_host(&address, "155.138.131.47");
+  enet_address_set_host(&address, "cuppajoeman.com");
   address.port = 7777;
 
   peer = enet_host_connect(client, &address, 1, 0);

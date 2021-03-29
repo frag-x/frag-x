@@ -1,2 +1,2 @@
 #!/bin/bash
-git add -A && git commit && git push
+g++ chat_screen.cpp client.cpp -o client.out -lncurses -lenet -fpermissive

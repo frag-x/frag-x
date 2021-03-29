@@ -20,7 +20,7 @@ int main(int argc, char ** argv){
   ENetEvent event;
   ENetPeer* peer;
 
-  enet_address_set_host(&address, "127.0.0.1");
+  enet_address_set_host(&address, "155.138.131.47");
   address.port = 7777;
 
   peer = enet_host_connect(client, &address, 1, 0);

@@ -1,7 +1,10 @@
 #include <iostream>
 #include <enet/enet.h>
 #include <stdio.h>
+#include <cstring>
 #include <string>
+#include <pthread.h>
+
 #include "chat_screen.hpp"
 
 static ChatScreen chatScreen;
@@ -10,6 +13,28 @@ void SendPacket(ENetPeer* peer,const char* data)
 {
   ENetPacket* packet = enet_packet_create(data,strlen(data) + 1,ENET_PACKET_FLAG_RELIABLE);
   enet_peer_send(peer,0,packet);
+  printf("packet sent");
+}
+
+void* MsgLoop(ENetHost* client) { 
+  while (true) {
+   ENetEvent event; 
+   while (enet_host_service(client, &event, 1000) > 0 ) {
+    switch (event.type) {
+      case ENET_EVENT_TYPE_RECEIVE:
+        printf ("A packet of length %u containing %s was received from %x:%u on channel %u.\n",
+                event.packet -> dataLength,
+                event.packet -> data,
+                event.peer -> address.host,
+                event.peer -> address.port,
+                event.channelID);
+
+        enet_packet_destroy(event.packet);
+
+        break;
+    }
+   }
+  }
 }
 
 int main(int argc, char ** argv){
@@ -22,6 +47,7 @@ int main(int argc, char ** argv){
     fprintf(stderr, "An error occurred while initializing ENet\n");
     return EXIT_FAILURE;
   }
+
   atexit(enet_deinitialize);
 
   ENetHost* client;
@@ -53,9 +79,13 @@ int main(int argc, char ** argv){
     return EXIT_SUCCESS;
   }
 
-  SendPacket(peer,"dataaaaaaaaaaaaa");
+  SendPacket(peer,username);
 
   chatScreen.Init();
+
+  // Create thread for receiving data
+  pthread_t thread;
+  pthread_create(&thread, NULL, MsgLoop, client);
 
   bool running = true;
 
@@ -64,6 +94,7 @@ int main(int argc, char ** argv){
 
     std::string msg = chatScreen.CheckBoxInput();
     chatScreen.PostMessage(username,msg.c_str());
+    SendPacket(peer, msg.c_str());
 
     if (msg == "/exit") {
      running = false; 
@@ -71,6 +102,9 @@ int main(int argc, char ** argv){
     
   }
   // GAME LOOP END
+  
+  pthread_join(thread, NULL);
+  
   enet_peer_disconnect(peer, 0);
 
   while (enet_host_service(client, &event, 3000) > 0) {

@@ -78,8 +78,10 @@ int main(int argc, char ** argv){
     puts("Connection to localhost:7777 failed"); 
     return EXIT_SUCCESS;
   }
-
-  SendPacket(peer,username);
+  
+  char str_data[80] = "2|";
+  strcat(str_data, username);
+  SendPacket(peer, str_data);
 
   chatScreen.Init();
 

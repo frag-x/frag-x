@@ -1,11 +1,17 @@
 #include <iostream>
 #include <enet/enet.h>
+#include <stdio.h>
 #include <string>
 #include "chat_screen.hpp"
 
 static ChatScreen chatScreen;
 
 int main(int argc, char ** argv){
+
+  printf("Please Enter Your Username:\n");
+  char username[80];
+  scanf("%s", &username);
+
   // if (enet_initialize() != 0){
   //   fprintf(stderr, "An error occurred while initializing ENet\n");
   //   return EXIT_FAILURE;
@@ -74,7 +80,7 @@ int main(int argc, char ** argv){
 while (true)
 {
   std::string msg = chatScreen.CheckBoxInput();
-  chatScreen.PostMessage("usrNm",msg.c_str());
+  chatScreen.PostMessage(username,msg.c_str());
 }
 
 

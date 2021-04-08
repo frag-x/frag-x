@@ -10,11 +10,10 @@ function love.update(dt)
     player:update(dt)
 end
 
-function love.mousemoved(X,Y,DX,DY)
-  x,y,dx,dy = X,Y,DX,DY
-  player.rotationAngle = player.rotationAngle + dx * player.sensitivity
+function love.mousemoved(x, y, dx, dy)
+  player:mousemoved(x, y, dx, dy)
 end
-
+  
 function love.draw()
     player:draw()
 end

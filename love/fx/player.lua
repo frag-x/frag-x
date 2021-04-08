@@ -29,6 +29,11 @@ function Player:update(dt)
   print(self.rotationAngle)
 end
 
+
+function Player:mousemoved(x, y, dx, dy)
+  self.rotationAngle = self.rotationAngle + dx * self.sensitivity
+end
+
 function bool_to_number(value)
   return value and 1 or 0
 end

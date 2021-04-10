@@ -25,19 +25,19 @@ function Player:update(dt)
 
   --! key input
   
-  self.x_dir = bool_to_number(love.keyboard.isDown("d")) - bool_to_number(love.keyboard.isDown("a")) 
-  self.y_dir = bool_to_number(love.keyboard.isDown("s")) - bool_to_number(love.keyboard.isDown("w")) 
+  self.xDir = bool_to_number(love.keyboard.isDown("d")) - bool_to_number(love.keyboard.isDown("a")) 
+  self.yDir = bool_to_number(love.keyboard.isDown("s")) - bool_to_number(love.keyboard.isDown("w")) 
 
-  self.body:applyForce(self.speed * self.x_dir, self.speed * self.y_dir)
+  self.body:applyForce(self.speed * self.xDir, self.speed * self.yDir)
 end
 
 function Player:inputStateAsText()
   -- format:
-  -- |x_dir|y_dir|rotationAngle
+  -- |xDir|yDir|rotationAngle
   data = "|"
-  data = data .. tostring(self.x_dir)
+  data = data .. tostring(self.xDir)
   data = data .. "|"
-  data = data .. tostring(self.y_dir)
+  data = data .. tostring(self.yDir)
   data = data .. "|"
   data = data .. tostring(self.rotationAngle)
   data = data .. "|"

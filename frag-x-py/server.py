@@ -4,14 +4,15 @@ import _thread
 import sys 
 import pygame
 from typing import List
-from game_engine_constants import SCREEN_CENTER_POINT, ORIGIN, BUF_SIZE, PORT, LOCAL_IP, SERVER_TICK_RATE_HZ
+from game_engine_constants import SCREEN_CENTER_POINT, ORIGIN, BUF_SIZE, PORT, LOCAL_IP, SERVER_TICK_RATE_HZ, REMOTE_IP
 from network import FragNetwork
 from converters import str_to_player_data
 from player import ServerPlayer
 from threading import Lock, Thread
 from queue import Queue
 
-SERVER_ADDRESS = LOCAL_IP
+#SERVER_ADDRESS = LOCAL_IP
+SERVER_ADDRESS = REMOTE_IP
 
 s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 

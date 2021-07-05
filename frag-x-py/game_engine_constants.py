@@ -22,5 +22,7 @@ s.connect(("8.8.8.8", 80))
 LOCAL_IP = s.getsockname()[0]
 s.close()
 
+REMOTE_IP = socket.gethostname()
+
 PORT = 50000
 

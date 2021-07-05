@@ -1,13 +1,19 @@
 import pygame
 from network import FragNetwork
 from player import ClientPlayer
-from game_engine_constants import ARROW_MOVEMENT_KEYS, WASD_MOVEMENT_KEYS, WIDTH, HEIGHT, FPS, GAME_TITLE, SCREEN_CENTER_POINT, ORIGIN
-from converters import convert_player_data_to_str, convert_str_to_player_data
+from game_engine_constants import ARROW_MOVEMENT_KEYS, WASD_MOVEMENT_KEYS, WIDTH, HEIGHT, FPS, GAME_TITLE, SCREEN_CENTER_POINT, ORIGIN, BUF_SIZE
+from converters import convert_player_data_to_str, convert_str_to_player_data_client
+from threading import Thread, Lock
+import pickle
+import time
 
 ## Initialize network
 fn = FragNetwork()
-fn.connect()
+player_id = fn.connect()
 
+player_id = int(player_id)
+
+print(f"You are player {player_id}")
 
 ## initialize pygame and create window
 pygame.init()
@@ -20,19 +26,45 @@ clock = pygame.time.Clock()     ## For syncing the FPS
 ## group all the sprites together for ease of update
 all_sprites = pygame.sprite.Group()
 
-p1 = ClientPlayer(ORIGIN, 50, 50, (50, 255, 5),ARROW_MOVEMENT_KEYS, WIDTH, HEIGHT, fn)
-p2 = ClientPlayer(SCREEN_CENTER_POINT, 50, 50, (50, 120, 255), WASD_MOVEMENT_KEYS, WIDTH, HEIGHT, fn)
+# initially we don't know what our id is we only get it back from the server so we need to do 
+# a type of responce thing..
+curr_player = ClientPlayer(ORIGIN, 50, 50, (50, 255, 5),ARROW_MOVEMENT_KEYS, WIDTH, HEIGHT, player_id, fn)
 
-#all_sprites.add(p1)
-all_sprites.add(p2)
+all_sprites.add(curr_player)
 
+id_to_player = {}
+
+id_to_player[player_id] = curr_player
+
+def game_state_watcher():
+    # CONNECT LOOP
+    while True:
+        print("watching for game state")
+        raw_data = fn.client.recv(BUF_SIZE)
+        game_state = pickle.loads(raw_data)
+        print("GAME STATE RECEIVED: ", game_state)
+
+        for player_state in game_state:
+            print("player state", player_state)
+            player_id, x, y = convert_str_to_player_data_client(player_state)
+
+            if player_id not in id_to_player:
+                id_to_player[player_id] = ClientPlayer((x,y), 50, 50, (50, 255, 5),ARROW_MOVEMENT_KEYS, WIDTH, HEIGHT, player_id, fn)
+                all_sprites.add(id_to_player[player_id])
+            else:
+                print(id_to_player, player_id)
+                id_to_player[player_id].set_pos(x,y)
+
+
+t = Thread(target=game_state_watcher, args=() )
+t.start()
 
 ## Game loop
 running = True
 ticks_from_previous_iteration = 0
 while running:
     
-    print("running")
+    #print("running")
 
     #1 Process input/events
     clock.tick(FPS)     ## will make the loop run at the same speed all the time
@@ -51,20 +83,24 @@ while running:
     delta_time = (t - ticks_from_previous_iteration ) / 1000.0
     ticks_from_previous_iteration = t
 
-    print("update start")
+    #print("update start")
 
-    # Note: Multiplayer logic occurs in the update method
+    # Note: This sends the users inputs to the server
     all_sprites.update(events, delta_time)
+    curr_player.send_inputs(events, delta_time)
 
-    print("update end")
+    #print("update end")
 
     #3 Draw/render
     screen.fill(pygame.color.THECOLORS['black'])
 
     all_sprites.draw(screen)
+
     ########################
 
     ### Put code here
+
+    # check if there are any updates
 
     ########################
 

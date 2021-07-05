@@ -1,7 +1,9 @@
 import pygame
+import random
 WIDTH = 800
 HEIGHT = 800
 FPS = 60
+SERVER_TICK_RATE_HZ = FPS
 
 SCREEN_CENTER_POINT = (WIDTH/2, HEIGHT/2)
 ORIGIN = (0,0)
@@ -20,5 +22,5 @@ s.connect(("8.8.8.8", 80))
 LOCAL_IP = s.getsockname()[0]
 s.close()
 
-PORT = 4444
+PORT = 50000
 

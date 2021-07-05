@@ -2,10 +2,11 @@ import pygame
 from network import FragNetwork
 from player import ClientPlayer
 from game_engine_constants import ARROW_MOVEMENT_KEYS, WASD_MOVEMENT_KEYS, WIDTH, HEIGHT, FPS, GAME_TITLE, SCREEN_CENTER_POINT, ORIGIN, BUF_SIZE
-from converters import convert_player_data_to_str, convert_str_to_player_data_client
+from converters import str_to_player_data_no_dt
 from threading import Thread, Lock
 import pickle
 import time
+import random
 
 ## Initialize network
 fn = FragNetwork()
@@ -28,7 +29,8 @@ all_sprites = pygame.sprite.Group()
 
 # initially we don't know what our id is we only get it back from the server so we need to do 
 # a type of responce thing..
-curr_player = ClientPlayer(ORIGIN, 50, 50, (50, 255, 5),ARROW_MOVEMENT_KEYS, WIDTH, HEIGHT, player_id, fn)
+rand_color = random.choices(range(256), k=3)
+curr_player = ClientPlayer(ORIGIN, 50, 50, rand_color,ARROW_MOVEMENT_KEYS, WIDTH, HEIGHT, player_id, fn)
 
 all_sprites.add(curr_player)
 
@@ -46,7 +48,7 @@ def game_state_watcher():
 
         for player_state in game_state:
             print("player state", player_state)
-            player_id, x, y = convert_str_to_player_data_client(player_state)
+            player_id, x, y, rotation_angle = str_to_player_data_no_dt(player_state)
 
             if player_id not in id_to_player:
                 id_to_player[player_id] = ClientPlayer((x,y), 50, 50, (50, 255, 5),ARROW_MOVEMENT_KEYS, WIDTH, HEIGHT, player_id, fn)
@@ -54,6 +56,8 @@ def game_state_watcher():
             else:
                 print(id_to_player, player_id)
                 id_to_player[player_id].set_pos(x,y)
+                # In real life we can't change their view or they will freak - do it for now
+                id_to_player[player_id].rotation_angle = rotation_angle
 
 
 t = Thread(target=game_state_watcher, args=() )
@@ -62,6 +66,11 @@ t.start()
 ## Game loop
 running = True
 ticks_from_previous_iteration = 0
+
+# Initialization
+pygame.mouse.set_visible(False)
+pygame.event.set_grab(True)
+
 while running:
     
     #print("running")

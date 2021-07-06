@@ -11,8 +11,8 @@ from player import ServerPlayer
 from threading import Lock, Thread
 from queue import Queue
 
-#SERVER_ADDRESS = LOCAL_IP
-SERVER_ADDRESS = REMOTE_IP
+SERVER_ADDRESS = LOCAL_IP
+#SERVER_ADDRESS = REMOTE_IP
 
 s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 

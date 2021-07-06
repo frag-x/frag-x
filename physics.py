@@ -1,45 +1,19 @@
-#import pygame
-#
-#def compute_new_position_using_acceleration(movement_vector, current_velocity, delta_time): 
-#    """Movement vector is the current movement that is being applied to this body
-#
-#    delta_time represents the amount of time in the future we would like to predict
-#    our position using our physics implmentation
-#
-#    """
-#
-#    velocity_change = self.acceleration * delta_time
-#
-#    if not (movement_vector.x == 0 and movement_vector.y == 0):
-#        pygame.math.Vector2.normalize_ip(movement_vector)
-#        self.apply_movement(velocity_change * self.movement_vector)
-#    else:
-#        # If no buttons are being pressed then we can apply friction to slow them down
-#        # We will slow them down at the same speed they would speed up by
-#        self.apply_friction()
-#
-#    # Based on our acceleration calculate what the velocity update should be
-#
-#    # Change in position = velocity * change in time
-#    self.pos += self.velocity * delta_time
-#    self.pos.x %= self.s_width
-#    self.pos.y %= self.s_height
-#    self.rect.center = self.pos
-#
-#def apply_friction(self):
-#    if magnitude(self.velocity) - self.friction > 0:
-#        self.velocity -= self.velocity * self.friction
-#    else:
-#        # If we can't subtract any more, just set it to zero
-#        self.velocity.x = 0
-#        self.velocity.y = 0
-#
-#def apply_movement(self, velocity,  new_velocity_update):
-#    """Given velocity, we apply the result of the movement
-#    and return the new velocity"""
-#    self.velocity += new_velocity_update
-#    if magnitude(self.velocity) > self.max_speed:
-#        self.velocity = self.velocity.normalize() * self.max_speed
-#    
-#    
-#
+import pygame
+
+def elastic_collision_update(b1, b2):
+    m1, m2 = b1.mass, b2.mass
+    M = m1 + m2
+
+    p1, p2 = b1.pos, b2.pos
+
+    len_squared = (p1 - p2).length_squared()
+
+    v1, v2 = b1.velocity, b2.velocity
+
+    # Compute their new velocities - TODO understand this formula
+    u1 = v1 - (2 * m2 / M) * (pygame.math.Vector2.dot(v1 - v2, p1 - p2) / (len_squared)) * (p1 - p2)
+    u2 = v2 - (2 * m1 / M) * (pygame.math.Vector2.dot(v2 - v1, p2 - p1) / (len_squared)) * (p2 - p1)
+
+    b1.velocity = u1
+    b2.velocity = u2
+

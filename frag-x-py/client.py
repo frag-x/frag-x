@@ -30,7 +30,7 @@ all_sprites = pygame.sprite.Group()
 # initially we don't know what our id is we only get it back from the server so we need to do 
 # a type of responce thing..
 rand_color = random.choices(range(256), k=3)
-curr_player = ClientPlayer(ORIGIN, 50, 50, rand_color,ARROW_MOVEMENT_KEYS, WIDTH, HEIGHT, player_id, fn)
+curr_player = ClientPlayer(ORIGIN, 50, 50, rand_color,WASD_MOVEMENT_KEYS, WIDTH, HEIGHT, player_id, fn)
 
 all_sprites.add(curr_player)
 

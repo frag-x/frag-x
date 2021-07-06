@@ -15,6 +15,7 @@ class Network:
     def connect(self) -> str:
         """Attempt to connect to server"""
         try:
+            print(f"attempting to connect to: {self.server_address}")
             self.client.connect(self.server_address)
             print(f"connected to {self.server_address}")
             return self.client.recv(BUF_SIZE).decode()

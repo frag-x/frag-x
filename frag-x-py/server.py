@@ -24,7 +24,7 @@ except socket.error as e:
 
 s.listen(2)
 
-print("Server started")
+print(f"Server started on {(SERVER_ADDRESS, PORT)}")
 
 players = []
 

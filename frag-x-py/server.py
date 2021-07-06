@@ -1,7 +1,5 @@
 import socket
 import pickle
-import _thread
-import sys 
 import pygame
 from typing import List
 from game_engine_constants import SCREEN_CENTER_POINT, ORIGIN, BUF_SIZE, PORT, LOCAL_IP, SERVER_TICK_RATE_HZ, REMOTE_IP, RUNNING_LOCALLY

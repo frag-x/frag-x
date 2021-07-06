@@ -15,7 +15,8 @@ WASD_MOVEMENT_KEYS = [pygame.K_a, pygame.K_w, pygame.K_d, pygame.K_s]
 
 BUF_SIZE = 2 ** 12 
 
-RUNNING_LOCALLY = True
+#RUNNING_LOCALLY = True
+RUNNING_LOCALLY = False
 
 import socket
 s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)

@@ -7,6 +7,7 @@ from network import FragNetwork
 from converters import str_to_player_data
 from player import ServerPlayer
 from threading import Lock, Thread
+from collisions import colliding
 from queue import Queue
 
 if RUNNING_LOCALLY:
@@ -52,7 +53,7 @@ def client_state_producer(conn, state_queue):
                 # Likely means we've disconnected
                 break
             else:
-                print(f'Received: {data.decode("utf-8")}')
+                #print(f'Received: {data.decode("utf-8")}')
 
                 recv_buffer += data.decode("utf-8")
 
@@ -119,15 +120,27 @@ while True:
     q_drain_lock.acquire()  
 
     while not state_queue.empty():
-        print("q is drainable")
+        #print("q is drainable")
         player_id, dx, dy, dm, delta_time = state_queue.get()
 
         if player_id in id_to_player:
             p = id_to_player[player_id]
             p.update_position(dx, dy, delta_time)
             p.update_aim(dm)
+
+        # Now that their positions have been updated we can check for collisions
+        bodies = list(id_to_player.values())
+        n = len(bodies)
+        for i in range(n):
+            for j in range(i+1, n):
+                b1 = bodies[i]
+                b2 = bodies[j]
+                if colliding(b1.pos, b1.radius, b2.pos, b2.radius):
+                    print("BIDGES ARE TOUCHING")
+
     
     q_drain_lock.release()  
+
 
     player_lock.acquire()
 
@@ -137,7 +150,7 @@ while True:
 
     # Send the game state to each of the players
     for p in id_to_player.values():
-        print("server updates", server_updates)
+        #print("server updates", server_updates)
         p.socket.sendall(pickle.dumps(server_updates))
 
     # reset server updates

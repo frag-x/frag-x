@@ -16,6 +16,7 @@ class BasePlayer:
         # Basic Properties
 
         self.width = width
+        self.radius = width
         self.height = height
         self.player_id = player_id
 

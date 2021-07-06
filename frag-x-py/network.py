@@ -7,7 +7,9 @@ class Network:
     def __init__(self):
         self.client = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         #self.server_address = (LOCAL_IP, PORT)
+        #self.server_address = (REMOTE_IP, PORT)
         self.server_address = (REMOTE_IP, PORT)
+        self.server_address = ("168.100.233.209", PORT)
         #self.server_address = ("cuppajoeman.com", PORT)
         #self.id = self.connect()
         #self.initialization_data = self.connect()

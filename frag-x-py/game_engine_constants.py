@@ -15,6 +15,7 @@ WASD_MOVEMENT_KEYS = [pygame.K_a, pygame.K_w, pygame.K_d, pygame.K_s]
 
 BUF_SIZE = 2 ** 12 
 
+RUNNING_LOCALLY = True
 
 import socket
 s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
@@ -22,8 +23,8 @@ s.connect(("8.8.8.8", 80))
 LOCAL_IP = s.getsockname()[0]
 s.close()
 
-REMOTE_IP = socket.gethostname()
-#REMOTE_IP = "cuppajoeman.com"
+REMOTE_IP = "cuppajoeman.com"
+#REMOTE_IP = socket.gethostname()
 
 PORT = 50000
 

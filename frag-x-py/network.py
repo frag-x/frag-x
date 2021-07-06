@@ -1,18 +1,15 @@
 import socket
 from typing import Tuple
-from game_engine_constants import BUF_SIZE, LOCAL_IP, PORT, REMOTE_IP
+from game_engine_constants import BUF_SIZE, LOCAL_IP, PORT, REMOTE_IP, RUNNING_LOCALLY
 
 
 class Network:
     def __init__(self):
         self.client = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        self.server_address = (LOCAL_IP, PORT)
-        #self.server_address = (REMOTE_IP, PORT)
-        #self.server_address = (REMOTE_IP, PORT)
-        #self.server_address = ("168.100.233.209", PORT)
-        #self.server_address = ("cuppajoeman.com", PORT)
-        #self.id = self.connect()
-        #self.initialization_data = self.connect()
+        if RUNNING_LOCALLY:
+           self.server_address = (LOCAL_IP, PORT)
+        else:
+           self.server_address = (REMOTE_IP, PORT)
 
     def connect(self) -> str:
         """Attempt to connect to server"""

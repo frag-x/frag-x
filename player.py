@@ -7,6 +7,10 @@ from converters import player_data_to_str
 def magnitude(v):
   return math.sqrt(v.x ** 2 + v.y ** 2)
 
+
+#class Body: position, velocity, mass, etc...
+    
+
 class BasePlayer:
     def __init__(self,start_pos, width, height,player_id, socket):
         pygame.sprite.Sprite.__init__(self)
@@ -17,6 +21,8 @@ class BasePlayer:
 
         self.width = width
         self.radius = width
+        # mass is equal to area
+        self.mass = math.pi * (self.radius ** 2)
         self.height = height
         self.player_id = player_id
 

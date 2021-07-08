@@ -8,6 +8,7 @@ from converters import str_to_player_data
 from player import ServerPlayer
 from threading import Lock, Thread
 from collisions import colliding
+from physics import elastic_collision_update
 from queue import Queue
 
 if RUNNING_LOCALLY:
@@ -42,7 +43,6 @@ def client_state_producer(conn, state_queue):
 
     #players.append(p)
 
-    reply = ""
     iterations = 0
     recv_buffer = ""
     while True:
@@ -136,7 +136,7 @@ while True:
                 b1 = bodies[i]
                 b2 = bodies[j]
                 if colliding(b1.pos, b1.radius, b2.pos, b2.radius):
-                    print("BIDGES ARE TOUCHING")
+                    elastic_collision_update(b1, b2)
 
     
     q_drain_lock.release()  

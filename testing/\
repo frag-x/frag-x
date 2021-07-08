@@ -31,10 +31,7 @@ def simulate_collision_v2(body, b_wall, closest_v):
     #unstick_amount = 1 + body.velocity.magnitude()/1000
     collision_depth = body.radius - (closest_v - body.pos).magnitude()
     extra_buffer = 3
-    # TODO ABOUT TO SET THIS TO AN EXACT POSITION SOMETHING LIKE 
-    unstick_amount = body.radius + extra_buffer
-
-    velocity_reduction_multiplier = .5
+    unstick_amount = collision_depth + 3
 
     # Note that the previous position should not be colliding - you collide once and out
     print(f"Body at {body.previous_pos.x} {body.previous_pos.y} before collision")
@@ -144,69 +141,66 @@ def simulate_collision_v2(body, b_wall, closest_v):
         if A1:
             print("top right")
             rotated_vel = pygame.math.Vector2.rotate_rad(body.velocity, -math.tau/8)
-            rotated_vel.y *= -velocity_reduction_multiplier
+            rotated_vel.y *= -1
             vel = pygame.math.Vector2.rotate_rad(rotated_vel, math.tau/8)
             body.velocity = vel
 
-            r_v = pygame.math.Vector2(unstick_amount, 0)
-            r_v.rotate_ip_rad(-math.tau/8)
-
-            body.pos = closest_v + r_v
+            # Unstick player
+            body.pos.x += unstick_amount # right
+            body.pos.y -= unstick_amount # up
 
         elif B1:
             print("bottom right")
             rotated_vel = pygame.math.Vector2.rotate_rad(body.velocity, math.tau/8)
-            rotated_vel.y *= -velocity_reduction_multiplier
+            rotated_vel.y *= -1
             vel = pygame.math.Vector2.rotate_rad(rotated_vel, -math.tau/8)
-            body.velocity = vel 
+            body.velocity = vel
 
-            r_v = pygame.math.Vector2(unstick_amount, 0)
-            r_v.rotate_ip_rad(math.tau/8)
-
-            body.pos = closest_v + r_v
+            # Unstick player
+            body.pos.x += unstick_amount # right
+            body.pos.y += unstick_amount # down
         elif C1:
             print("bottom left")
             rotated_vel = pygame.math.Vector2.rotate_rad(body.velocity, -math.tau/8)
-            rotated_vel.y *= -velocity_reduction_multiplier
+            rotated_vel.y *= -1
             vel = pygame.math.Vector2.rotate_rad(rotated_vel, math.tau/8)
-            body.velocity = vel 
+            body.velocity = vel
 
-            r_v = pygame.math.Vector2(-unstick_amount, 0)
-            r_v.rotate_ip_rad(-math.tau/8)
-
-            body.pos = closest_v + r_v
-
+            # Unstick player TODO: use a vector which is perpendicular to the tangent
+            body.pos.x -= unstick_amount # left (this doesn't make sense??? depending on the direction you come in at)
+            body.pos.y -= unstick_amount # down
         elif D1:
             print("top left")
             rotated_vel = pygame.math.Vector2.rotate_rad(body.velocity, math.tau/8)
 
-            rotated_vel.y *= -velocity_reduction_multiplier
+            rotated_vel.y *= -1
             vel = pygame.math.Vector2.rotate_rad(rotated_vel, -math.tau/8)
-            body.velocity = vel 
+            body.velocity = vel
 
-            r_v = pygame.math.Vector2(-unstick_amount, 0)
-            r_v.rotate_ip_rad(math.tau/8)
+            unstick_vec = pygame.math.Vector2(-1, 0)
+            unstick_vec.rotate_ip_rad(math.tau/8)
+            unstick_vec.scale_to_length(unstick_amount)
 
-            body.pos = closest_v + r_v
-
+            # Unstick player
+            body.pos += unstick_vec
     elif any(case_2):
         if A2:
-            right_reflect(body, unstick_amount, closest_v, velocity_reduction_multiplier)
+            right_reflect(body, unstick_amount)
         elif B2:
-            left_reflect(body, unstick_amount, closest_v, velocity_reduction_multiplier)
+            left_reflect(body, unstick_amount)
         elif C2:
-            bottom_reflect(body, unstick_amount, closest_v, velocity_reduction_multiplier)
+            bottom_reflect(body, unstick_amount)
         elif D2:
-            top_reflect(body, unstick_amount, closest_v, velocity_reduction_multiplier)
+            top_reflect(body, unstick_amount)
     elif any(case_3):
         if A3:
-            right_reflect(body, unstick_amount, closest_v, velocity_reduction_multiplier)
+            right_reflect(body, unstick_amount)
         elif B3:
-            left_reflect(body, unstick_amount, closest_v, velocity_reduction_multiplier)
+            left_reflect(body, unstick_amount)
         elif C3:
-            top_reflect(body, unstick_amount, closest_v, velocity_reduction_multiplier)
+            top_reflect(body, unstick_amount)
         elif D3:
-            bottom_reflect(body, unstick_amount, closest_v, velocity_reduction_multiplier)
+            bottom_reflect(body, unstick_amount)
     else:
         print("a collision was detected - but for some reason we didn't do anything! - this is bad")
         
@@ -214,29 +208,28 @@ def simulate_collision_v2(body, b_wall, closest_v):
     print(f"Body at {body.pos.x} {body.pos.y} after collision")
     print("==== COLLISION SIMULATION END ====")
 
-# TODO combine functionality by realizing you can always do body.velocity.[xy] *= 1
-def right_reflect(body, unstick_amount, closest_v, velocity_reduction_multiplier):
+def right_reflect(body, unstick_amount):
     print("right")
-    body.velocity.x *= (-1 * velocity_reduction_multiplier)
+    body.velocity.x *= -1
     # Unstick player
-    body.pos = closest_v + pygame.math.Vector2(unstick_amount, 0)
+    body.pos.x += unstick_amount
 
-def left_reflect(body, unstick_amount, closest_v, velocity_reduction_multiplier):
+def left_reflect(body, unstick_amount):
     print("left")
-    body.velocity.x *= (-1 * velocity_reduction_multiplier)
+    body.velocity.x *= -1
     # Unstick player
-    body.pos = closest_v + pygame.math.Vector2(-unstick_amount, 0)
+    body.pos.x -= unstick_amount
 
-def top_reflect(body, unstick_amount, closest_v, velocity_reduction_multiplier):
+def top_reflect(body, unstick_amount):
     print("top")
-    body.velocity.y *= (-1 * velocity_reduction_multiplier)
+    body.velocity.y *= -1
     # Unstick player
-    body.pos = closest_v + pygame.math.Vector2(0, -unstick_amount)
+    body.pos.y -= unstick_amount
 
-def bottom_reflect(body, unstick_amount, closest_v, velocity_reduction_multiplier):
+def bottom_reflect(body, unstick_amount):
     print("bottom")
-    body.velocity.y *= (-1 * velocity_reduction_multiplier)
+    body.velocity.y *= -1
     # Unstick player
-    body.pos = closest_v + pygame.math.Vector2(0, unstick_amount)
+    body.pos.y += unstick_amount
 
 

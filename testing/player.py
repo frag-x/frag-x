@@ -34,6 +34,9 @@ class Player(pygame.sprite.Sprite):
 
         self.velocity = pygame.math.Vector2(0,0)
 
+        #self.camera = pygame.math.Vector2d(self.pos.x, self.pos.y)
+        self.camera = self.pos
+
         self.max_speed = 4000
         self.acceleration = 2000
         self.friction = 0.05
@@ -67,8 +70,8 @@ class Player(pygame.sprite.Sprite):
         # Change in position = velocity * change in time
         self.pos += self.velocity * delta_time
 
-        self.pos.x %= self.s_width
-        self.pos.y %= self.s_height
+        #self.pos.x %= self.s_width
+        #self.pos.y %= self.s_height
         self.rect.center = self.pos
     
     def apply_friction(self):

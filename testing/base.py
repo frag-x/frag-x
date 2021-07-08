@@ -1,4 +1,5 @@
 import map_loading
+import math
 import pygame
 import collisions
 from player import Player
@@ -38,6 +39,7 @@ myfont = pygame.font.SysFont(pygame.font.get_default_font(), 30)
 running = True
 ticks_from_previous_iteration = 0
 prev_list = []
+center = pygame.math.Vector2(WIDTH/2, HEIGHT/2)
 while running:
 
     #1 Process input/events
@@ -56,11 +58,6 @@ while running:
 
     screen.blit(textsurface,(0,0))
 
-    for wall in walls:
-        pygame.draw.rect(screen, wall.color, wall.rect, 1)
-
-    for b_wall in bounding_walls:
-        pygame.draw.rect(screen, b_wall.color, b_wall.rect, 1)
 
     t = pygame.time.get_ticks()
     # deltaTime in seconds.
@@ -71,10 +68,10 @@ while running:
     all_sprites.update(events, delta_time)
 
     if p2.velocity.x != 0 or p2.velocity.y != 0:
-        vel_display_vector = p2.velocity/ 3
+        vel_display_vector = p2.velocity/ 2
     else:
         vel_display_vector = p2.velocity
-    pygame.draw.line(screen, (255, 0, 0), p2.pos, p2.pos + vel_display_vector)
+    #pygame.draw.line(screen, (255, 0, 0), p2.pos, p2.pos + vel_display_vector, 3)
 
     #pygame.draw.polygon(screen, (255, 255, 255), ((), (0, 200), (200, 200), (200, 300), (300, 150), (200, 0), (200, 100)))
 
@@ -84,17 +81,28 @@ while running:
         colliding, closest_v = collisions.colliding_and_closest(p2, b_wall)
         #pygame.draw.line(screen, (255, 255, 255), p2.pos, closest_v)
         if colliding:
-
+            print(f"player coliding at {p2.pos.x} {p2.pos.y}")
             #collisions.simulate_collision(p2, b_wall, closest_v)
             collisions.simulate_collision_v2(p2, b_wall, closest_v)
-            p2.pos = p2.previous_pos
+            #p2.pos = p2.previous_pos
             #prev_list.append((p2.pos.x, p2.pos.y))
         else:
             prev_list = []
 
 
-    all_sprites.draw(screen)
+    camera_v = center - p2.pos
 
+    for wall in walls:
+        pygame.draw.rect(screen, wall.color, wall.rect.move(camera_v.x, camera_v.y))
+
+    for b_wall in bounding_walls:
+        pygame.draw.rect(screen, b_wall.color, b_wall.rect.move(camera_v.x, camera_v.y))
+
+    #all_sprites.draw(screen)
+
+    for sprite in all_sprites:
+        # Add the player's camera offset to the coords of all sprites.
+        screen.blit(sprite.image, sprite.rect.topleft + camera_v)
 
     ########################
 

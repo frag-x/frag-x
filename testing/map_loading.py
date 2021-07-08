@@ -19,7 +19,7 @@ class Map:
         pass
 
 class SquareWall:
-    def __init__(self, x, y, color = pygame.color.THECOLORS['grey'], size = 100):
+    def __init__(self, x, y, color = pygame.color.THECOLORS['grey'], size = 32):
         self.size = size
         self.x_idx = x
         self.y_idx = y

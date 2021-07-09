@@ -18,9 +18,9 @@ def colliding_and_closest(body, b_wall):
 def simulate_collision_v2(body, b_wall, closest_v):
     top, left, bottom, right = b_wall.rect.top, b_wall.rect.left, b_wall.rect.bottom, b_wall.rect.right 
 
-    #print("==== COLLISION SIMULATION START ====")
-    print(f"top: {top}, left: {left}, bottom: {bottom}, right: {right}") 
-    print(f"closest: {closest_v.x} {closest_v.y}")
+    ##print("==== COLLISION SIMULATION START ====")
+    #print(f"top: {top}, left: {left}, bottom: {bottom}, right: {right}") 
+    #print(f"closest: {closest_v.x} {closest_v.y}")
 
     top_visible, right_visible, bottom_visible, left_visible = b_wall.visible_sides
 
@@ -37,8 +37,8 @@ def simulate_collision_v2(body, b_wall, closest_v):
     velocity_reduction_multiplier = .5
 
     # Note that the previous position should not be colliding - you collide once and out
-    print(f"Body at {body.previous_pos.x} {body.previous_pos.y} before collision")
-    print(f"Body at {body.pos.x} {body.pos.y} during collision")
+    #print(f"Body at {body.previous_pos.x} {body.previous_pos.y} before collision")
+    #print(f"Body at {body.pos.x} {body.pos.y} during collision")
 
 
     """
@@ -67,17 +67,17 @@ def simulate_collision_v2(body, b_wall, closest_v):
     half_in = A or B
 
     if fully_in or half_in:
-        print("body is inside")
+        #print("body is inside")
         prev_pos = body.previous_pos
         curr_pos = body.pos
         # Then we use the previous position, and get it's closest pos
         # Which is guarenteed to be neither half nor fully in
         # And use that to figure out what kind of it hit it is
         body.pos = prev_pos
-        print(closest_v.x, closest_v.y)
+        #print(closest_v.x, closest_v.y)
         colliding,  closest_v = colliding_and_closest(body, b_wall)
         assert colliding == False
-        print("corrected: ", closest_v.x, closest_v.y)
+        #print("corrected: ", closest_v.x, closest_v.y)
         # reset position and then continue
         body.pos = curr_pos
 
@@ -138,11 +138,11 @@ def simulate_collision_v2(body, b_wall, closest_v):
 
     case_3 = [A3, B3, C3, D3]
 
-    print(f"fully_in: {fully_in},\n half_in: {half_in},\n case1: {case_1},\n case2: {case_2},\n case3: {case_3}")
+    #print(f"fully_in: {fully_in},\n half_in: {half_in},\n case1: {case_1},\n case2: {case_2},\n case3: {case_3}")
 
     if any(case_1):
         if A1:
-            print("top right")
+            #print("top right")
             rotated_vel = pygame.math.Vector2.rotate_rad(body.velocity, -math.tau/8)
             rotated_vel.y *= -velocity_reduction_multiplier
             vel = pygame.math.Vector2.rotate_rad(rotated_vel, math.tau/8)
@@ -154,7 +154,7 @@ def simulate_collision_v2(body, b_wall, closest_v):
             body.pos = closest_v + r_v
 
         elif B1:
-            print("bottom right")
+            #print("bottom right")
             rotated_vel = pygame.math.Vector2.rotate_rad(body.velocity, math.tau/8)
             rotated_vel.y *= -velocity_reduction_multiplier
             vel = pygame.math.Vector2.rotate_rad(rotated_vel, -math.tau/8)
@@ -165,7 +165,7 @@ def simulate_collision_v2(body, b_wall, closest_v):
 
             body.pos = closest_v + r_v
         elif C1:
-            print("bottom left")
+            #print("bottom left")
             rotated_vel = pygame.math.Vector2.rotate_rad(body.velocity, -math.tau/8)
             rotated_vel.y *= -velocity_reduction_multiplier
             vel = pygame.math.Vector2.rotate_rad(rotated_vel, math.tau/8)
@@ -177,7 +177,7 @@ def simulate_collision_v2(body, b_wall, closest_v):
             body.pos = closest_v + r_v
 
         elif D1:
-            print("top left")
+            #print("top left")
             rotated_vel = pygame.math.Vector2.rotate_rad(body.velocity, math.tau/8)
 
             rotated_vel.y *= -velocity_reduction_multiplier
@@ -208,33 +208,34 @@ def simulate_collision_v2(body, b_wall, closest_v):
         elif D3:
             bottom_reflect(body, unstick_amount, closest_v, velocity_reduction_multiplier)
     else:
-        print("a collision was detected - but for some reason we didn't do anything! - this is bad")
+        #print("a collision was detected - but for some reason we didn't do anything! - this is bad")
+        pass
         
 
-    print(f"Body at {body.pos.x} {body.pos.y} after collision")
-    print("==== COLLISION SIMULATION END ====")
+    #print(f"Body at {body.pos.x} {body.pos.y} after collision")
+    #print("==== COLLISION SIMULATION END ====")
 
 # TODO combine functionality by realizing you can always do body.velocity.[xy] *= 1
 def right_reflect(body, unstick_amount, closest_v, velocity_reduction_multiplier):
-    print("right")
+    #print("right")
     body.velocity.x *= (-1 * velocity_reduction_multiplier)
     # Unstick player
     body.pos = closest_v + pygame.math.Vector2(unstick_amount, 0)
 
 def left_reflect(body, unstick_amount, closest_v, velocity_reduction_multiplier):
-    print("left")
+    #print("left")
     body.velocity.x *= (-1 * velocity_reduction_multiplier)
     # Unstick player
     body.pos = closest_v + pygame.math.Vector2(-unstick_amount, 0)
 
 def top_reflect(body, unstick_amount, closest_v, velocity_reduction_multiplier):
-    print("top")
+    #print("top")
     body.velocity.y *= (-1 * velocity_reduction_multiplier)
     # Unstick player
     body.pos = closest_v + pygame.math.Vector2(0, -unstick_amount)
 
 def bottom_reflect(body, unstick_amount, closest_v, velocity_reduction_multiplier):
-    print("bottom")
+    #print("bottom")
     body.velocity.y *= (-1 * velocity_reduction_multiplier)
     # Unstick player
     body.pos = closest_v + pygame.math.Vector2(0, unstick_amount)

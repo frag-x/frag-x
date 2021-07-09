@@ -42,7 +42,7 @@ def construct_bounding_walls(pixel_map):
     for y, row in enumerate(pixel_map):
         for x, element in enumerate(row):
             if is_bounding(x,y, pixel_map):
-                bounding_walls.append(SquareWall(x,y, pygame.color.THECOLORS['green']))
+                bounding_walls.append(SquareWall(x,y, pygame.color.THECOLORS['aquamarine4']))
     return bounding_walls
 
 def is_wall(x, y, pixel_map):

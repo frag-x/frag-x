@@ -1,5 +1,6 @@
 import pygame
 import math
+import weapons
 
 def magnitude(v):
   return math.sqrt(v.x ** 2 + v.y ** 2)
@@ -17,15 +18,19 @@ class Player(pygame.sprite.Sprite):
         self.pos = pygame.math.Vector2(start_pos)
         self.s_width= s_width
         self.s_height = s_height
-        self.width = width
+
+        self.weapon = weapons.Hitscan(1, self, 1000)
+
+        self.aim_length = 100
+        self.width = width + 2*self.aim_length
+        self.height = height + 2*self.aim_length
         self.radius = width/2
-        self.height = height
         # Create an image of the block, and fill it with a color.
         # This could also be an image loaded from the disk.
         self.image = pygame.Surface([self.width, self.height], pygame.SRCALPHA, 32)
         #self.image.fill(color)
-        pygame.draw.circle(self.image, pygame.color.THECOLORS['blue'], (width/2, height/2), self.radius)
 
+        self.rotation_angle = 0
         # Fetch the rectangle object that has the dimensions of the image
         # Update the position of this object by setting the values of rect.x and rect.y
         self.rect = self.image.get_rect()
@@ -36,6 +41,7 @@ class Player(pygame.sprite.Sprite):
 
         #self.camera = pygame.math.Vector2d(self.pos.x, self.pos.y)
         self.camera = self.pos
+        self.sensitivity = 0.002
 
         self.max_speed = 4000
         self.acceleration = 2000
@@ -44,7 +50,20 @@ class Player(pygame.sprite.Sprite):
 
 
     def update(self, events, delta_time):
+
+        self.image.fill((255,255,255, 0))
+
         keys = pygame.key.get_pressed()
+
+        dm, _ = pygame.mouse.get_rel()
+
+
+        center_point = (self.width/2, self.height/2)
+        pygame.draw.line(self.image, pygame.color.THECOLORS['orange'], center_point, (center_point[0] + math.cos(self.rotation_angle)* self.aim_length, center_point[1] + math.sin(self.rotation_angle) * self.aim_length))
+
+        pygame.draw.circle(self.image, pygame.color.THECOLORS['blue'], (self.width/2, self.height/2), self.radius)
+        self.rotation_angle += dm * self.sensitivity
+        self.rotation_angle %= math.tau
 
         l, u, r, d = self.movement_keys
 

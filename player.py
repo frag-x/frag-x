@@ -1,6 +1,5 @@
 import pygame
 import math
-from game_engine_constants import WIDTH, HEIGHT
 from converters import player_data_to_str
 
 
@@ -12,7 +11,7 @@ def magnitude(v):
     
 
 class BasePlayer:
-    def __init__(self,start_pos, width, height,player_id, socket):
+    def __init__(self,start_pos, width, height ,player_id, socket):
         pygame.sprite.Sprite.__init__(self)
         self.pos = pygame.math.Vector2(start_pos)
 
@@ -21,9 +20,16 @@ class BasePlayer:
 
         self.width = width
         self.radius = width
+
+        self.aim_length = 100
+
+        self.width = width + 2*self.aim_length
+        self.height = height + 2*self.aim_length
+        self.player_id = player_id
+
+        self.radius = width/2
         # mass is equal to area
         self.mass = math.pi * (self.radius ** 2)
-        self.height = height
         self.player_id = player_id
 
         self.socket = socket
@@ -44,12 +50,12 @@ class BasePlayer:
         self.friction = 0.05
 
 
-class ClientPlayer(pygame.sprite.Sprite):
+class ClientPlayer(BasePlayer, pygame.sprite.Sprite):
     """A client player is a representation of a player which only stores enough information to draw
     it to the screen
     """
 
-    def __init__(self,start_pos, width, height,color, movement_keys, s_width, s_height, player_id, server):
+    def __init__(self,start_pos, width, height,color, movement_keys, player_id, server):
         """
         Initialize a player
 
@@ -57,36 +63,21 @@ class ClientPlayer(pygame.sprite.Sprite):
          
         Left Up Right Down (clockwise order)
         """
+        super().__init__(start_pos, width, height,player_id, server)
         pygame.sprite.Sprite.__init__(self)
-        self.pos = pygame.math.Vector2(start_pos)
 
-        self.rotation_angle = 0
-        self.sensitivity = 0.011
+        self.color = color
 
-        self.aim_length = 100
-
-        self.s_width= s_width
-        self.s_height = s_height
-        self.width = width + 2*self.aim_length
-        self.height = height + 2*self.aim_length
-        self.player_id = player_id
         # Create an image of the block, and fill it with a color.
         # This could also be an image loaded from the disk.
+        print(self.width, self.height)
         self.image = pygame.Surface([self.width, self.height], pygame.SRCALPHA, 32)
-        #self.image = self.image.convert_alpha()
-        #self.image.fill(color)
-        #pygame.draw.circle(self.image, (self.width/2, self.height/2), color, self.width)
-        self.color = color
-        self.server = server
-
-        self.rotation_angle = 0
 
         # Fetch the rectangle object that has the dimensions of the image
         # Update the position of this object by setting the values of rect.x and rect.y
         self.rect = self.image.get_rect()
 
         self.movement_keys = movement_keys
-
 
     def set_pos(self, x,y):
         self.pos = pygame.math.Vector2((x,y))
@@ -106,16 +97,17 @@ class ClientPlayer(pygame.sprite.Sprite):
         
         print(player_data_to_str(inputs))
 
-        self.server.send(player_data_to_str(inputs))
+        self.socket.send(player_data_to_str(inputs))
 
     def update(self, events, delta_time):
 
         self.image.fill((255,255,255, 0))
 
         center_point = (self.width/2, self.height/2)
-        pygame.draw.line(self.image, pygame.color.THECOLORS['blue'], center_point, (center_point[0] + math.cos(self.rotation_angle)* self.aim_length, center_point[1] + math.sin(self.rotation_angle) * self.aim_length))
+        pygame.draw.line(self.image, pygame.color.THECOLORS['orange'], center_point, (center_point[0] + math.cos(self.rotation_angle)* self.aim_length, center_point[1] + math.sin(self.rotation_angle) * self.aim_length))
 
-        pygame.draw.circle(self.image, self.color, center_point, 50)
+
+        pygame.draw.circle(self.image, pygame.color.THECOLORS['blue'], center_point, self.radius)
         self.rect.center = self.pos
 
 
@@ -137,6 +129,10 @@ class ServerPlayer(BasePlayer):
       self.rotation_angle += dm * self.sensitivity
 
     def update_position(self, dx, dy, delta_time):
+
+        # Save the previous position for collisions
+        self.previous_pos = pygame.math.Vector2(self.pos.x, self.pos.y)
+
         # NOTE: You should update the movement vector before you update the position
         self.movement_vector.x = dx
         self.movement_vector.y = dy
@@ -151,12 +147,10 @@ class ServerPlayer(BasePlayer):
             # We will slow them down at the same speed they would speed up by
             self.apply_friction()
 
-        # Based on our acceleration calculate what the velocity update should be
 
+        # Based on our acceleration calculate what the velocity update should be
         # Change in position = velocity * change in time
         self.pos += self.velocity * delta_time
-        self.pos.x %= WIDTH
-        self.pos.y %= HEIGHT
 
     def get_sendable_state(self):
         properties = [self.player_id, self.pos.x, self.pos.y, self.rotation_angle]

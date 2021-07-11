@@ -5,8 +5,8 @@ import pygame
 import collisions
 from player import Player
 
-WIDTH = 1500
-HEIGHT = 1000
+WIDTH = 1366
+HEIGHT = 786
 FPS = 60
 
 ## initialize pygame and create window

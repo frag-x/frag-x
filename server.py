@@ -7,7 +7,8 @@ from network import FragNetwork
 from converters import str_to_player_data
 from player import ServerPlayer
 from threading import Lock, Thread
-from collisions import colliding
+import collisions
+import map_loading
 from physics import elastic_collision_update
 from queue import Queue
 
@@ -31,6 +32,20 @@ print(f"Server started on {(SERVER_ADDRESS, PORT)}")
 players = []
 
 player_start_positions = [ORIGIN, SCREEN_CENTER_POINT]
+
+
+# START MAP LOAD
+
+walls = map_loading.construct_walls(map_loading.get_pixels("maps/m1_no_layers.png"))
+#walls = [(4, 3), (4,4), (4, 5), (5,5), (6,5), (7,5), (8,5), (4, 6)]
+#walls = [(5,5)]
+#walls = [map_loading.SquareWall(x, y, pygame.color.THECOLORS['green'], 100) for x, y in walls]
+bounding_walls = map_loading.construct_bounding_walls(map_loading.get_pixels("maps/m1_no_layers.png"))
+#bounding_walls = walls
+
+map_loading.classify_bounding_walls(bounding_walls, "maps/m1_no_layers.png")
+
+# END MAP LOAD
 
 def client_state_producer(conn, state_queue):
     """
@@ -131,12 +146,21 @@ while True:
         # Now that their positions have been updated we can check for collisions
         bodies = list(id_to_player.values())
         n = len(bodies)
+        # This iterates over all the possible 
         for i in range(n):
+            b1 = bodies[i]
+            # Checks for collisions with other bodies
             for j in range(i+1, n):
-                b1 = bodies[i]
                 b2 = bodies[j]
-                if colliding(b1.pos, b1.radius, b2.pos, b2.radius):
+                if collisions.bodies_colliding(b1.pos, b1.radius, b2.pos, b2.radius):
                     elastic_collision_update(b1, b2)
+
+            # Checks for collisions with walls
+
+            for b_wall in bounding_walls:
+                colliding, closest_v = collisions.colliding_and_closest(b1, b_wall)
+                if colliding:
+                    collisions.simulate_collision_v2(b1, b_wall, closest_v)
 
     
     q_drain_lock.release()  

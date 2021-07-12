@@ -1,5 +1,7 @@
 import pygame
 import math
+import logging
+import weapons
 from converters import player_data_to_str
 
 
@@ -38,6 +40,10 @@ class BasePlayer:
 
         self.rotation_angle = 0
         self.sensitivity = 0.011
+
+        # Guns
+
+        self.weapon = weapons.Hitscan(1, self, 1000)
 
         # Physics/Movement
 
@@ -93,9 +99,11 @@ class ClientPlayer(BasePlayer, pygame.sprite.Sprite):
         x_movement = int(keys[r]) - int(keys[l]) 
         y_movement = -(int(keys[u]) - int(keys[d]))
 
-        inputs = (self.player_id, x_movement, y_movement, dm, delta_time)
+        firing = int(pygame.mouse.get_pressed()[0])
+
+        inputs = (self.player_id, x_movement, y_movement, dm, delta_time, firing)
         
-        print(player_data_to_str(inputs))
+        logging.info(f"INPUTS: {player_data_to_str(inputs)}")
 
         self.socket.send(player_data_to_str(inputs))
 

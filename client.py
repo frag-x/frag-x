@@ -1,7 +1,7 @@
 import pygame
 from network import FragNetwork
 from player import ClientPlayer
-from game_engine_constants import ARROW_MOVEMENT_KEYS, WASD_MOVEMENT_KEYS, WIDTH, HEIGHT, FPS, GAME_TITLE, SCREEN_CENTER_POINT, ORIGIN, BUF_SIZE
+from game_engine_constants import ARROW_MOVEMENT_KEYS, WASD_MOVEMENT_KEYS, WIDTH, HEIGHT, FPS, GAME_TITLE, SCREEN_CENTER_POINT, ORIGIN, BUF_SIZE, DEV_MAP
 from converters import str_to_player_data_no_dt
 from threading import Thread, Lock
 import map_loading
@@ -9,6 +9,9 @@ import pickle
 import time
 import random
 import logging
+from fractions import Fraction
+import math
+logging.basicConfig(level=logging.INFO)
 
 ## Initialize network
 fn = FragNetwork()
@@ -21,7 +24,10 @@ print(f"You are player {player_id}")
 ## initialize pygame and create window
 pygame.init()
 pygame.mixer.init()  ## For sound
+pygame.font.init() # you have to call this at the start, 
+myfont = pygame.font.SysFont(pygame.font.get_default_font(), 30)
 screen = pygame.display.set_mode((WIDTH, HEIGHT))
+
 
 pygame.display.set_caption(GAME_TITLE)
 clock = pygame.time.Clock()     ## For syncing the FPS
@@ -33,14 +39,9 @@ all_sprites = pygame.sprite.Group()
 
 # START MAP LOAD TODO server should only send the name of the map and then we load it in
 
-walls = map_loading.construct_walls(map_loading.get_pixels("maps/m1_no_layers.png"))
-#walls = [(4, 3), (4,4), (4, 5), (5,5), (6,5), (7,5), (8,5), (4, 6)]
-#walls = [(5,5)]
-#walls = [map_loading.SquareWall(x, y, pygame.color.THECOLORS['green'], 100) for x, y in walls]
-bounding_walls = map_loading.construct_bounding_walls(map_loading.get_pixels("maps/m1_no_layers.png"))
-#bounding_walls = walls
-
-map_loading.classify_bounding_walls(bounding_walls, "maps/m1_no_layers.png")
+walls = map_loading.construct_walls(map_loading.get_pixels(DEV_MAP))
+bounding_walls = map_loading.construct_bounding_walls(map_loading.get_pixels(DEV_MAP))
+map_loading.classify_bounding_walls(bounding_walls, DEV_MAP)
 
 # END MAP LOAD
 
@@ -63,17 +64,17 @@ def game_state_watcher():
         logging.info("watching for game state")
         raw_data = fn.client.recv(BUF_SIZE)
         game_state = pickle.loads(raw_data)
-        logging.info("GAME STATE RECEIVED: ", game_state)
+        logging.info(f"GAME STATE RECEIVED: {game_state}")
 
         for player_state in game_state:
-            logging.info("player state", player_state)
+            logging.info(f"player state: {player_state}")
             player_id, x, y, rotation_angle = str_to_player_data_no_dt(player_state)
 
             if player_id not in id_to_player:
                 id_to_player[player_id] = ClientPlayer((x,y), 50, 50, (50, 255, 5),ARROW_MOVEMENT_KEYS, player_id, fn)
                 all_sprites.add(id_to_player[player_id])
             else:
-                logging.info(id_to_player, player_id)
+                #logging.info(id_to_player, player_id)
                 id_to_player[player_id].set_pos(x,y)
                 # In real life we can't change their view or they will freak - do it for now
                 id_to_player[player_id].rotation_angle = rotation_angle
@@ -138,6 +139,19 @@ while running:
     for sprite in all_sprites:
         # Add the player's camera offset to the coords of all sprites.
         screen.blit(sprite.image, sprite.rect.topleft + camera_v)
+
+    # FONTS
+
+    font_color = pygame.color.THECOLORS['brown3']
+
+    speed = myfont.render(str(round(curr_player.velocity.magnitude())), False, font_color)
+    pos = myfont.render(str(curr_player.pos), False, font_color)
+    aim_angle_frac = Fraction(curr_player.rotation_angle/math.tau).limit_denominator(10)
+    angle = myfont.render(str(aim_angle_frac) + "τ", False, font_color)
+
+    screen.blit(speed,(0,0))
+    screen.blit(pos,(0,25))
+    screen.blit(angle,(0,50))
 
     ########################
 

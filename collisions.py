@@ -1,5 +1,30 @@
-import pygame, math
+import pygame, math, time
 import logging
+
+def elastic_collision_update(b1, b2):
+    logging.info("==== BODY COLLISION SIMULATION START ====")
+
+    start_body_collision_time = time.time()
+
+    m1, m2 = b1.mass, b2.mass
+    M = m1 + m2
+
+    p1, p2 = b1.pos, b2.pos
+
+    len_squared = (p1 - p2).length_squared()
+
+    v1, v2 = b1.velocity, b2.velocity
+
+    # Compute their new velocities - TODO understand this formula
+    u1 = v1 - (2 * m2 / M) * (pygame.math.Vector2.dot(v1 - v2, p1 - p2) / (len_squared)) * (p1 - p2)
+    u2 = v2 - (2 * m1 / M) * (pygame.math.Vector2.dot(v2 - v1, p2 - p1) / (len_squared)) * (p2 - p1)
+
+    b1.velocity = u1
+    b2.velocity = u2
+
+    end_body_collision_time = time.time()
+
+    logging.info(f"==== BODY COLLISION SIMULATION END | TIME TAKEN {end_body_collision_time - start_body_collision_time} ====")
 
 def bodies_colliding(p1: pygame.Vector2, r1: float, p2: pygame.Vector2, r2: float) -> bool:
     center_distance = (p2 - p1).magnitude()
@@ -20,9 +45,12 @@ def colliding_and_closest(body, b_wall):
     return (closest_v - body.pos).magnitude() <= body.radius, closest_v
 
 def simulate_collision_v2(body, b_wall, closest_v):
+    logging.info("==== WALL COLLISION SIMULATION START ====")
+
+    start_collision_simulation_time = time.time()
+
     top, left, bottom, right = b_wall.rect.top, b_wall.rect.left, b_wall.rect.bottom, b_wall.rect.right 
 
-    #logging.info("==== COLLISION SIMULATION START ====")
     logging.info(f"top: {top}, left: {left}, bottom: {bottom}, right: {right}") 
     logging.info(f"closest: {closest_v.x} {closest_v.y}")
 
@@ -217,7 +245,9 @@ def simulate_collision_v2(body, b_wall, closest_v):
         
 
     logging.info(f"Body at {body.pos.x} {body.pos.y} after collision")
-    logging.info("==== COLLISION SIMULATION END ====")
+
+    end_collision_simulation_time = time.time()
+    logging.info(f"==== WALL COLLISION SIMULATION END | TIME TAKEN: {end_collision_simulation_time - start_collision_simulation_time} ====")
 
 # TODO combine functionality by realizing you can always do body.velocity.[xy] *= 1
 def right_reflect(body, unstick_amount, closest_v, velocity_reduction_multiplier):

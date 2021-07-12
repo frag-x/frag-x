@@ -1,0 +1,48 @@
+INFO:root:Amount of time to send game data: 8.58306884765625e-05
+INFO:root:Amount of time to compute collisions: 0.004095315933227539
+INFO:root:Amount of time to send game data: 4.7206878662109375e-05
+INFO:root:Amount of time to compute collisions: 0.0037500858306884766
+INFO:root:Amount of time to send game data: 0.0001366138458251953
+INFO:root:Amount of time to compute collisions: 0.004297494888305664
+INFO:root:Amount of time to send game data: 0.00016164779663085938
+INFO:root:Amount of time to compute collisions: 0.003879547119140625
+INFO:root:Amount of time to send game data: 9.72747802734375e-05
+INFO:root:Amount of time to compute collisions: 0.004703044891357422
+INFO:root:Amount of time to send game data: 4.863739013671875e-05
+INFO:root:top: 96, left: 800, bottom: 128, right: 832
+INFO:root:closest: 832.0 128.0
+INFO:root:Body at 834.6485103381536 155.33386795049682 before collision
+INFO:root:Body at 832.1764486709388 152.5429709316075 during collision
+INFO:root:fully_in: False,
+ half_in: False,
+ case1: [False, False, False, False],
+ case2: [False, False, False, False],
+ case3: [False, False, False, True]
+INFO:root:bottom
+INFO:root:Body at 832.0 156.0 after collision
+INFO:root:==== COLLISION SIMULATION END ====
+INFO:root:Amount of time to compute collisions: 0.005246400833129883
+INFO:root:Amount of time to send game data: 9.274482727050781e-05
+INFO:root:Amount of time to compute collisions: 0.005006074905395508
+INFO:root:Amount of time to send game data: 4.9114227294921875e-05
+INFO:root:Amount of time to compute collisions: 0.004977226257324219
+INFO:root:Amount of time to send game data: 8.0108642578125e-05
+INFO:root:Amount of time to compute collisions: 0.005865573883056641
+INFO:root:Amount of time to send game data: 5.8650970458984375e-05
+INFO:root:Amount of time to compute collisions: 0.008520126342773438
+INFO:root:Amount of time to send game data: 0.0001392364501953125
+INFO:root:Amount of time to compute collisions: 0.004842996597290039
+INFO:root:Amount of time to send game data: 4.9591064453125e-05
+INFO:root:Amount of time to compute collisions: 0.005296230316162109
+INFO:root:Amount of time to send game data: 7.152557373046875e-05
+INFO:root:Amount of time to compute collisions: 0.006559610366821289
+INFO:root:Amount of time to send game data: 6.628036499023438e-05
+INFO:root:Amount of time to compute collisions: 0.007923603057861328
+INFO:root:Amount of time to send game data: 0.00012230873107910156
+INFO:root:Amount of time to compute collisions: 0.007627248764038086
+INFO:root:Amount of time to send game data: 5.1021575927734375e-05
+INFO:root:Amount of time to compute collisions: 0.007455110549926758
+INFO:root:Amount of time to send game data: 6.175041198730469e-05
+INFO:root:Amount of time to compute collisions: 0.007585763931274414
+INFO:root:Amount of time to send game data: 5.364418029785156e-05
+

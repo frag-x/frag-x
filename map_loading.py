@@ -46,7 +46,13 @@ def construct_bounding_walls(pixel_map):
     return bounding_walls
 
 def is_wall(x, y, pixel_map):
-    return pixel_map[y][x] == (0, 0, 0, 255)
+    color = pixel_map[y][x]
+    return color == (0, 0, 0, 255) or color == (0,0,0)
+
+
+def is_empty(x, y, pixel_map):
+    color = pixel_map[y][x]
+    return color == (255, 255, 255, 255) or color == (255,255,255)
 
 def is_bounding(x, y, pixel_map):
     # Assuming pixel map non-empty
@@ -60,7 +66,7 @@ def is_bounding(x, y, pixel_map):
                 point_y = y + k
                 if 0 <= point_x <= max_x and 0 <= point_y <= max_y:
                     # Then we can check this point
-                    if pixel_map[point_y][point_x] == (255, 255, 255, 255):
+                    if is_empty(point_x, point_y, pixel_map):
                         # An empty square
                         return True
     else:

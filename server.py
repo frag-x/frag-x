@@ -2,15 +2,19 @@ import socket
 import pickle
 import pygame
 from typing import List
-from game_engine_constants import SCREEN_CENTER_POINT, ORIGIN, BUF_SIZE, PORT, LOCAL_IP, SERVER_TICK_RATE_HZ, REMOTE_IP, RUNNING_LOCALLY
+from game_engine_constants import SCREEN_CENTER_POINT, ORIGIN, BUF_SIZE, PORT, LOCAL_IP, SERVER_TICK_RATE_HZ, REMOTE_IP, RUNNING_LOCALLY, DEV_MAP
 from network import FragNetwork
 from converters import str_to_player_data
 from player import ServerPlayer
 from threading import Lock, Thread
 import collisions
+import logging
+#logging.basicConfig(level=logging.INFO)
 import map_loading
-from physics import elastic_collision_update
 from queue import Queue
+import time
+import math
+from player import ServerPlayer
 
 if RUNNING_LOCALLY:
     SERVER_ADDRESS = LOCAL_IP
@@ -36,14 +40,10 @@ player_start_positions = [ORIGIN, SCREEN_CENTER_POINT]
 
 # START MAP LOAD
 
-walls = map_loading.construct_walls(map_loading.get_pixels("maps/m1_no_layers.png"))
-#walls = [(4, 3), (4,4), (4, 5), (5,5), (6,5), (7,5), (8,5), (4, 6)]
-#walls = [(5,5)]
-#walls = [map_loading.SquareWall(x, y, pygame.color.THECOLORS['green'], 100) for x, y in walls]
-bounding_walls = map_loading.construct_bounding_walls(map_loading.get_pixels("maps/m1_no_layers.png"))
-#bounding_walls = walls
+walls = map_loading.construct_walls(map_loading.get_pixels(DEV_MAP))
+bounding_walls = map_loading.construct_bounding_walls(map_loading.get_pixels(DEV_MAP))
 
-map_loading.classify_bounding_walls(bounding_walls, "maps/m1_no_layers.png")
+map_loading.classify_bounding_walls(bounding_walls,DEV_MAP)
 
 # END MAP LOAD
 
@@ -105,7 +105,7 @@ def threaded_server_acceptor(state_queue):
 
         player_lock.acquire()
 
-        id_to_player[player_id] = ServerPlayer((0,0), 50, 50, player_id, conn)
+        id_to_player[player_id] = ServerPlayer(SCREEN_CENTER_POINT, 50, 50, player_id, conn)
 
         player_lock.release()
 
@@ -127,22 +127,41 @@ server_updates = []
 tsa_t = Thread(target=threaded_server_acceptor, args=(state_queue,))
 tsa_t.start()
 
+ticks_from_previous_iteration = 0
 
 while True:
 
     clock.tick(SERVER_TICK_RATE_HZ)     ## will make the loop run at the same speed all the time
 
+    t = pygame.time.get_ticks()
+
     q_drain_lock.acquire()  
+
+    start_player_computation_time = time.time()
 
     while not state_queue.empty():
         #print("q is drainable")
-        player_id, dx, dy, dm, delta_time = state_queue.get()
+        player_id, dx, dy, dm, delta_time, firing = state_queue.get()
 
+        # TODO and if it's not??
         if player_id in id_to_player:
             p = id_to_player[player_id]
             p.update_position(dx, dy, delta_time)
             p.update_aim(dm)
 
+        if firing:
+            players = list(id_to_player.values())
+            other_players = [x for x in players if x is not p]
+            closest_hit, closest_entity = p.weapon.get_all_intersecting_objects(bounding_walls, other_players)
+            if type(closest_entity) is ServerPlayer:
+                hit_v = pygame.math.Vector2(0,0)
+                # Because from polar is in deg apparently ...
+                # TODO add a polar version to pygame
+                deg = p.rotation_angle * 360/math.tau
+                hit_v.from_polar((p.weapon.power, deg))
+                closest_entity.velocity += hit_v
+
+        start_collision_time = time.time()
         # Now that their positions have been updated we can check for collisions
         bodies = list(id_to_player.values())
         n = len(bodies)
@@ -153,7 +172,7 @@ while True:
             for j in range(i+1, n):
                 b2 = bodies[j]
                 if collisions.bodies_colliding(b1.pos, b1.radius, b2.pos, b2.radius):
-                    elastic_collision_update(b1, b2)
+                    collisions.elastic_collision_update(b1, b2)
 
             # Checks for collisions with walls
 
@@ -162,11 +181,20 @@ while True:
                 if colliding:
                     collisions.simulate_collision_v2(b1, b_wall, closest_v)
 
+        end_collsion_time = time.time()
+
+        logging.info(f"Amount of time to compute collisions for player {p.player_id}: {end_collsion_time - start_collision_time}")
+
+
+    end_player_computation_time = time.time()
+    logging.info(f"Amount of time to compute operations for all players: {end_player_computation_time - start_player_computation_time}")
     
     q_drain_lock.release()  
 
 
     player_lock.acquire()
+
+    start_send_time = time.time()
 
     # get the game state ready to be sent
     for p in id_to_player.values():
@@ -176,6 +204,10 @@ while True:
     for p in id_to_player.values():
         #print("server updates", server_updates)
         p.socket.sendall(pickle.dumps(server_updates))
+
+    end_send_time = time.time()
+
+    logging.info(f"Amount of time to send game data: {end_send_time - start_send_time}")
 
     # reset server updates
     server_updates = []

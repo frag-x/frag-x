@@ -1,5 +1,6 @@
 import pygame
 import math
+import game_engine_constants
 import logging
 import weapons
 from converters import player_data_to_str
@@ -29,7 +30,7 @@ class BasePlayer:
         self.height = height + 2*self.aim_length
         self.player_id = player_id
 
-        self.radius = width/2
+        self.radius = game_engine_constants.TILE_SIZE/2
         # mass is equal to area
         self.mass = math.pi * (self.radius ** 2)
         self.player_id = player_id
@@ -100,7 +101,7 @@ class ClientPlayer(BasePlayer, pygame.sprite.Sprite):
         y_movement = -(int(keys[u]) - int(keys[d]))
 
         firing = int(pygame.mouse.get_pressed()[0])
-
+        
         inputs = (self.player_id, x_movement, y_movement, dm, delta_time, firing)
         
         logging.info(f"INPUTS: {player_data_to_str(inputs)}")

@@ -20,6 +20,7 @@ RUNNING_LOCALLY = True
 
 #DEV_MAP = "maps/simple_map.png"
 DEV_MAP = "maps/m1_no_layers.png"
+TILE_SIZE = 32
 
 
 import socket
@@ -33,5 +34,6 @@ s.close()
 REMOTE_IP = "168.100.233.209"
 #REMOTE_IP = socket.gethostname()
 
-PORT = 50000
+#PORT = 50000
+PORT = 49999
 

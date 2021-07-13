@@ -1,5 +1,6 @@
 import math
 import pygame
+import game_engine_constants
 
 class Weapon:
     def __init__(self, fire_rate: float, owner, power):
@@ -10,6 +11,119 @@ class Weapon:
 class Hitscan(Weapon):
     def __init__(self, fire_rate: float, owner, power: float):
         super().__init__(fire_rate, owner, power)
+
+    def get_intersecting_partitions(self, partitioned_map_grid):
+        fire_origin = self.owner.pos
+
+        delta_y = math.sin(self.owner.rotation_angle)
+
+        delta_x = math.cos(self.owner.rotation_angle)
+
+        closest_hit = None
+        closest_entity = None
+
+        def get_sign(num):
+            if num > 0:
+                return 1
+            elif num < 0:
+                return -1
+            else:
+                return 0
+
+        quadrant_info = (get_sign(delta_x), get_sign(delta_y))
+
+        if delta_x == 0 or delta_y == 0:
+            # Then we fired along the axis
+            pass
+        else:
+            fire_slope = delta_y/delta_x
+
+            # if abs(delta_y) <= abs(delta_x) employ this method otherwise switch all variables
+
+            x_partition_seams = [x for x in range(0, partitioned_map_grid.width, partitioned_map_grid.partition_width)]
+            print(x_partition_seams)
+
+            for x_partition_seam in x_partition_seams:
+                translated_x_partition_seam = x_partition_seam - self.owner.pos.x
+                # TODO check if this is within 
+                y = fire_slope * translated_x_partition_seam
+                # TODO remove hardcode on tilesize?
+                partition_y_length = partitioned_map_grid.partition_height
+                untranslated_y = y + self.owner.pos.y
+                print(untranslated_y)
+                """
+                A Quad patch is the overlap of 4 collision partitions
+                 ___________ ___________
+                |           |           |
+                |           |   QP      |
+                |           |  /        |
+                |        ___|_/_        |
+                |       |   |   |       |
+                |_______|___|___|_______|
+                |       |   |   |       |
+                |       |___|___|       |
+                |           |           |
+                |           |           |
+                |           |           |
+                |___________|___________|
+
+                """
+                intersecting_bottom_of_quad_patch = (partition_y_length - game_engine_constants.TILE_SIZE <= untranslated_y % partition_y_length <= partition_y_length)
+                intersecting_top_of_quad_patch = (0 <= untranslated_y % partition_y_length  <= game_engine_constants.TILE_SIZE)
+
+                if intersecting_bottom_of_quad_patch or intersecting_top_of_quad_patch:
+                    print("At a quad_patch intersection")
+                    if intersecting_bottom_of_quad_patch:
+                        # Then we round up
+                        quad_patch_center = (x_partition_seam, (untranslated_y // partition_y_length + 1) * partition_y_length)
+                    elif intersecting_top_of_quad_patch:
+                        # Then we round down
+                        quad_patch_center = (x_partition_seam, (untranslated_y // partition_y_length ) * partition_y_length)
+
+                    bottom_right_partition_idx_x = quad_patch_center[0] // partitioned_map_grid.partition_width
+                    bottom_right_partition_idx_y = quad_patch_center[1] // partitioned_map_grid.partition_height
+
+                    bottom_right_partition_idx = (bottom_right_partition_idx_x, bottom_right_partition_idx_y)
+
+                    collision_partition_offsets = [(-1, -1), (0, -1), (0, 0), (-1, 0)]
+
+                    def tuple_add(t0, t1):
+                        return (int(t0[0] + t1[0]), int(t0[1] + t1[1])) 
+
+                    collision_partition_indices = [tuple_add(t0, bottom_right_partition_idx) for t0 in collision_partition_offsets]
+
+                    print(collision_partition_indices)
+
+                    # Uses a set for duplicate collision partitions
+                    tiles_to_check = set()
+
+                    for index in collision_partition_indices:
+                        x, y = index
+                        tiles_to_check.add(partitioned_map_grid.collision_partitioned_map[y][x])
+
+                    return tiles_to_check
+
+                    
+
+                    
+                        
+                else:
+                    print("At a double intersection")
+
+                #x_idx, y_idx
+
+                #for every valid index:
+                #    add that partition to a set of partitions
+
+                #for every hit partition:
+                #    color that partition in so we can visually make sure it's working
+                #    iterate through that partitons boundingwalls
+                #    iterate through that partitions players
+
+                #    check for hits
+                #    call get allintersectiong objects
+
+                #then for each intersecting object take the min again
 
 
     def get_all_intersecting_objects(self, bounding_walls, bodies):
@@ -147,4 +261,11 @@ class Hitscan(Weapon):
                             closest_hit, closest_entity = update_closest(hit, body, closest_hit, closest_entity)
                     
             return closest_hit, closest_entity
+
+class Explosion:
+    pass
+
+class Projectile:
+    pass
+
 

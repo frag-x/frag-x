@@ -1,5 +1,6 @@
 from PIL import Image
 import pygame
+import game_engine_constants
 import helpers
 from typing import List, Optional, Tuple
 
@@ -17,8 +18,8 @@ def create_blank_map(filename):
 
 
 class Wall:
-    def __init__(self, x, y, color = pygame.color.THECOLORS['grey'], size = 32):
-        self.size = size
+    def __init__(self, x, y, color = pygame.color.THECOLORS['grey']):
+        self.size = game_engine_constants.TILE_SIZE
         self.x_idx = x
         self.y_idx = y
 
@@ -29,22 +30,24 @@ class Wall:
         self.color = color
 
 class BoundingWall(Wall):
-    def __init__(self, x, y, color = pygame.color.THECOLORS['grey'], size = 32):
-        super().__init__(x,y, color, size)
+    def __init__(self, x, y, color = pygame.color.THECOLORS['grey']):
+        super().__init__(x,y, color)
         self.visible_sides = None
 
 # TODO make this taken in something other than filename for input so that ineheritance will work.
 # Make it takin a list of pixels and then the partitioned version will call this on the chunked thing.
 class MapGrid:
-    def __init__(self, pixel_map, scale=32):
+    def __init__(self, pixel_map):
         self.pixel_map = pixel_map
-        self.scale = scale 
         self.walls = []
         self.bounding_walls = []
-        self.height = len(pixel_map) 
-        self.width = len(pixel_map[0]) 
+        self.base_height = len(pixel_map) 
+        self.base_width = len(pixel_map[0]) 
 
-        self.map = [[None for x in range(self.width)] for y in range(self.height)]
+        self.height = self.base_height * game_engine_constants.TILE_SIZE
+        self.width = self.base_width * game_engine_constants.TILE_SIZE
+
+        self.map = [[None for x in range(self.base_width)] for y in range(self.base_height)]
 
         self.construct_walls()
         self.construct_bounding_walls()
@@ -55,7 +58,7 @@ class MapGrid:
         for y, row in enumerate(self.pixel_map):
             for x, element in enumerate(row):
                 if is_wall(x,y,self.pixel_map):
-                    w = Wall(x,y,pygame.color.THECOLORS['grey'], self.scale)
+                    w = Wall(x,y,pygame.color.THECOLORS['grey'])
                     self.walls.append(w)
                     self.map[y][x] = w
 
@@ -63,7 +66,7 @@ class MapGrid:
         for y, row in enumerate(self.pixel_map):
             for x, element in enumerate(row):
                 if is_bounding(x,y, self.pixel_map):
-                    bw = BoundingWall(x,y, pygame.color.THECOLORS['aquamarine4'], self.scale)
+                    bw = BoundingWall(x,y, pygame.color.THECOLORS['aquamarine4'])
                     self.bounding_walls.append(bw)
                     self.map[y][x] = bw
 
@@ -107,56 +110,59 @@ class MapGrid:
 
                     bw.visible_sides = [not x for x in around]
 
-
+# TODO - so that it can be used in client and server
+class PMGManager:
+    """This class updates players within the partioned map grid"""
+    pass
 
 class PartitionedMapGrid(MapGrid):
-    def __init__(self, pixel_map, partition_width_base_unit, partition_height_base_unit):
+    def __init__(self, pixel_map, partition_width_base, partition_height_base):
         super().__init__(pixel_map)
 
-        self.partition_width_base_unit = partition_width_base_unit
-        self.partition_height_base_unit = partition_height_base_unit
+        self.partition_width_base = partition_width_base
+        self.partition_height_base = partition_height_base
 
-        self.partition_width = self.partition_width_base_unit * self.scale
-        self.partition_height = self.partition_height_base_unit * self.scale
+        self.partition_width = self.partition_width_base * game_engine_constants.TILE_SIZE
+        self.partition_height = self.partition_height_base * game_engine_constants.TILE_SIZE
 
-        assert self.width % partition_width_base_unit == 0 and self.height % partition_height_base_unit == 0
+        assert self.base_width % partition_width_base == 0 and self.base_height % partition_height_base == 0
 
-        self.num_x_partitions = self.width // self.partition_width_base_unit
-        self.num_y_partitions = self.height // self.partition_height_base_unit
+        self.num_x_partitions = self.base_width // self.partition_width_base
+        self.num_y_partitions = self.base_height // self.partition_height_base
         self.partitioned_map = [[None for x in range(self.num_x_partitions)] for y in range(self.num_y_partitions)]
         self.collision_partitioned_map = [[None for x in range(self.num_x_partitions)] for y in range(self.num_y_partitions)]
         self.partition_map()
 
     def partition_map(self):
-        for j in range(0, self.height, self.partition_height_base_unit):
-            for i in range(0, self.width, self.partition_width_base_unit):
+        for j in range(0, self.base_height, self.partition_height_base):
+            for i in range(0, self.base_width, self.partition_width_base):
 
 
-                x1, x2 = i, i + self.partition_width_base_unit
-                y1, y2 = j, j + self.partition_height_base_unit
+                x1, x2 = i, i + self.partition_width_base
+                y1, y2 = j, j + self.partition_height_base
                 map_partition = [row[x1: x2] for row in self.map[y1: y2]]
 
                 # Even if a body is inside of a paritition part of it may be coming out of the partition, therefore we need to make sure we account for these extra blocks
                 collision_buffer_size = 1 
-                cx1, cx2 = helpers.clamp(x1 - collision_buffer_size, 0, self.width), helpers.clamp(x2 + collision_buffer_size, 0, self.width)
-                cy1, cy2 = helpers.clamp(y1 - collision_buffer_size, 0, self.height), helpers.clamp(y2 + collision_buffer_size, 0, self.height)
+                cx1, cx2 = helpers.clamp(x1 - collision_buffer_size, 0, self.base_width), helpers.clamp(x2 + collision_buffer_size, 0, self.base_width)
+                cy1, cy2 = helpers.clamp(y1 - collision_buffer_size, 0, self.base_height), helpers.clamp(y2 + collision_buffer_size, 0, self.base_height)
 
                 print(cx1, cx2, cy1, cy2)
                 
                 collision_map_partition = [row[cx1: cx2] for row in self.map[cy1: cy2]]
 
-                j_idx = j // self.partition_height_base_unit
-                i_idx = i // self.partition_width_base_unit
+                j_idx = j // self.partition_height_base
+                i_idx = i // self.partition_width_base
 
-                self.partitioned_map[j_idx][i_idx] = MapGridPartition((i,j), self.partition_width_base_unit, self.partition_height_base_unit, map_partition, self.scale)
-                self.collision_partitioned_map[j_idx][i_idx] = MapGridPartition((i,j), self.partition_width_base_unit, self.partition_height_base_unit, collision_map_partition, self.scale)
+                self.partitioned_map[j_idx][i_idx] = MapGridPartition((i,j), self.partition_width_base, self.partition_height_base, map_partition)
+                self.collision_partitioned_map[j_idx][i_idx] = MapGridPartition((i,j), self.partition_width_base, self.partition_height_base, collision_map_partition)
 
 class MapGridPartition:
-    def __init__(self, pos: Tuple[int, int], partition_width_base_unit: int, partition_height_base_unit: int, partition_data:List[List[Optional[Wall]]], scale):
-        self.pos = (pos[0] * scale , pos[1] * scale)
-        self.partition_width_base_unit = partition_width_base_unit * scale
-        self.partition_height_base_unit = partition_height_base_unit * scale
-        self.rect = pygame.Rect(self.pos[0], self.pos[1], self.partition_width_base_unit, self.partition_height_base_unit)
+    def __init__(self, pos: Tuple[int, int], partition_width_base: int, partition_height_base: int, partition_data:List[List[Optional[Wall]]]):
+        self.pos = (pos[0] * game_engine_constants.TILE_SIZE , pos[1] * game_engine_constants.TILE_SIZE)
+        self.partition_width_base = partition_width_base * game_engine_constants.TILE_SIZE
+        self.partition_height_base = partition_height_base * game_engine_constants.TILE_SIZE        
+        self.rect = pygame.Rect(self.pos[0], self.pos[1], self.partition_width_base, self.partition_height_base)
         self.walls = []
         self.bounding_walls = []
         for row in partition_data:

@@ -135,6 +135,13 @@ while running:
                 pygame.draw.rect(screen, b_wall.color, b_wall.rect.move(camera_v.x, camera_v.y))
 
 
+    firing = int(pygame.mouse.get_pressed()[0])
+
+    if firing:
+        partitions_hit = curr_player.weapon.get_intersecting_partitions(partitioned_map_grid)
+        for map_grid_partition in partitions_hit:
+            pygame.draw.rect(screen,pygame.color.THECOLORS['blueviolet'] , map_grid_partition.rect.move(camera_v.x, camera_v.y), width=1)
+
     #for wall in map_grid.walls:
     #    pygame.draw.rect(screen, wall.color, wall.rect.move(camera_v.x, camera_v.y))
 

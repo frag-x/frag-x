@@ -16,21 +16,14 @@ import time
 import math
 from player import ServerPlayer
 
-
 # START MAP LOAD
 
-map_grid = map_loading.MapGrid(map_loading.get_pixels(DEV_MAP), 32)
-
-#walls = map_loading.construct_walls(map_loading.get_pixels(DEV_MAP))
-walls = map_grid.walls
-#bounding_walls = map_loading.construct_bounding_walls(map_loading.get_pixels(DEV_MAP))
-bounding_walls = map_grid.bounding_walls
-
-#map_loading.classify_bounding_walls(bounding_walls,DEV_MAP)
+map_grid = map_loading.MapGrid(map_loading.get_pixels(DEV_MAP))
+partitioned_map_grid = map_loading.PartitionedMapGrid(map_loading.get_pixels(DEV_MAP),10, 10)
 
 # END MAP LOAD
 
-
+# START SOCKET SETUP
 
 if RUNNING_LOCALLY:
     SERVER_ADDRESS = LOCAL_IP
@@ -49,11 +42,11 @@ s.listen(2)
 
 print(f"Server started on {(SERVER_ADDRESS, PORT)}")
 
+# END SOCKET SETUP
+
 players = []
 
 player_start_positions = [ORIGIN, SCREEN_CENTER_POINT]
-
-
 
 def client_state_producer(conn, state_queue):
     """
@@ -155,12 +148,13 @@ while True:
         if player_id in id_to_player:
             p = id_to_player[player_id]
             p.update_position(dx, dy, delta_time)
+            p.pos.x
             p.update_aim(dm)
 
         if firing:
             players = list(id_to_player.values())
             other_players = [x for x in players if x is not p]
-            closest_hit, closest_entity = p.weapon.get_all_intersecting_objects(bounding_walls, other_players)
+            closest_hit, closest_entity = p.weapon.get_all_intersecting_objects(map_grid.bounding_walls, other_players)
             if type(closest_entity) is ServerPlayer:
                 # Then also send a weapon message saying hit and draw a line shooting the other player
                 hit_v = pygame.math.Vector2(0,0)
@@ -185,7 +179,17 @@ while True:
 
             # Checks for collisions with walls
 
-            for b_wall in bounding_walls:
+            
+            # TODO Move this to the server side
+            partition_idx_x = int(b1.pos.x // partitioned_map_grid.partition_width)
+            partition_idx_y = int(b1.pos.y // partitioned_map_grid.partition_height)
+
+
+
+            curr_partition = partitioned_map_grid.collision_partitioned_map[partition_idx_y][partition_idx_x]
+
+
+            for b_wall in curr_partition.bounding_walls:
                 colliding, closest_v = collisions.colliding_and_closest(b1, b_wall)
                 if colliding:
                     collisions.simulate_collision_v2(b1, b_wall, closest_v)
@@ -211,7 +215,7 @@ while True:
 
     # Send the game state to each of the players
     for p in id_to_player.values():
-        print("server updates", server_updates)
+        #print("server updates", server_updates)
         p.socket.sendall(pickle.dumps(server_updates))
 
     end_send_time = time.time()

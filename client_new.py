@@ -11,7 +11,14 @@ import random
 import logging
 from fractions import Fraction
 import math
-logging.basicConfig(level=logging.INFO)
+#logging.basicConfig(level=logging.INFO)
+
+# START MAP LOAD TODO server should only send the name of the map and then we load it in
+
+map_grid = map_loading.MapGrid(map_loading.get_pixels(DEV_MAP))
+partitioned_map_grid = map_loading.PartitionedMapGrid(map_loading.get_pixels(DEV_MAP),10, 10)
+
+# END MAP LOAD
 
 
 ## initialize pygame and create window
@@ -28,17 +35,6 @@ clock = pygame.time.Clock()     ## For syncing the FPS
 ## group all the sprites together for ease of update
 all_sprites = pygame.sprite.Group()
 
-
-
-# START MAP LOAD TODO server should only send the name of the map and then we load it in
-
-
-walls = map_loading.construct_walls(map_loading.get_pixels(DEV_MAP))
-#walls = map_grid.walls
-#bounding_walls = map_loading.construct_bounding_walls(map_loading.get_pixels(DEV_MAP))
-bounding_walls = map_grid.bounding_walls
-
-# END MAP LOAD
 
 ## Initialize network
 fn = FragNetwork()
@@ -128,11 +124,22 @@ while running:
 
     camera_v = SCREEN_CENTER_POINT - curr_player.pos
 
-    for wall in walls:
-        pygame.draw.rect(screen, wall.color, wall.rect.move(camera_v.x, camera_v.y))
+    for row in partitioned_map_grid.collision_partitioned_map:
+        for partition in row:
+            pygame.draw.rect(screen,pygame.color.THECOLORS['gold'] , partition.rect.move(camera_v.x, camera_v.y), width=1)
+    
+            for wall in partition.walls:
+                pygame.draw.rect(screen, wall.color, wall.rect.move(camera_v.x, camera_v.y))
 
-    for b_wall in bounding_walls:
-        pygame.draw.rect(screen, b_wall.color, b_wall.rect.move(camera_v.x, camera_v.y))
+            for b_wall in partition.bounding_walls:
+                pygame.draw.rect(screen, b_wall.color, b_wall.rect.move(camera_v.x, camera_v.y))
+
+
+    #for wall in map_grid.walls:
+    #    pygame.draw.rect(screen, wall.color, wall.rect.move(camera_v.x, camera_v.y))
+
+    #for b_wall in map_grid.bounding_walls:
+    #    pygame.draw.rect(screen, b_wall.color, b_wall.rect.move(camera_v.x, camera_v.y))
 
     #all_sprites.draw(screen)
 

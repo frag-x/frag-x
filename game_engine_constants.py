@@ -18,8 +18,8 @@ BUF_SIZE = 2 ** 12
 RUNNING_LOCALLY = True
 #RUNNING_LOCALLY = False
 
-DEV_MAP = "maps/simple_map.png"
-#DEV_MAP = "maps/m1_no_layers.png"
+#DEV_MAP = "maps/simple_map.png"
+DEV_MAP = "maps/m1_no_layers.png"
 
 
 import socket

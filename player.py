@@ -39,7 +39,7 @@ class BasePlayer:
         # Aiming
 
         self.rotation_angle = 0
-        self.sensitivity = 0.011
+        self.sensitivity = 0.005
 
         # Guns
 

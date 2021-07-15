@@ -135,7 +135,7 @@ class ServerPlayer(BasePlayer):
         super().__init__(start_pos, width, height,player_id, socket)
 
     def update_aim(self, dm):
-      self.rotation_angle += dm * self.sensitivity
+      self.rotation_angle = (self.rotation_angle + dm * self.sensitivity) % math.tau
 
     def update_position(self, dx, dy, delta_time):
 

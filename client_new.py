@@ -163,8 +163,9 @@ while running:
 
     speed = myfont.render(str(round(curr_player.velocity.magnitude())), False, font_color)
     pos = myfont.render(str(curr_player.pos), False, font_color)
-    aim_angle_frac = Fraction(curr_player.rotation_angle/math.tau).limit_denominator(10)
-    angle = myfont.render(str(aim_angle_frac) + "τ", False, font_color)
+    #aim_angle_frac = Fraction(curr_player.rotation_angle/math.tau).limit_denominator(10)
+    aim_angle_str = str(math.floor(curr_player.rotation_angle/math.tau * 10)) + "/" + str(10)
+    angle = myfont.render(aim_angle_str+ "τ", False, font_color)
 
     screen.blit(speed,(0,0))
     screen.blit(pos,(0,25))

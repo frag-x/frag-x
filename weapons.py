@@ -1,5 +1,9 @@
 import math
+import logging
+#logging.basicConfig(level=logging.INFO)
+import helpers
 import pygame
+import typing
 import game_engine_constants
 
 class Weapon:
@@ -8,11 +12,82 @@ class Weapon:
         self.owner = owner
         self.power = power
 
+class HitscanBeam:
+    def __init__(self, start_point, end_point):
+        delta_y = end_point[1] - start_point[1]
+        delta_x = end_point[0] - start_point[0]
+
+        self.start_point = start_point
+        self.end_point = end_point
+
+        self.slope = helpers.get_slope(start_point, end_point)
+
+        self.quadrant_info = (helpers.get_sign(delta_x), helpers.get_sign(delta_y))
+
 class Hitscan(Weapon):
     def __init__(self, fire_rate: float, owner, power: float):
         super().__init__(fire_rate, owner, power)
 
-    def get_intersecting_partitions(self, partitioned_map_grid):
+    def get_beam(self, screen_for_debug=None):
+
+        delta_y = math.sin(self.owner.rotation_angle)
+
+        delta_x = math.cos(self.owner.rotation_angle)
+
+        quadrant_info = (helpers.get_sign(delta_x), helpers.get_sign(delta_y))
+
+        slope = helpers.get_slope_from_deltas(delta_x, delta_y)
+
+        left_wall = 0
+        right_wall = game_engine_constants.MAP_DIM_X 
+
+        top_wall = 0
+        bottom_wall = game_engine_constants.MAP_DIM_Y 
+
+        left_wall_translated, right_wall_translated = left_wall - self.owner.pos.x, right_wall - self.owner.pos.x
+        top_wall_translated, bottom_wall_translated = top_wall - self.owner.pos.y, bottom_wall - self.owner.pos.y
+
+        # assuming the slope isn't vertical or horizontal here
+
+        translated_locations = []
+        if quadrant_info == (-1,-1):
+            # Check left and top
+            print("checking left and top")
+            left_wall_y_translated = slope * left_wall_translated
+            top_wall_x_translated = 1/slope * top_wall_translated
+            translated_locations = [(left_wall_translated, left_wall_y_translated), (top_wall_x_translated, top_wall_translated)]
+        elif quadrant_info == (1, -1):
+            # check right and top
+            print("checking right and top")
+            right_wall_y_translated = slope * right_wall_translated
+            top_wall_x_translated = 1/slope * top_wall_translated
+            translated_locations = [(right_wall_translated, right_wall_y_translated), (top_wall_x_translated, top_wall_translated)]
+        elif quadrant_info == (1, 1):
+            # check right and bottom
+            print("checking right and bottom")
+            right_wall_y_translated = slope * right_wall_translated
+            bottom_wall_x_translated = 1/slope * bottom_wall_translated
+            translated_locations = [(right_wall_translated, right_wall_y_translated), (bottom_wall_x_translated, bottom_wall_translated)]
+        elif quadrant_info == (-1, 1):
+            # check left and bottom
+            print("checking left and bottom")
+            left_wall_y_translated = slope * left_wall_translated
+            bottom_wall_x_translated = 1/slope * bottom_wall_translated
+            translated_locations = [(left_wall_translated, left_wall_y_translated), (bottom_wall_x_translated, bottom_wall_translated)]
+
+        locations = [pygame.math.Vector2(x + self.owner.pos.x, y + self.owner.pos.y) for x, y in translated_locations]
+
+        for location in locations:
+            if helpers.point_within_map(location):
+                print(location)
+                if screen_for_debug:
+                    pygame.draw.line(screen_for_debug, pygame.color.THECOLORS['purple'], helpers.translate_point_for_camera(self.owner, self.owner.pos), helpers.translate_point_for_camera(self.owner, location))
+                # This is guarenteed to be reached
+                return HitscanBeam(self.owner.pos, location)
+        #assert 1 == 0
+
+
+    def get_firing_line(self):
         fire_origin = self.owner.pos
 
         delta_y = math.sin(self.owner.rotation_angle)
@@ -22,15 +97,8 @@ class Hitscan(Weapon):
         closest_hit = None
         closest_entity = None
 
-        def get_sign(num):
-            if num > 0:
-                return 1
-            elif num < 0:
-                return -1
-            else:
-                return 0
 
-        quadrant_info = (get_sign(delta_x), get_sign(delta_y))
+        quadrant_info = (helpers.get_sign(delta_x), helpers.get_sign(delta_y))
 
         if delta_x == 0 or delta_y == 0:
             # Then we fired along the axis
@@ -38,47 +106,68 @@ class Hitscan(Weapon):
         else:
             fire_slope = delta_y/delta_x
 
-            # if abs(delta_y) <= abs(delta_x) employ this method otherwise switch all variables
+    def get_intersecting_partitions(self, partitioned_map_grid, beam: HitscanBeam, screen_for_debug=None):
 
-            x_partition_seams = [x for x in range(0, partitioned_map_grid.width, partitioned_map_grid.partition_width)]
-            print(x_partition_seams)
 
-            for x_partition_seam in x_partition_seams:
-                translated_x_partition_seam = x_partition_seam - self.owner.pos.x
+        intersecting_partitions = set()
+
+        x_beam_interval = [min(beam.start_point.x, beam.end_point.x), max(beam.start_point.x, beam.end_point.x)]
+        y_beam_interval = [min(beam.start_point.y, beam.end_point.y), max(beam.start_point.y, beam.end_point.y)]
+
+        """
+        A Quad patch is the overlap of 4 collision partitions
+         ___________ ___________
+        |           |           |
+        |           |   QP      |
+        |           |  /        |
+        |        ___|_/_        |
+        |       |   |   |       |
+        |_______|___|___|_______|
+        |       |   |   |       |
+        |       |___|___|       |
+        |           |           |
+        |           |           |
+        |           |           |
+        |___________|___________|
+
+        """
+
+        if beam.slope != math.inf and beam.slope != 0:
+            valid_x_partition_seams = [x for x in range(0, partitioned_map_grid.width, partitioned_map_grid.partition_width) if x_beam_interval[0] <= x <= x_beam_interval[1]]
+            valid_y_partition_seams = [y for y in range(0, partitioned_map_grid.height, partitioned_map_grid.partition_height) if y_beam_interval[0] <= y <= y_beam_interval[1]]
+
+            valid_x_partition_seams_translated = [x - self.owner.pos.x for x in valid_x_partition_seams]
+            valid_y_partition_seams_translated = [y - self.owner.pos.y for y in valid_y_partition_seams]
+
+            # TODO the usage of bottom here is incorrect, it should be top
+            # vxpst: valid x partition seam translated 
+            for vxpst in valid_x_partition_seams_translated:
                 # TODO check if this is within 
-                y = fire_slope * translated_x_partition_seam
+                y = beam.slope * vxpst
                 # TODO remove hardcode on tilesize?
-                partition_y_length = partitioned_map_grid.partition_height
                 untranslated_y = y + self.owner.pos.y
-                print(untranslated_y)
-                """
-                A Quad patch is the overlap of 4 collision partitions
-                 ___________ ___________
-                |           |           |
-                |           |   QP      |
-                |           |  /        |
-                |        ___|_/_        |
-                |       |   |   |       |
-                |_______|___|___|_______|
-                |       |   |   |       |
-                |       |___|___|       |
-                |           |           |
-                |           |           |
-                |           |           |
-                |___________|___________|
+                untranslated_x = vxpst + self.owner.pos.x
 
-                """
-                intersecting_bottom_of_quad_patch = (partition_y_length - game_engine_constants.TILE_SIZE <= untranslated_y % partition_y_length <= partition_y_length)
-                intersecting_top_of_quad_patch = (0 <= untranslated_y % partition_y_length  <= game_engine_constants.TILE_SIZE)
+                point = (untranslated_x, untranslated_y)
+
+                if screen_for_debug:
+                    pygame.draw.circle(screen_for_debug, pygame.color.THECOLORS['purple'], helpers.translate_point_for_camera(self.owner, point), game_engine_constants.DEBUG_RADIUS)
+
+                intersecting_bottom_of_quad_patch = (partitioned_map_grid.partition_height - game_engine_constants.TILE_SIZE <= untranslated_y % partitioned_map_grid.partition_height <= partitioned_map_grid.partition_height)
+                intersecting_top_of_quad_patch = (0 <= untranslated_y % partitioned_map_grid.partition_height  <= game_engine_constants.TILE_SIZE)
 
                 if intersecting_bottom_of_quad_patch or intersecting_top_of_quad_patch:
                     print("At a quad_patch intersection")
                     if intersecting_bottom_of_quad_patch:
                         # Then we round up
-                        quad_patch_center = (x_partition_seam, (untranslated_y // partition_y_length + 1) * partition_y_length)
+                        quad_patch_center = (untranslated_x, (untranslated_y // partitioned_map_grid.partition_height + 1) * partitioned_map_grid.partition_height)
                     elif intersecting_top_of_quad_patch:
                         # Then we round down
-                        quad_patch_center = (x_partition_seam, (untranslated_y // partition_y_length ) * partition_y_length)
+                        quad_patch_center = (untranslated_x, (untranslated_y // partitioned_map_grid.partition_height ) * partitioned_map_grid.partition_height)
+
+
+                    if screen_for_debug:
+                        pygame.draw.circle(screen_for_debug, pygame.color.THECOLORS['red'], helpers.translate_point_for_camera(self.owner, pygame.math.Vector2(quad_patch_center)), game_engine_constants.DEBUG_RADIUS)
 
                     bottom_right_partition_idx_x = quad_patch_center[0] // partitioned_map_grid.partition_width
                     bottom_right_partition_idx_y = quad_patch_center[1] // partitioned_map_grid.partition_height
@@ -87,43 +176,134 @@ class Hitscan(Weapon):
 
                     collision_partition_offsets = [(-1, -1), (0, -1), (0, 0), (-1, 0)]
 
-                    def tuple_add(t0, t1):
-                        return (int(t0[0] + t1[0]), int(t0[1] + t1[1])) 
 
-                    collision_partition_indices = [tuple_add(t0, bottom_right_partition_idx) for t0 in collision_partition_offsets]
-
-                    print(collision_partition_indices)
+                    collision_partition_indices  = []
+                    for t0 in collision_partition_offsets:
+                        new_idx = helpers.tuple_add(t0, bottom_right_partition_idx)
+                        if helpers.valid_2d_index_for_partitioned_map_grid(new_idx, partitioned_map_grid):
+                            collision_partition_indices.append(new_idx)
 
                     # Uses a set for duplicate collision partitions
-                    tiles_to_check = set()
 
                     for index in collision_partition_indices:
                         x, y = index
-                        tiles_to_check.add(partitioned_map_grid.collision_partitioned_map[y][x])
+                        print(f"About to Index: {(x,y)} out of {partitioned_map_grid.num_x_partitions, partitioned_map_grid.num_y_partitions}")
+                        intersecting_partitions.add(partitioned_map_grid.collision_partitioned_map[y][x])
 
-                    return tiles_to_check
-
-                    
-
-                    
-                        
                 else:
-                    print("At a double intersection")
+                    # Then we're at a double intersection
+                    print("double intersection")
 
-                #x_idx, y_idx
+                    double_patch_upper = (untranslated_x, (untranslated_y // partitioned_map_grid.partition_height ) * partitioned_map_grid.partition_height)
 
-                #for every valid index:
-                #    add that partition to a set of partitions
+                    if screen_for_debug:
+                        pygame.draw.circle(screen_for_debug, pygame.color.THECOLORS['red'], helpers.translate_point_for_camera(self.owner, pygame.math.Vector2(double_patch_upper[0], double_patch_upper[1] + partitioned_map_grid.partition_height/2)), game_engine_constants.DEBUG_RADIUS)
 
-                #for every hit partition:
-                #    color that partition in so we can visually make sure it's working
-                #    iterate through that partitons boundingwalls
-                #    iterate through that partitions players
+                    double_patch_upper_partition_idx_x = double_patch_upper[0] // partitioned_map_grid.partition_width
+                    double_patch_upper_partition_idx_y = double_patch_upper[1] // partitioned_map_grid.partition_height
 
-                #    check for hits
-                #    call get allintersectiong objects
+                    double_patch_upper_partition_idx = (double_patch_upper_partition_idx_x, double_patch_upper_partition_idx_y)
 
-                #then for each intersecting object take the min again
+                    collision_partition_offsets = [(0, 0), (-1, 0)]
+
+
+                    collision_partition_indices  = []
+                    for t0 in collision_partition_offsets:
+                        new_idx = helpers.tuple_add(t0, double_patch_upper_partition_idx)
+                        if helpers.valid_2d_index_for_partitioned_map_grid(new_idx, partitioned_map_grid):
+                            collision_partition_indices.append(new_idx)
+
+                    # Uses a set for duplicate collision partitions
+
+                    for index in collision_partition_indices:
+                        x, y = index
+                        print(f"About to Index: {(x,y)} out of {partitioned_map_grid.num_x_partitions, partitioned_map_grid.num_y_partitions}")
+                        intersecting_partitions.add(partitioned_map_grid.collision_partitioned_map[y][x])
+
+            ## vypst: valid y partition seam translated 
+            for vypst in valid_y_partition_seams_translated:
+                x = 1/beam.slope * vypst
+                untranslated_x = x + self.owner.pos.x
+                untranslated_y = vypst + self.owner.pos.y
+
+                point = (untranslated_x, untranslated_y)
+
+
+                if screen_for_debug:
+                    pygame.draw.circle(screen_for_debug, pygame.color.THECOLORS['purple'], helpers.translate_point_for_camera(self.owner, point), game_engine_constants.DEBUG_RADIUS)
+
+                intersecting_left_of_quad_patch = (partitioned_map_grid.partition_width - game_engine_constants.TILE_SIZE <= untranslated_x % partitioned_map_grid.partition_width <= partitioned_map_grid.partition_width)
+                intersecting_right_of_quad_patch = (0 <= untranslated_x % partitioned_map_grid.partition_width  <= game_engine_constants.TILE_SIZE)
+
+                if intersecting_right_of_quad_patch or intersecting_left_of_quad_patch:
+                    print("At a quad_patch intersection")
+                    if intersecting_left_of_quad_patch:
+                        # Then we round up
+                        quad_patch_center = ((untranslated_x // partitioned_map_grid.partition_width + 1) * partitioned_map_grid.partition_width, untranslated_y)
+                        #quad_patch_center = (x_partition_seam, (untranslated_y // partitioned_map_grid.partition_height + 1) * partitioned_map_grid.partition_height)
+                    elif intersecting_right_of_quad_patch:
+                        # Then we round down
+                        quad_patch_center = ((untranslated_x // partitioned_map_grid.partition_width) * partitioned_map_grid.partition_width, untranslated_y)
+
+
+                    if screen_for_debug:
+                        pygame.draw.circle(screen_for_debug, pygame.color.THECOLORS['red'], helpers.translate_point_for_camera(self.owner, pygame.math.Vector2(quad_patch_center)), game_engine_constants.DEBUG_RADIUS)
+
+                    bottom_right_partition_idx_x = quad_patch_center[0] // partitioned_map_grid.partition_width
+                    bottom_right_partition_idx_y = quad_patch_center[1] // partitioned_map_grid.partition_height
+
+                    bottom_right_partition_idx = (bottom_right_partition_idx_x, bottom_right_partition_idx_y)
+
+                    collision_partition_offsets = [(-1, -1), (0, -1), (0, 0), (-1, 0)]
+
+
+                    collision_partition_indices  = []
+                    for t0 in collision_partition_offsets:
+                        new_idx = helpers.tuple_add(t0, bottom_right_partition_idx)
+                        if helpers.valid_2d_index_for_partitioned_map_grid(new_idx, partitioned_map_grid):
+                            collision_partition_indices.append(new_idx)
+
+                    # Uses a set for duplicate collision partitions
+
+                    for index in collision_partition_indices:
+                        x, y = index
+                        print(f"About to Index: {(x,y)} out of {partitioned_map_grid.num_x_partitions, partitioned_map_grid.num_y_partitions}")
+                        intersecting_partitions.add(partitioned_map_grid.collision_partitioned_map[y][x])
+
+                else:
+                    # Then we're at a double intersection
+                    print("double intersection")
+
+                    double_patch_left = ((untranslated_x // partitioned_map_grid.partition_width) * partitioned_map_grid.partition_height, untranslated_y)
+
+                    if screen_for_debug:
+                        pygame.draw.circle(screen_for_debug, pygame.color.THECOLORS['red'], helpers.translate_point_for_camera(self.owner, pygame.math.Vector2(double_patch_left[0] + partitioned_map_grid.partition_width/2, double_patch_left[1])), game_engine_constants.DEBUG_RADIUS)
+
+                    double_patch_left_partition_idx_x = double_patch_left[0] // partitioned_map_grid.partition_width
+                    double_patch_left_partition_idx_y = double_patch_left[1] // partitioned_map_grid.partition_height
+
+                    double_patch_left_partition_idx = (double_patch_left_partition_idx_x, double_patch_left_partition_idx_y)
+
+                    collision_partition_offsets = [(0, 0), (0, -1)]
+
+
+                    collision_partition_indices  = []
+                    for t0 in collision_partition_offsets:
+                        new_idx = helpers.tuple_add(t0, double_patch_left_partition_idx)
+                        if helpers.valid_2d_index_for_partitioned_map_grid(new_idx, partitioned_map_grid):
+                            collision_partition_indices.append(new_idx)
+
+                    # Uses a set for duplicate collision partitions
+
+                    for index in collision_partition_indices:
+                        x, y = index
+                        print(f"About to Index: {(x,y)} out of {partitioned_map_grid.num_x_partitions, partitioned_map_grid.num_y_partitions}")
+                        intersecting_partitions.add(partitioned_map_grid.collision_partitioned_map[y][x])
+            return intersecting_partitions
+        else:
+            # Vertical/Horizontal shot made
+            pass
+
 
 
     def get_all_intersecting_objects(self, bounding_walls, bodies):

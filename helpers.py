@@ -1,2 +1,51 @@
+import game_engine_constants
+import math
+import pygame
+
 def clamp(val, min_val, max_val):
     return min(max(val, min_val), max_val)
+
+def get_sign(num):
+    if num >= 0:
+        return 1
+    elif num < 0:
+        return -1
+    #else:
+    #    return 0
+
+
+def tuple_add(t0, t1):
+    return (int(t0[0] + t1[0]), int(t0[1] + t1[1])) 
+
+def point_within_map(point) -> bool:
+    x_valid = 0 <= point[0] <= game_engine_constants.MAP_DIM_X 
+    y_valid = 0 <= point[1] <= game_engine_constants.MAP_DIM_Y
+    return x_valid and y_valid
+
+def valid_2d_index_for_partitioned_map_grid(idx, pmg):
+    x, y = idx
+    return 0 <= x <= pmg.num_x_partitions - 1 and 0 <= y <= pmg.num_y_partitions -1
+
+def get_slope(point_1, point_2):
+    delta_y = point_2[1] - point_1[1]
+    delta_x = point_2[0] - point_1[0]
+
+    return get_slope_from_deltas(delta_x, delta_y)
+
+
+def get_slope_from_deltas(delta_x, delta_y):
+    try:
+        slope = delta_y/delta_x
+    except ZeroDivisionError:
+        slope = math.inf
+
+    return slope
+
+def translate_point_for_camera(player, point: pygame.math.Vector2):
+    offset = game_engine_constants.SCREEN_CENTER_POINT - player.pos
+    return point + offset
+
+
+#def get_quadrant_info(point_1, point_2):
+#    """Considering point_1 as the origin, this function returns which quadrant point_2 is in"""
+

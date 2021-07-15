@@ -21,6 +21,13 @@ RUNNING_LOCALLY = True
 #DEV_MAP = "maps/simple_map.png"
 DEV_MAP = "maps/m1_no_layers.png"
 TILE_SIZE = 32
+MAP_BASE_DIM_X = 160
+MAP_BASE_DIM_Y = 90
+
+DEBUG_RADIUS = 10
+
+MAP_DIM_X = MAP_BASE_DIM_X * TILE_SIZE
+MAP_DIM_Y = MAP_BASE_DIM_Y * TILE_SIZE
 
 
 import socket

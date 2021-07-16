@@ -80,6 +80,8 @@ class ClientPlayer(BasePlayer, pygame.sprite.Sprite):
         print(self.width, self.height)
         self.image = pygame.Surface([self.width, self.height], pygame.SRCALPHA, 32)
 
+
+        self.camera_v = game_engine_constants.SCREEN_CENTER_POINT - self.pos
         # Fetch the rectangle object that has the dimensions of the image
         # Update the position of this object by setting the values of rect.x and rect.y
         self.rect = self.image.get_rect()
@@ -87,7 +89,9 @@ class ClientPlayer(BasePlayer, pygame.sprite.Sprite):
         self.movement_keys = movement_keys
 
     def set_pos(self, x,y):
+        """Set the players position and also fixes the camera to stay centered on the player"""
         self.pos = pygame.math.Vector2((x,y))
+        #self.camera_v = game_engine_constants.SCREEN_CENTER_POINT - self.pos
 
     def send_inputs(self, events, delta_time):
 

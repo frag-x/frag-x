@@ -30,11 +30,12 @@ MAP_DIM_X = MAP_BASE_DIM_X * TILE_SIZE
 MAP_DIM_Y = MAP_BASE_DIM_Y * TILE_SIZE
 
 
-import socket
-s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-s.connect(("8.8.8.8", 80))
-LOCAL_IP = s.getsockname()[0]
-s.close()
+#import socket
+#s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+#s.connect(("8.8.8.8", 80))
+#LOCAL_IP = s.getsockname()[0]
+LOCAL_IP = "localhost"
+#s.close()
 
 # TODO LAN: https://stackoverflow.com/questions/20695493/python-connect-via-lan
 #REMOTE_IP = "cuppajoeman.com"

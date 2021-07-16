@@ -18,6 +18,7 @@ def tuple_add(t0, t1):
     return (int(t0[0] + t1[0]), int(t0[1] + t1[1])) 
 
 def point_within_map(point) -> bool:
+    print(f"checking point {point} within x: {game_engine_constants.MAP_DIM_X}, and within y: {game_engine_constants.MAP_BASE_DIM_Y}")
     x_valid = 0 <= point[0] <= game_engine_constants.MAP_DIM_X 
     y_valid = 0 <= point[1] <= game_engine_constants.MAP_DIM_Y
     return x_valid and y_valid

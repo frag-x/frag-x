@@ -1,4 +1,5 @@
 import math
+import random
 import logging
 #logging.basicConfig(level=logging.INFO)
 import helpers
@@ -30,6 +31,9 @@ class Hitscan(Weapon):
 
     def get_beam(self, screen_for_debug=None):
 
+        print("started getting beam")
+
+
         delta_y = math.sin(self.owner.rotation_angle)
 
         delta_x = math.cos(self.owner.rotation_angle)
@@ -52,39 +56,42 @@ class Hitscan(Weapon):
         translated_locations = []
         if quadrant_info == (-1,-1):
             # Check left and top
-            print("checking left and top")
+            #print("checking left and top")
             left_wall_y_translated = slope * left_wall_translated
             top_wall_x_translated = 1/slope * top_wall_translated
             translated_locations = [(left_wall_translated, left_wall_y_translated), (top_wall_x_translated, top_wall_translated)]
         elif quadrant_info == (1, -1):
             # check right and top
-            print("checking right and top")
+            #print("checking right and top")
             right_wall_y_translated = slope * right_wall_translated
             top_wall_x_translated = 1/slope * top_wall_translated
             translated_locations = [(right_wall_translated, right_wall_y_translated), (top_wall_x_translated, top_wall_translated)]
         elif quadrant_info == (1, 1):
             # check right and bottom
-            print("checking right and bottom")
+            #print("checking right and bottom")
             right_wall_y_translated = slope * right_wall_translated
             bottom_wall_x_translated = 1/slope * bottom_wall_translated
             translated_locations = [(right_wall_translated, right_wall_y_translated), (bottom_wall_x_translated, bottom_wall_translated)]
         elif quadrant_info == (-1, 1):
             # check left and bottom
-            print("checking left and bottom")
+            #print("checking left and bottom")
             left_wall_y_translated = slope * left_wall_translated
             bottom_wall_x_translated = 1/slope * bottom_wall_translated
             translated_locations = [(left_wall_translated, left_wall_y_translated), (bottom_wall_x_translated, bottom_wall_translated)]
 
         locations = [pygame.math.Vector2(x + self.owner.pos.x, y + self.owner.pos.y) for x, y in translated_locations]
 
+        #print(locations)
+
         for location in locations:
+            # This is the whole reason this whole function is locked - if this function is not locked then the players position could be updated between tranlsations making the whole thing break
             if helpers.point_within_map(location):
-                print(location)
                 if screen_for_debug:
                     pygame.draw.line(screen_for_debug, pygame.color.THECOLORS['purple'], helpers.translate_point_for_camera(self.owner, self.owner.pos), helpers.translate_point_for_camera(self.owner, location))
                 # This is guarenteed to be reached
                 return HitscanBeam(self.owner.pos, location)
         #assert 1 == 0
+
 
 
     def get_firing_line(self):
@@ -107,7 +114,6 @@ class Hitscan(Weapon):
             fire_slope = delta_y/delta_x
 
     def get_intersecting_partitions(self, partitioned_map_grid, beam: HitscanBeam, screen_for_debug=None):
-
 
         intersecting_partitions = set()
 
@@ -157,7 +163,7 @@ class Hitscan(Weapon):
                 intersecting_top_of_quad_patch = (0 <= untranslated_y % partitioned_map_grid.partition_height  <= game_engine_constants.TILE_SIZE)
 
                 if intersecting_bottom_of_quad_patch or intersecting_top_of_quad_patch:
-                    print("At a quad_patch intersection")
+                    #print("At a quad_patch intersection")
                     if intersecting_bottom_of_quad_patch:
                         # Then we round up
                         quad_patch_center = (untranslated_x, (untranslated_y // partitioned_map_grid.partition_height + 1) * partitioned_map_grid.partition_height)
@@ -187,12 +193,12 @@ class Hitscan(Weapon):
 
                     for index in collision_partition_indices:
                         x, y = index
-                        print(f"About to Index: {(x,y)} out of {partitioned_map_grid.num_x_partitions, partitioned_map_grid.num_y_partitions}")
-                        intersecting_partitions.add(partitioned_map_grid.collision_partitioned_map[y][x])
+                        #print(f"About to Index: {(x,y)} out of {partitioned_map_grid.num_x_partitions, partitioned_map_grid.num_y_partitions}")
+                        intersecting_partitions.add(partitioned_map_grid.partitioned_map[y][x])
 
                 else:
                     # Then we're at a double intersection
-                    print("double intersection")
+                    #print("double intersection")
 
                     double_patch_upper = (untranslated_x, (untranslated_y // partitioned_map_grid.partition_height ) * partitioned_map_grid.partition_height)
 
@@ -217,8 +223,8 @@ class Hitscan(Weapon):
 
                     for index in collision_partition_indices:
                         x, y = index
-                        print(f"About to Index: {(x,y)} out of {partitioned_map_grid.num_x_partitions, partitioned_map_grid.num_y_partitions}")
-                        intersecting_partitions.add(partitioned_map_grid.collision_partitioned_map[y][x])
+                        #print(f"About to Index: {(x,y)} out of {partitioned_map_grid.num_x_partitions, partitioned_map_grid.num_y_partitions}")
+                        intersecting_partitions.add(partitioned_map_grid.partitioned_map[y][x])
 
             ## vypst: valid y partition seam translated 
             for vypst in valid_y_partition_seams_translated:
@@ -236,7 +242,7 @@ class Hitscan(Weapon):
                 intersecting_right_of_quad_patch = (0 <= untranslated_x % partitioned_map_grid.partition_width  <= game_engine_constants.TILE_SIZE)
 
                 if intersecting_right_of_quad_patch or intersecting_left_of_quad_patch:
-                    print("At a quad_patch intersection")
+                    #print("At a quad_patch intersection")
                     if intersecting_left_of_quad_patch:
                         # Then we round up
                         quad_patch_center = ((untranslated_x // partitioned_map_grid.partition_width + 1) * partitioned_map_grid.partition_width, untranslated_y)
@@ -267,12 +273,12 @@ class Hitscan(Weapon):
 
                     for index in collision_partition_indices:
                         x, y = index
-                        print(f"About to Index: {(x,y)} out of {partitioned_map_grid.num_x_partitions, partitioned_map_grid.num_y_partitions}")
-                        intersecting_partitions.add(partitioned_map_grid.collision_partitioned_map[y][x])
+                        #print(f"About to Index: {(x,y)} out of {partitioned_map_grid.num_x_partitions, partitioned_map_grid.num_y_partitions}")
+                        intersecting_partitions.add(partitioned_map_grid.partitioned_map[y][x])
 
                 else:
                     # Then we're at a double intersection
-                    print("double intersection")
+                    #print("double intersection")
 
                     double_patch_left = ((untranslated_x // partitioned_map_grid.partition_width) * partitioned_map_grid.partition_height, untranslated_y)
 
@@ -297,16 +303,55 @@ class Hitscan(Weapon):
 
                     for index in collision_partition_indices:
                         x, y = index
-                        print(f"About to Index: {(x,y)} out of {partitioned_map_grid.num_x_partitions, partitioned_map_grid.num_y_partitions}")
-                        intersecting_partitions.add(partitioned_map_grid.collision_partitioned_map[y][x])
+                        #print(f"About to Index: {(x,y)} out of {partitioned_map_grid.num_x_partitions, partitioned_map_grid.num_y_partitions}")
+                        #intersecting_partitions.add(partitioned_map_grid.collision_partitioned_map[y][x])
+                        intersecting_partitions.add(partitioned_map_grid.partitioned_map[y][x])
             return intersecting_partitions
         else:
             # Vertical/Horizontal shot made
             pass
 
 
+    def get_closest_intersecting_object_in_pmg(self, partitioned_map_grid, beam, screen_for_debug=None):
+        closest_hit = None
+        closest_entity = None
 
-    def get_all_intersecting_objects(self, bounding_walls, bodies):
+        def update_closest(hit, entity, closest_hit, closest_entity):
+
+            if closest_hit is None:
+                closest_hit = hit
+                closest_entity = entity
+            else:
+                if hit.magnitude() <= closest_hit.magnitude():
+                    closest_hit = hit
+                    closest_entity = entity
+            return closest_hit, closest_entity
+
+        intersected_partitions = self.get_intersecting_partitions(partitioned_map_grid, beam, screen_for_debug)
+
+        for partition in intersected_partitions:
+            hit, entity = self.get_closest_intersecting_object_in_partition(partition, screen_for_debug)
+
+            print(f"Hit at {hit, entity} in {partition.rect} with players {partition.players}")
+
+            if screen_for_debug and hit is not None:
+                pygame.draw.circle(screen_for_debug, pygame.color.THECOLORS['aquamarine'], helpers.translate_point_for_camera(self.owner, hit), game_engine_constants.DEBUG_RADIUS)
+
+            if hit is not None and entity is not None:
+                closest_hit, closest_entity = update_closest(hit, entity, closest_hit, closest_entity)
+
+
+        if screen_for_debug and closest_hit is not None:
+            pygame.draw.circle(screen_for_debug, pygame.color.THECOLORS['aquamarine'], helpers.translate_point_for_camera(self.owner, closest_hit), game_engine_constants.DEBUG_RADIUS)
+
+        if screen_for_debug:
+            pygame.draw.circle(screen_for_debug, pygame.color.THECOLORS['gold'], helpers.translate_point_for_camera(self.owner, closest_hit), game_engine_constants.DEBUG_RADIUS)
+
+        print(f"Closest Hit {closest_entity} at {closest_hit}")
+        return closest_hit, closest_entity
+
+
+    def get_closest_intersecting_object_in_partition(self, pmg, screen_for_debug=None):
 
         fire_origin = self.owner.pos
 
@@ -317,15 +362,9 @@ class Hitscan(Weapon):
         closest_hit = None
         closest_entity = None
 
-        def get_sign(num):
-            if num > 0:
-                return 1
-            elif num < 0:
-                return -1
-            else:
-                return 0
 
-        quadrant_info = (get_sign(delta_x), get_sign(delta_y))
+
+        quadrant_info = (helpers.get_sign(delta_x), helpers.get_sign(delta_y))
 
         def update_closest(hit, entity, closest_hit, closest_entity):
 
@@ -345,7 +384,10 @@ class Hitscan(Weapon):
         else:
             fire_slope = delta_y/delta_x
 
-            for b_wall in bounding_walls:
+            for b_wall in pmg.bounding_walls:
+
+                if screen_for_debug is not None:
+                    pygame.draw.rect(screen_for_debug,pygame.color.THECOLORS['purple']  , b_wall.rect.move(self.owner.camera_v), width=1)
                 top, left, bottom, right = b_wall.rect.top, b_wall.rect.left, b_wall.rect.bottom, b_wall.rect.right 
                 ##print( top, left, bottom, right)
                 translated_top, translated_left, translated_bottom, translated_right = top - fire_origin.y, left - fire_origin.x, bottom - fire_origin.y, right - fire_origin.x
@@ -361,14 +403,14 @@ class Hitscan(Weapon):
                     # Hit right side
                     #print(f"hit right at ({translated_right}, {yr})")
                     hit = pygame.math.Vector2((translated_right, yr))
-                    if (get_sign(hit.x), get_sign(hit.y)) == quadrant_info:
+                    if (helpers.get_sign(hit.x), helpers.get_sign(hit.y)) == quadrant_info:
                         closest_hit, closest_entity = update_closest(hit, b_wall, closest_hit, closest_entity)
 
                 if translated_top <= yl <= translated_bottom:
                     # Hit right side
                     #print(f"hit left at ({translated_left}, {yl})")
                     hit = pygame.math.Vector2((translated_left, yl))
-                    if (get_sign(hit.x), get_sign(hit.y)) == quadrant_info:
+                    if (helpers.get_sign(hit.x), helpers.get_sign(hit.y)) == quadrant_info:
                         closest_hit, closest_entity = update_closest(hit, b_wall, closest_hit, closest_entity)
 
                 xt = translated_top / fire_slope
@@ -377,70 +419,77 @@ class Hitscan(Weapon):
                 if translated_left <= xt <= translated_right:
                     #print(f"hit top at ({xt}, {translated_top})")
                     hit = pygame.math.Vector2((xt, translated_top))
-                    if (get_sign(hit.x), get_sign(hit.y)) == quadrant_info:
+                    if (helpers.get_sign(hit.x), helpers.get_sign(hit.y)) == quadrant_info:
                         closest_hit, closest_entity = update_closest(hit, b_wall, closest_hit, closest_entity)
 
                 if translated_left <= xb <= translated_right:
                     #print(f"hit bottom at ({xb}, {translated_bottom})")
                     hit = pygame.math.Vector2((xb, translated_bottom))
-                    if (get_sign(hit.x), get_sign(hit.y)) == quadrant_info:
+                    if (helpers.get_sign(hit.x), helpers.get_sign(hit.y)) == quadrant_info:
                         closest_hit, closest_entity = update_closest(hit, b_wall, closest_hit, closest_entity)
 
                 #if len(hits) != 0:
 
-            for body in bodies:
+            for body in pmg.players:
 
-                """
-                Assuming p, q are written with respect to the fire origin:
+                if body is not self.owner:
 
-                (x - p)**2 + (y - q)**2 = r**2 & y = mx
+                    """
+                    Assuming p, q are written with respect to the fire origin:
 
-                =>  (x - p)**2 + (mx - q)**2 = r**2 
+                    (x - p)**2 + (y - q)**2 = r**2 & y = mx
 
-                <=> x**2 - 2px + p**2 + (mx)**2 - 2mqx + q**2 = r**2 
+                    =>  (x - p)**2 + (mx - q)**2 = r**2 
 
-                <=> (m**2 + 1)x**2 -2(p + mq)x + p**2 + q**2 - r**2 = 0
+                    <=> x**2 - 2px + p**2 + (mx)**2 - 2mqx + q**2 = r**2 
 
-                Quadratic Equation with
+                    <=> (m**2 + 1)x**2 -2(p + mq)x + p**2 + q**2 - r**2 = 0
 
-                a = (m**2 + 1), b = -2(p + q) c = p**2 + q**2 - r**2
+                    Quadratic Equation with
 
-                Then it will have solutions if the descriminant is positive, that is, if:
+                    a = (m**2 + 1), b = -2(p + q) c = p**2 + q**2 - r**2
 
-                b**2 - 4ac >= 0
+                    Then it will have solutions if the descriminant is positive, that is, if:
 
-                """
-                p, q = body.pos
-                r = body.radius
+                    b**2 - 4ac >= 0
 
-                # Written with respect to fire origin
-                p, q = p - fire_origin.x, q - fire_origin.y
+                    """
+                    p, q = body.pos
+                    r = body.radius
 
-                m = fire_slope
+                    # Written with respect to fire origin
+                    p, q = p - fire_origin.x, q - fire_origin.y
 
-                a = (m**2) + 1
-                b = -2 * (p + (m * q)) 
-                c = (p**2) + (q**2) - (r**2)
+                    m = fire_slope
 
-                discriminant = b**2 - (4 * a * c)
+                    a = (m**2) + 1
+                    b = -2 * (p + (m * q)) 
+                    c = (p**2) + (q**2) - (r**2)
 
-                if discriminant >= 0:
-                    #print("hit ball")
-                    # Then we have at least one solution
-                    x = (-b + (discriminant)**(1/2) ) / (2 * a) 
-                    y = m * x
-                    hit = pygame.math.Vector2((x,y))
-                    if (get_sign(hit.x), get_sign(hit.y)) == quadrant_info:
-                        closest_hit, closest_entity = update_closest(hit, body, closest_hit, closest_entity)
-                    if discriminant > 0:
-                        # Second solution is negative
-                        xn = (-b - (discriminant)**(1/2) ) / (2 * a) 
-                        yn = m * xn
-                        hit = pygame.math.Vector2((xn,yn))
-                        if (get_sign(hit.x), get_sign(hit.y)) == quadrant_info:
+                    discriminant = b**2 - (4 * a * c)
+
+                    if discriminant >= 0:
+                        #print("hit ball")
+                        # Then we have at least one solution
+                        x = (-b + (discriminant)**(1/2) ) / (2 * a) 
+                        y = m * x
+                        hit = pygame.math.Vector2((x,y))
+                        if (helpers.get_sign(hit.x), helpers.get_sign(hit.y)) == quadrant_info:
                             closest_hit, closest_entity = update_closest(hit, body, closest_hit, closest_entity)
-                    
-            return closest_hit, closest_entity
+                        if discriminant > 0:
+                            # Second solution is negative
+                            xn = (-b - (discriminant)**(1/2) ) / (2 * a) 
+                            yn = m * xn
+                            hit = pygame.math.Vector2((xn,yn))
+                            if (helpers.get_sign(hit.x), helpers.get_sign(hit.y)) == quadrant_info:
+                                closest_hit, closest_entity = update_closest(hit, body, closest_hit, closest_entity)
+
+            if closest_hit is not None:
+                print(f"closest hit at {closest_hit + self.owner.pos}, it is {closest_entity}")
+                # returns position relative to player which is good
+                return closest_hit, closest_entity
+            else: 
+                return closest_hit, closest_entity
 
 class Explosion:
     pass

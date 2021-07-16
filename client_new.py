@@ -1,5 +1,6 @@
 import pygame
 from network import FragNetwork
+import game_engine_constants
 from player import ClientPlayer
 from game_engine_constants import ARROW_MOVEMENT_KEYS, WASD_MOVEMENT_KEYS, WIDTH, HEIGHT, FPS, GAME_TITLE, SCREEN_CENTER_POINT, ORIGIN, BUF_SIZE, DEV_MAP
 from converters import str_to_player_data_no_dt
@@ -73,13 +74,18 @@ def game_state_watcher():
                 all_sprites.add(id_to_player[player_id])
             else:
                 #logging.info(id_to_player, player_id)
+                # this needs to be locked because if we are doing collisions or hitscan which depends on the position of the player then we can have issues where their position is updated after translating a point with respect to it's original position and then there are no valid 
+                player_data_lock.acquire()
                 id_to_player[player_id].set_pos(x,y)
                 # In real life we can't change their view or they will freak - do it for now
                 id_to_player[player_id].rotation_angle = rotation_angle
+                player_data_lock.release()
 
 
 t = Thread(target=game_state_watcher, args=() )
 t.start()
+
+player_data_lock = Lock()
 
 ## Game loop
 running = True
@@ -121,27 +127,31 @@ while running:
     #3 Draw/render
     screen.fill(pygame.color.THECOLORS['black'])
 
+    curr_player.camera_v = game_engine_constants.SCREEN_CENTER_POINT - curr_player.pos
 
-    camera_v = SCREEN_CENTER_POINT - curr_player.pos
-
-    for row in partitioned_map_grid.collision_partitioned_map:
+    for row in partitioned_map_grid.partitioned_map:
         for partition in row:
-            pygame.draw.rect(screen,pygame.color.THECOLORS['gold'] , partition.rect.move(camera_v.x, camera_v.y), width=1)
+            pygame.draw.rect(screen,pygame.color.THECOLORS['gold'] , partition.rect.move(curr_player.camera_v), width=1)
     
+                
             for wall in partition.walls:
-                pygame.draw.rect(screen, wall.color, wall.rect.move(camera_v.x, camera_v.y))
+                pygame.draw.rect(screen, wall.color, wall.rect.move(curr_player.camera_v))
 
             for b_wall in partition.bounding_walls:
-                pygame.draw.rect(screen, b_wall.color, b_wall.rect.move(camera_v.x, camera_v.y))
+                pygame.draw.rect(screen, b_wall.color, b_wall.rect.move(curr_player.camera_v))
 
 
     firing = int(pygame.mouse.get_pressed()[0])
 
     if firing:
+        player_data_lock.acquire()
         beam = curr_player.weapon.get_beam(screen)
+        player_data_lock.release()
+
         partitions_hit = curr_player.weapon.get_intersecting_partitions(partitioned_map_grid, beam, screen)
+        closest_hit, closest_entity = curr_player.weapon.get_closest_intersecting_object_in_pmg(partitioned_map_grid, beam, screen)
         for map_grid_partition in partitions_hit:
-            pygame.draw.rect(screen,pygame.color.THECOLORS['blueviolet'] , map_grid_partition.rect.move(camera_v.x, camera_v.y), width=1)
+            pygame.draw.rect(screen,pygame.color.THECOLORS['blueviolet'] , map_grid_partition.rect.move(curr_player.camera_v), width=1)
 
     #for wall in map_grid.walls:
     #    pygame.draw.rect(screen, wall.color, wall.rect.move(camera_v.x, camera_v.y))
@@ -155,7 +165,7 @@ while running:
     # instead fo actually simulating its movement that way it seems more solid
     for sprite in all_sprites:
         # Add the player's camera offset to the coords of all sprites.
-        screen.blit(sprite.image, sprite.rect.topleft + camera_v)
+        screen.blit(sprite.image, sprite.rect.topleft + curr_player.camera_v)
 
     # FONTS
 

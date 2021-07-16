@@ -1,4 +1,5 @@
 from PIL import Image
+import random
 import pygame
 import game_engine_constants
 import helpers
@@ -133,6 +134,11 @@ class PartitionedMapGrid(MapGrid):
         self.collision_partitioned_map = [[None for x in range(self.num_x_partitions)] for y in range(self.num_y_partitions)]
         self.partition_map()
 
+    def reset_players_in_partitions(self):
+        for row in self.partitioned_map:
+            for partition in row:
+                partition.players = []
+
     def partition_map(self):
         for j in range(0, self.base_height, self.partition_height_base):
             for i in range(0, self.base_width, self.partition_width_base):
@@ -141,33 +147,41 @@ class PartitionedMapGrid(MapGrid):
                 x1, x2 = i, i + self.partition_width_base
                 y1, y2 = j, j + self.partition_height_base
                 map_partition = [row[x1: x2] for row in self.map[y1: y2]]
+                print("partition slice: ", x1, x2, y1, y2)
+
+                print(f"x : {len(map_partition[0])}, y: {len(map_partition)}") 
 
                 # Even if a body is inside of a paritition part of it may be coming out of the partition, therefore we need to make sure we account for these extra blocks
                 collision_buffer_size = 1 
                 cx1, cx2 = helpers.clamp(x1 - collision_buffer_size, 0, self.base_width), helpers.clamp(x2 + collision_buffer_size, 0, self.base_width)
                 cy1, cy2 = helpers.clamp(y1 - collision_buffer_size, 0, self.base_height), helpers.clamp(y2 + collision_buffer_size, 0, self.base_height)
 
-                print(cx1, cx2, cy1, cy2)
+                print("collision slice: ", cx1, cx2, cy1, cy2)
                 
                 collision_map_partition = [row[cx1: cx2] for row in self.map[cy1: cy2]]
 
                 j_idx = j // self.partition_height_base
                 i_idx = i // self.partition_width_base
 
-                self.partitioned_map[j_idx][i_idx] = MapGridPartition((i,j), self.partition_width_base, self.partition_height_base, map_partition)
                 self.collision_partitioned_map[j_idx][i_idx] = MapGridPartition((i,j), self.partition_width_base, self.partition_height_base, collision_map_partition)
+                self.partitioned_map[j_idx][i_idx] = MapGridPartition((i,j), self.partition_width_base, self.partition_height_base, map_partition, True)
 
 class MapGridPartition:
-    def __init__(self, pos: Tuple[int, int], partition_width_base: int, partition_height_base: int, partition_data:List[List[Optional[Wall]]]):
+    def __init__(self, pos: Tuple[int, int], partition_width_base: int, partition_height_base: int, partition_data:List[List[Optional[Wall]]], randomly_color_partition=False):
         self.pos = (pos[0] * game_engine_constants.TILE_SIZE , pos[1] * game_engine_constants.TILE_SIZE)
-        self.partition_width_base = partition_width_base * game_engine_constants.TILE_SIZE
-        self.partition_height_base = partition_height_base * game_engine_constants.TILE_SIZE        
-        self.rect = pygame.Rect(self.pos[0], self.pos[1], self.partition_width_base, self.partition_height_base)
+        self.partition_width = partition_width_base * game_engine_constants.TILE_SIZE
+        self.partition_height = partition_height_base * game_engine_constants.TILE_SIZE        
+        self.rect = pygame.Rect(self.pos[0], self.pos[1], self.partition_width, self.partition_height)
+        self.players = []
         self.walls = []
         self.bounding_walls = []
+        if randomly_color_partition:
+            r_color = tuple(random.choices(range(0,256), k=3))
         for row in partition_data:
             for data in row:
                 if type(data) is BoundingWall:
+                    if randomly_color_partition:
+                        data.color = r_color
                     self.bounding_walls.append(data)
                 elif type(data) is Wall:
                     self.walls.append(data)

@@ -148,13 +148,15 @@ while True:
         if player_id in id_to_player:
             p = id_to_player[player_id]
             p.update_position(dx, dy, delta_time)
-            p.pos.x
             p.update_aim(dm)
 
         if firing:
+            beam = p.weapon.get_beam()
             players = list(id_to_player.values())
             other_players = [x for x in players if x is not p]
-            closest_hit, closest_entity = p.weapon.get_all_intersecting_objects(map_grid.bounding_walls, other_players)
+        #    #closest_hit, closest_entity = p.weapon.get_all_intersecting_objects(map_grid.bounding_walls, other_players)
+            closest_hit, closest_entity = p.weapon.get_closest_intersecting_object_in_pmg(partitioned_map_grid, beam)
+
             if type(closest_entity) is ServerPlayer:
                 # Then also send a weapon message saying hit and draw a line shooting the other player
                 hit_v = pygame.math.Vector2(0,0)
@@ -166,6 +168,10 @@ while True:
 
         start_collision_time = time.time()
         # Now that their positions have been updated we can check for collisions
+        # TODO we only need to iterate over the four boxes around them or something similar to the hitscan case.
+
+        # We reset and then refill with updated information
+        partitioned_map_grid.reset_players_in_partitions()
         bodies = list(id_to_player.values())
         n = len(bodies)
         # This iterates over all the possible 
@@ -184,9 +190,12 @@ while True:
             partition_idx_x = int(b1.pos.x // partitioned_map_grid.partition_width)
             partition_idx_y = int(b1.pos.y // partitioned_map_grid.partition_height)
 
-
+            # Put the player in the corresponding box
+            partitioned_map_grid.partitioned_map[partition_idx_y][partition_idx_x].players.append(b1)
 
             curr_partition = partitioned_map_grid.collision_partitioned_map[partition_idx_y][partition_idx_x]
+
+            # TODO add the player to this partitions playerlist
 
 
             for b_wall in curr_partition.bounding_walls:

@@ -13,10 +13,12 @@ GAME_TITLE = "frag-x"
 ARROW_MOVEMENT_KEYS = [pygame.K_LEFT, pygame.K_UP, pygame.K_RIGHT, pygame.K_DOWN]
 WASD_MOVEMENT_KEYS = [pygame.K_a, pygame.K_w, pygame.K_d, pygame.K_s]
 
+MAX_SPEED = 4000
+
 BUF_SIZE = 2 ** 12 
 
-RUNNING_LOCALLY = True
-#RUNNING_LOCALLY = False
+#RUNNING_LOCALLY = True
+RUNNING_LOCALLY = False
 
 #DEV_MAP = "maps/simple_map.png"
 DEV_MAP = "maps/m1_no_layers.png"

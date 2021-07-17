@@ -5,7 +5,7 @@ from player import ClientPlayer
 from game_engine_constants import ARROW_MOVEMENT_KEYS, WASD_MOVEMENT_KEYS, WIDTH, HEIGHT, FPS, GAME_TITLE, SCREEN_CENTER_POINT, ORIGIN, BUF_SIZE, DEV_MAP
 from converters import str_to_player_data_no_dt
 from threading import Thread, Lock
-import map_loading
+import map_loading, dev_constants
 import pickle
 import time
 import random
@@ -29,6 +29,9 @@ pygame.font.init() # you have to call this at the start,
 myfont = pygame.font.SysFont(pygame.font.get_default_font(), 30)
 screen = pygame.display.set_mode((WIDTH, HEIGHT))
 
+dev_constants.CLIENT_VISUAL_DEBUGGING = True
+if dev_constants.CLIENT_VISUAL_DEBUGGING:
+    dev_constants.SCREEN_FOR_DEBUGGING = screen
 
 pygame.display.set_caption(GAME_TITLE)
 clock = pygame.time.Clock()     ## For syncing the FPS

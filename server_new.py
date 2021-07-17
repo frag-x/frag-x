@@ -7,7 +7,7 @@ from network import FragNetwork
 from converters import str_to_player_data
 from player import ServerPlayer
 from threading import Lock, Thread
-import collisions
+import collisions, dev_constants
 import logging
 #logging.basicConfig(level=logging.INFO)
 import map_loading
@@ -73,6 +73,7 @@ def client_state_producer(conn, state_queue):
 
                 recv_buffer += data.decode("utf-8")
 
+                # Our network manager delimits all messages this way
                 messages = recv_buffer.split('~')
 
                 recv_buffer = messages[-1]
@@ -80,6 +81,12 @@ def client_state_producer(conn, state_queue):
                 for player_data in messages[:-1]:
 
                     q_drain_lock.acquire()
+
+
+                    if dev_constants.DEBUGGING_NETWORK_MESSAGES:
+                        print(f"RECEIVED: {player_data}")
+
+                    player_data = '|'.join(player_data.split('|')[1:])
 
                     state_queue.put(str_to_player_data(player_data))
 
@@ -149,22 +156,26 @@ while True:
             p = id_to_player[player_id]
             p.update_position(dx, dy, delta_time)
             p.update_aim(dm)
+            p.weapon.time_since_last_shot += delta_time
 
         if firing:
-            beam = p.weapon.get_beam()
-            players = list(id_to_player.values())
-            other_players = [x for x in players if x is not p]
-        #    #closest_hit, closest_entity = p.weapon.get_all_intersecting_objects(map_grid.bounding_walls, other_players)
-            closest_hit, closest_entity = p.weapon.get_closest_intersecting_object_in_pmg(partitioned_map_grid, beam)
+            if p.weapon.time_since_last_shot >= p.weapon.seconds_per_shot:
+                # reset time on gun
+                p.weapon.time_since_last_shot = 0
+                beam = p.weapon.get_beam()
+                players = list(id_to_player.values())
+                other_players = [x for x in players if x is not p]
+            #    #closest_hit, closest_entity = p.weapon.get_all_intersecting_objects(map_grid.bounding_walls, other_players)
+                closest_hit, closest_entity = p.weapon.get_closest_intersecting_object_in_pmg(partitioned_map_grid, beam)
 
-            if type(closest_entity) is ServerPlayer:
-                # Then also send a weapon message saying hit and draw a line shooting the other player
-                hit_v = pygame.math.Vector2(0,0)
-                # Because from polar is in deg apparently ...
-                # TODO add a polar version to pygame
-                deg = p.rotation_angle * 360/math.tau
-                hit_v.from_polar((p.weapon.power, deg))
-                closest_entity.velocity += hit_v
+                if type(closest_entity) is ServerPlayer:
+                    # Then also send a weapon message saying hit and draw a line shooting the other player
+                    hit_v = pygame.math.Vector2(0,0)
+                    # Because from polar is in deg apparently ...
+                    # TODO add a polar version to pygame
+                    deg = p.rotation_angle * 360/math.tau
+                    hit_v.from_polar((p.weapon.power, deg))
+                    closest_entity.velocity += hit_v
 
         start_collision_time = time.time()
         # Now that their positions have been updated we can check for collisions
@@ -224,7 +235,8 @@ while True:
 
     # Send the game state to each of the players
     for p in id_to_player.values():
-        #print("server updates", server_updates)
+        if dev_constants.DEBUGGING_NETWORK_MESSAGES:
+            print("server updates", server_updates)
         p.socket.sendall(pickle.dumps(server_updates))
 
     end_send_time = time.time()

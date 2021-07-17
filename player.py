@@ -1,9 +1,7 @@
 import pygame
 import math
-import game_engine_constants
 import logging
-import weapons
-from converters import player_data_to_str
+import weapons, converters, game_engine_constants, client_server_communication, dev_constants
 
 
 def magnitude(v):
@@ -11,18 +9,34 @@ def magnitude(v):
 
 
 #class Body: position, velocity, mass, etc...
+
+class Body:
+    """An object that moves in the game, it has constant acceleration """
+    def __init__(self, start_pos, radius, acceleration, friction):
+        self.pos = pygame.math.Vector2(start_pos)
+        self.radius = radius
+        # mass is equal to area
+        self.mass = math.pi * (self.radius ** 2)
+
+        self.velocity = pygame.math.Vector2(0,0)
+
+        self.max_speed = game_engine_constants.MAX_SPEED
+        # Acceleration is constant
+        self.acceleration = acceleration
+        self.friction = friction
+
     
 
-class BasePlayer:
+class BasePlayer(Body):
     def __init__(self,start_pos, width, height ,player_id, socket):
         pygame.sprite.Sprite.__init__(self)
         self.pos = pygame.math.Vector2(start_pos)
 
+        super().__init__(start_pos, game_engine_constants.TILE_SIZE/2, 2000, 0.05)
 
         # Basic Properties
 
         self.width = width
-        self.radius = width
 
         self.aim_length = 100
 
@@ -30,9 +44,6 @@ class BasePlayer:
         self.height = height + 2*self.aim_length
         self.player_id = player_id
 
-        self.radius = game_engine_constants.TILE_SIZE/2
-        # mass is equal to area
-        self.mass = math.pi * (self.radius ** 2)
         self.player_id = player_id
 
         self.socket = socket
@@ -40,7 +51,7 @@ class BasePlayer:
         # Aiming
 
         self.rotation_angle = 0
-        self.sensitivity = 0.005
+        self.sensitivity = 2 * 1/1000
 
         # Guns
 
@@ -48,13 +59,8 @@ class BasePlayer:
 
         # Physics/Movement
 
+        # A movement vector drives the player
         self.movement_vector = pygame.math.Vector2(0,0)
-
-        self.velocity = pygame.math.Vector2(0,0)
-
-        self.max_speed = 4000
-        self.acceleration = 2000
-        self.friction = 0.05
 
 
 class ClientPlayer(BasePlayer, pygame.sprite.Sprite):
@@ -108,9 +114,13 @@ class ClientPlayer(BasePlayer, pygame.sprite.Sprite):
         
         inputs = (self.player_id, x_movement, y_movement, dm, delta_time, firing)
         
-        logging.info(f"INPUTS: {player_data_to_str(inputs)}")
 
-        self.socket.send(player_data_to_str(inputs))
+        message = str(client_server_communication.ServerMessageType.PLAYER_INPUTS.value) + '|' +  converters.player_data_to_str(inputs)
+
+        if dev_constants.DEBUGGING_NETWORK_MESSAGES:
+            print(f"SENDING: {message}")
+
+        self.socket.send(message)
 
     def update(self, events, delta_time):
 

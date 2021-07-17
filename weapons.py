@@ -5,13 +5,17 @@ import logging
 import helpers
 import pygame
 import typing
-import game_engine_constants
+import game_engine_constants, dev_constants
 
 class Weapon:
     def __init__(self, fire_rate: float, owner, power):
+        # Measured in shots per second
         self.fire_rate = fire_rate
+        self.seconds_per_shot = 1/self.fire_rate
         self.owner = owner
         self.power = power
+        # Initialize to a value where they can shoot immediatly
+        self.time_since_last_shot = self.seconds_per_shot
 
 class HitscanBeam:
     def __init__(self, start_point, end_point):
@@ -29,10 +33,11 @@ class Hitscan(Weapon):
     def __init__(self, fire_rate: float, owner, power: float):
         super().__init__(fire_rate, owner, power)
 
+    def fire(self):
+        # TODO -implement the logic found on the server here to simplify the server code
+        pass
+
     def get_beam(self, screen_for_debug=None):
-
-        print("started getting beam")
-
 
         delta_y = math.sin(self.owner.rotation_angle)
 
@@ -332,20 +337,18 @@ class Hitscan(Weapon):
         for partition in intersected_partitions:
             hit, entity = self.get_closest_intersecting_object_in_partition(partition, screen_for_debug)
 
-            print(f"Hit at {hit, entity} in {partition.rect} with players {partition.players}")
-
             if screen_for_debug and hit is not None:
-                pygame.draw.circle(screen_for_debug, pygame.color.THECOLORS['aquamarine'], helpers.translate_point_for_camera(self.owner, hit), game_engine_constants.DEBUG_RADIUS)
+                translated_hit = helpers.translate_point_for_camera(self.owner, hit + self.owner.pos)
+                pygame.draw.circle(screen_for_debug, pygame.color.THECOLORS['aquamarine'], translated_hit, game_engine_constants.DEBUG_RADIUS)
 
             if hit is not None and entity is not None:
                 closest_hit, closest_entity = update_closest(hit, entity, closest_hit, closest_entity)
+        # Reposition relative to the player
+        closest_hit = closest_hit + self.owner.pos
 
-
-        if screen_for_debug and closest_hit is not None:
-            pygame.draw.circle(screen_for_debug, pygame.color.THECOLORS['aquamarine'], helpers.translate_point_for_camera(self.owner, closest_hit), game_engine_constants.DEBUG_RADIUS)
-
-        if screen_for_debug:
-            pygame.draw.circle(screen_for_debug, pygame.color.THECOLORS['gold'], helpers.translate_point_for_camera(self.owner, closest_hit), game_engine_constants.DEBUG_RADIUS)
+        # Note that there will always be a closest element as the map is closed.
+        if dev_constants.CLIENT_VISUAL_DEBUGGING:
+            pygame.draw.circle(dev_constants.SCREEN_FOR_DEBUGGING, pygame.color.THECOLORS['gold'], helpers.translate_point_for_camera(self.owner, closest_hit), game_engine_constants.DEBUG_RADIUS)
 
         print(f"Closest Hit {closest_entity} at {closest_hit}")
         return closest_hit, closest_entity

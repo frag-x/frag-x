@@ -30,7 +30,7 @@ def part_of_beam(point, beam):
     x,y = point[0], point[1]
     min_x = min(0, beam.end_point.x - beam.start_point.x)
     max_x = max(0, beam.end_point.x - beam.start_point.x)
-    print(f"is {point} between {min_x, max_x}?")
+    #print(f"is {point} between {min_x, max_x}?")
     return min_x <= x <= max_x
 
 def valid_2d_index_for_partitioned_map_grid(idx, pmg):

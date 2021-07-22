@@ -499,7 +499,6 @@ class Hitscan(Weapon):
                                 closest_hit, closest_entity = update_closest(hit, body, closest_hit, closest_entity)
 
             if closest_hit is not None:
-                print(f"closest hit at {closest_hit + self.owner.pos}, it is {closest_entity}")
                 # returns position relative to player which is good
                 return closest_hit, closest_entity
             else: 
@@ -534,7 +533,7 @@ class RocketLauncher(Weapon):
 
 
 class Explosion:
-    def __init__(self, pos, radius=200, power=500, num_shards=8):
+    def __init__(self, pos, radius=200, power=500, num_shards=16):
         self.pos = pos
         self.radius = radius
         self.power = power

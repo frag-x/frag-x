@@ -1,11 +1,11 @@
-import pygame
+import pygame, queue
 from network import FragNetwork
 import game_engine_constants
 from player import ClientPlayer
 from game_engine_constants import ARROW_MOVEMENT_KEYS, WASD_MOVEMENT_KEYS, WIDTH, HEIGHT, FPS, GAME_TITLE, SCREEN_CENTER_POINT, ORIGIN, BUF_SIZE, DEV_MAP
 from converters import str_to_player_data_no_dt
 from threading import Thread, Lock
-import map_loading, dev_constants, managers
+import map_loading, dev_constants, managers, client_server_communication, player
 import pickle
 import time
 import random
@@ -31,6 +31,12 @@ screen = pygame.display.set_mode((WIDTH, HEIGHT))
 
 cgm = managers.ClientGameManager(screen, DEV_MAP)
 
+# The client uses the server logic to simulate live reactions
+# and uses the servers responce to fix/verify differences
+if game_engine_constants.CLIENT_GAME_SIMULATION:
+    SGM = managers.ServerGameManager(DEV_MAP)
+    game_engine_constants.MOCK_SERVER_QUEUE = queue.Queue()
+
 dev_constants.CLIENT_VISUAL_DEBUGGING = True
 if dev_constants.CLIENT_VISUAL_DEBUGGING:
     dev_constants.SCREEN_FOR_DEBUGGING = screen
@@ -41,6 +47,7 @@ clock = pygame.time.Clock()     ## For syncing the FPS
 ## group all the sprites together for ease of update
 # TODO REMOVE THIS AND JUST USE A SET
 cgm.all_sprites = pygame.sprite.Group()
+
 
 ## Initialize network
 fn = FragNetwork()
@@ -55,9 +62,24 @@ curr_player = ClientPlayer(SCREEN_CENTER_POINT, 50, 50, rand_color,WASD_MOVEMENT
 
 cgm.all_sprites.add(curr_player)
 
-cgm.id_to_player = {}
-
 cgm.id_to_player[player_id] = curr_player
+
+if game_engine_constants.CLIENT_GAME_SIMULATION:
+    # "connecting"
+    mock_socket = None
+    # not using .add_player because that would generate a different id
+    SGM.id_to_player[player_id] = player.ServerPlayer(game_engine_constants.SCREEN_CENTER_POINT, 50, 50, player_id, mock_socket)
+
+
+def mock_server():
+    """This function gets run as a thread and simulates what the server does so we can update the players view without waiting for the server responce, when the server responce comes then we can check positions and fix them if required"""
+    while True:
+        player_id, dx, dy, dm, delta_time, firing = game_engine_constants.MOCK_SERVER_QUEUE.get()
+
+        input_message = client_server_communication.InputMessage(player_id, dx, dy, dm, delta_time, firing)
+
+        SGM.perform_all_server_operations(input_message)
+
 
 def game_state_watcher():
     # CONNECT LOOP
@@ -89,6 +111,10 @@ def game_state_watcher():
 
 t = Thread(target=game_state_watcher, args=() )
 t.start()
+
+if game_engine_constants.CLIENT_GAME_SIMULATION:
+    mock_server_thread = Thread(target=mock_server, args=())
+    mock_server_thread.start()
 
 player_data_lock = Lock()
 
@@ -144,6 +170,11 @@ while running:
 
             for b_wall in partition.bounding_walls:
                 pygame.draw.rect(screen, b_wall.color, b_wall.rect.move(curr_player.camera_v))
+
+    if dev_constants.CLIENT_VISUAL_DEBUGGING:
+        for explosion in dev_constants.EXPLOSIONS_FOR_DEBUGGING:
+            for beam in explosion.beams:
+                pygame.draw.line(dev_constants.SCREEN_FOR_DEBUGGING, pygame.color.THECOLORS['green'], beam.start_point + curr_player.camera_v, beam.end_point + curr_player.camera_v)
 
 
     cgm.draw_projectiles(curr_player.camera_v)

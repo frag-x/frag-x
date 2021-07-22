@@ -1,5 +1,5 @@
 import pygame, threading, uuid, math
-import client_server_communication, network, game_engine_constants, player, intersections, map_loading, collisions, helpers, weapons
+import client_server_communication, network, game_engine_constants, dev_constants, player, intersections, map_loading, collisions, helpers, weapons
 from player import ServerPlayer
 
 class GameManager:
@@ -143,8 +143,6 @@ class ServerGameManager(GameManager):
 
     def consume_player_inputs(self, input_message: client_server_communication.InputMessage):
         """Update the players attributes based on their input and operate their weapon if required"""
-
-        print(f"getting player {self.id_to_player}")
         player = self.id_to_player[input_message.player_id]
         net_x_movement = input_message.net_x_movement
         net_y_movement = input_message.net_y_movement
@@ -178,6 +176,7 @@ class ServerGameManager(GameManager):
             if hitscan:
                 self.analyze_hitscan_shot(player)
             else: # allowed because the only other weapon implemented is the rocket launcher
+                print("firing rl")
                 player.weapon.fire_projectile()
         
 
@@ -212,11 +211,12 @@ class ServerGameManager(GameManager):
 
             partition_idx_x, partition_idx_y = helpers.get_partition_index(self.partitioned_map_grid, p1.pos)
 
-            curr_partition = self.partitioned_map_grid.collision_partitioned_map[partition_idx_y][partition_idx_x]
+            curr_partition = self.partitioned_map_grid.partitioned_map[partition_idx_y][partition_idx_x]
+            curr_collision_partition = self.partitioned_map_grid.collision_partitioned_map[partition_idx_y][partition_idx_x]
             # Put the player in the corresponding partition
             curr_partition.players.append(p1)
 
-            self.simulate_wall_collision(p1, curr_partition)
+            self.simulate_wall_collision(p1, curr_collision_partition)
 
             self.simulate_rocket_explosions(p1)
 
@@ -242,18 +242,25 @@ class ServerGameManager(GameManager):
                 if colliding:
                     projectiles_to_explode.add(rocket)
                     # Move it out of the wall, that way the beams don't just get lodged in the wall
+                    # TODO instead of exploding it right here get the closest position
+                    # Use colliding and closest
                     rocket.pos = rocket.previous_pos
                     rocket_explosion = weapons.Explosion(rocket.pos)
+                    if dev_constants.CLIENT_VISUAL_DEBUGGING:
+                        dev_constants.EXPLOSIONS_FOR_DEBUGGING.append(rocket_explosion)
                     for beam in rocket_explosion.beams:
                         print("beam", beam)
                         closest_hit, closest_entity = intersections.get_closest_intersecting_object_in_pmg(player.weapon, self.partitioned_map_grid, beam)
 
                         # Have to import this because player.ServerPlayer wouldn't work as the variable is also being used
                         if type(closest_entity) is ServerPlayer:
+                            print("=== Player hit ===")
                             print(f"Explosion at {rocket_explosion.pos - player.pos} hit by beam {beam.direction_vector}")
                             # Then also send a weapon message saying hit and draw a line shooting the other player
-                            closest_entity.velocity += beam.direction_vector * rocket_explosion.power
-                        print("bang")
+                            print(beam.direction_vector * rocket_explosion.power)
+                            print(f"old vel {closest_entity.velocity}")
+                            closest_entity.velocity = closest_entity.velocity + (beam.direction_vector * rocket_explosion.power)
+                            print(f"new vel {closest_entity.velocity}")
 
         # clean up exploded projectiles
         for projectile in projectiles_to_explode:

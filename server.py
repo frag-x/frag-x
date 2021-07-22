@@ -106,7 +106,6 @@ def client_state_producer(conn, state_queue):
 
                 for player_data in messages[:-1]:
 
-                    q_drain_lock.acquire()
 
 
                     if dev_constants.DEBUGGING_NETWORK_MESSAGES:
@@ -116,7 +115,6 @@ def client_state_producer(conn, state_queue):
 
                     state_queue.put(str_to_player_data(player_data))
 
-                    q_drain_lock.release()
 
         except Exception as e:
             print(f"wasn't able to get data because {e}")
@@ -141,12 +139,10 @@ def threaded_server_acceptor(state_queue):
         # TODO START a thread that sends them data too
         t = Thread(target=client_state_producer, args=(client_socket, state_queue))
         t.start()
-        
 
 
 # for batching the inputs and running physics simulation
 
-q_drain_lock = Lock()
 
 player_lock = Lock()
 
@@ -197,11 +193,10 @@ while True:
 
     t = pygame.time.get_ticks()
 
-    q_drain_lock.acquire()  
 
     start_player_computation_time = time.time()
 
-    while not state_queue.empty():
+    while not state_queue.empty(): # TODO why does removing this cause immense lag?
         #print("q is drainable")
         player_id, dx, dy, dm, delta_time, firing = state_queue.get()
 
@@ -323,7 +318,6 @@ while True:
     end_player_computation_time = time.time()
     logging.info(f"Amount of time to compute operations for all players: {end_player_computation_time - start_player_computation_time}")
     
-    q_drain_lock.release()  
 
 
     #player_lock.acquire()

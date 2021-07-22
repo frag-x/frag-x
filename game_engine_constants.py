@@ -20,6 +20,10 @@ BUF_SIZE = 2 ** 12
 RUNNING_LOCALLY = True
 #RUNNING_LOCALLY = False
 
+CLIENT_GAME_SIMULATION = True
+CLIENT_SERVER_MANAGER = None # what is this???
+MOCK_SERVER_QUEUE = None # this will be set if CLIENT_GAME_SIMULATION IS TRUE
+
 #DEV_MAP = "maps/simple_map.png"
 DEV_MAP = "maps/m1_no_layers.png"
 TILE_SIZE = 32

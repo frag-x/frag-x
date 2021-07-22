@@ -233,9 +233,9 @@ def get_closest_intersecting_object_in_pmg(weapon, partitioned_map_grid, beam, s
         closest_hit = closest_hit + weapon.owner.pos
 
     # Note that there will always be a closest element as the map is closed.
-    if dev_constants.CLIENT_VISUAL_DEBUGGING:
-        pygame.draw.circle(dev_constants.SCREEN_FOR_DEBUGGING, pygame.color.THECOLORS['gold'], helpers.translate_point_for_camera(weapon.owner, closest_hit), game_engine_constants.DEBUG_RADIUS)
-
+#    if dev_constants.CLIENT_VISUAL_DEBUGGING:
+#        pygame.draw.circle(dev_constants.SCREEN_FOR_DEBUGGING, pygame.color.THECOLORS['gold'], helpers.translate_point_for_camera(weapon.owner, closest_hit), game_engine_constants.DEBUG_RADIUS)
+#
     print(f"Closest Hit {closest_entity} at {closest_hit}")
     return closest_hit, closest_entity
 
@@ -321,6 +321,7 @@ def get_closest_intersecting_object_in_partition(weapon, beam, pmg, screen_for_d
 
             #if len(hits) != 0:
 
+        print(f"players in partition {pmg.players}")
         for body in pmg.players:
 
             #if body is not weapon.owner: # can't shoot self

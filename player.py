@@ -1,6 +1,5 @@
 import pygame
 import math
-import logging
 import weapons, converters, game_engine_constants, client_server_communication, dev_constants, body
 
 
@@ -99,11 +98,15 @@ class ClientPlayer(BasePlayer, pygame.sprite.Sprite):
         
         inputs = (self.player_id, x_movement, y_movement, dm, delta_time, firing)
         
-
+        # instead of a string use a custom class designed for this...
         message = str(client_server_communication.ServerMessageType.PLAYER_INPUTS.value) + '|' +  converters.player_data_to_str(inputs)
 
         if dev_constants.DEBUGGING_NETWORK_MESSAGES:
             print(f"SENDING: {message}")
+
+        if game_engine_constants.CLIENT_GAME_SIMULATION:
+            player_data = '|'.join(message.split('|')[1:])
+            game_engine_constants.MOCK_SERVER_QUEUE.put(converters.str_to_player_data(player_data))
 
         self.socket.send(message)
 

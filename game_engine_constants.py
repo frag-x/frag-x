@@ -17,8 +17,8 @@ MAX_SPEED = 4000
 
 BUF_SIZE = 2 ** 12 
 
-#RUNNING_LOCALLY = True
-RUNNING_LOCALLY = False
+RUNNING_LOCALLY = True
+#RUNNING_LOCALLY = False
 
 #DEV_MAP = "maps/simple_map.png"
 DEV_MAP = "maps/m1_no_layers.png"
@@ -44,6 +44,6 @@ LOCAL_IP = "localhost"
 REMOTE_IP = "168.100.233.209"
 #REMOTE_IP = socket.gethostname()
 
-#PORT = 50000
-PORT = 49999
+PORT = 50000
+#PORT = 49999
 

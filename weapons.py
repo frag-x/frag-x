@@ -5,7 +5,7 @@ import logging
 import helpers
 import pygame
 import typing
-import game_engine_constants, dev_constants
+import game_engine_constants, dev_constants, body
 
 class Weapon:
     def __init__(self, fire_rate: float, owner, power):
@@ -17,18 +17,29 @@ class Weapon:
         # Initialize to a value where they can shoot immediatly
         self.time_since_last_shot = self.seconds_per_shot
 
+    # TODO make a method which takes in a checking function and runs it or something only if you've waited past the rate
+
+
 class HitscanBeam:
+    """A hitscan beam is a line segment"""
+    # TODO make sure the inputs are actually vectors
     def __init__(self, start_point, end_point):
-        delta_y = end_point[1] - start_point[1]
-        delta_x = end_point[0] - start_point[0]
+        self.delta_y = end_point[1] - start_point[1]
+        self.delta_x = end_point[0] - start_point[0]
+
+        self.direction_vector = (end_point - start_point).normalize()
 
         self.start_point = start_point
         self.end_point = end_point
 
         self.slope = helpers.get_slope(start_point, end_point)
 
-        self.quadrant_info = (helpers.get_sign(delta_x), helpers.get_sign(delta_y))
+        self.quadrant_info = (helpers.get_sign(self.delta_x), helpers.get_sign(self.delta_y))
+    
+    def __str__(self):
+        return str(vars(self))
 
+# Todo rename this to rail gun
 class Hitscan(Weapon):
     def __init__(self, fire_rate: float, owner, power: float):
         super().__init__(fire_rate, owner, power)
@@ -494,10 +505,55 @@ class Hitscan(Weapon):
             else: 
                 return closest_hit, closest_entity
 
-class Explosion:
+class Projectile(body.ConstantVelocityBody):
     pass
 
-class Projectile:
-    pass
+class RocketLauncher(Weapon):
+    def __init__(self, fire_rate: float, owner, power, speed = 2000, rocket_radius=game_engine_constants.TILE_SIZE/4):
+        super().__init__(fire_rate, owner, power)
+        self.speed = speed
+        self.rocket_radius = rocket_radius
+        # TODO rocket launcher should not be in charge of it's own bullets, need a weapon management system
+        self.fired_projectiles = []
+
+    def fire_projectile(self):
+        velocity_v = pygame.math.Vector2(0,0)
+        # Because from polar is in deg apparently ...
+        # TODO add a polar version to pygame
+        deg = self.owner.rotation_angle * 360/math.tau
+        velocity_v.from_polar((self.speed, deg))
+
+        rocket = Projectile(self.owner.pos, self.rocket_radius, 0, velocity_v)
+        self.fired_projectiles.append(rocket)
+
+    def update_projectile_positions(self, delta_time):
+        for rocket in self.fired_projectiles:
+            # Everything is measured per second
+            rocket.previous_pos = pygame.math.Vector2(rocket.pos.x, rocket.pos.y)
+            rocket.pos += rocket.velocity * delta_time
+
+
+class Explosion:
+    def __init__(self, pos, radius=200, power=500, num_shards=8):
+        self.pos = pos
+        self.radius = radius
+        self.power = power
+        self.num_shards = num_shards
+        self.beams = []
+        self.generate_beams()
+
+    def generate_beams(self):
+        angle_fraction = math.tau/self.num_shards
+        for i in range(self.num_shards):
+            angle = angle_fraction * i + math.tau/8 # TODO remove this
+            x = math.cos(angle) * self.radius
+            y = math.sin(angle) * self.radius
+
+            relative_shard_vec = pygame.math.Vector2(x,y)
+
+            shard_vec = relative_shard_vec + self.pos
+
+            self.beams.append(HitscanBeam(self.pos, shard_vec))
+
 
 

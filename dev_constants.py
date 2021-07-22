@@ -1,4 +1,4 @@
-
+PROFILING_PROGRAM = True
 DEBUGGING_NETWORK_MESSAGES = False
 DEBUGGING_HITSCAN_WEAPON = False
 # If CVD is true then SFD must be set

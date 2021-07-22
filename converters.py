@@ -9,10 +9,10 @@ def str_to_player_data(player_data: str):
     """Here we x, y, mouse can be referring to delta's coming into the server, or in the 
     client where they'll be absolute positions or angles"""
     player_id, x, y, mouse, delta_time, firing = player_data.split("|")
-    return [int(player_id), float(x), float(y), float(mouse), float(delta_time), int(firing)]
+    return [player_id, float(x), float(y), float(mouse), float(delta_time), int(firing)]
 
 def str_to_player_data_no_dt(player_data: str):
     """Here we x, y, mouse can be referring to delta's coming into the server, or in the 
     client where they'll be absolute positions or angles"""
     player_id, x, y, mouse = player_data.split("|")
-    return [int(player_id), float(x), float(y), float(mouse)]
+    return [player_id, float(x), float(y), float(mouse)]

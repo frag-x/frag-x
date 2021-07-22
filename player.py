@@ -1,7 +1,7 @@
 import pygame
 import math
 import logging
-import weapons, converters, game_engine_constants, client_server_communication, dev_constants
+import weapons, converters, game_engine_constants, client_server_communication, dev_constants, body
 
 
 def magnitude(v):
@@ -10,29 +10,13 @@ def magnitude(v):
 
 #class Body: position, velocity, mass, etc...
 
-class Body:
-    """An object that moves in the game, it has constant acceleration """
-    def __init__(self, start_pos, radius, acceleration, friction):
-        self.pos = pygame.math.Vector2(start_pos)
-        self.radius = radius
-        # mass is equal to area
-        self.mass = math.pi * (self.radius ** 2)
 
-        self.velocity = pygame.math.Vector2(0,0)
-
-        self.max_speed = game_engine_constants.MAX_SPEED
-        # Acceleration is constant
-        self.acceleration = acceleration
-        self.friction = friction
-
-    
-
-class BasePlayer(Body):
+class BasePlayer(body.ConstantAccelerationBody):
     def __init__(self,start_pos, width, height ,player_id, socket):
         pygame.sprite.Sprite.__init__(self)
         self.pos = pygame.math.Vector2(start_pos)
 
-        super().__init__(start_pos, game_engine_constants.TILE_SIZE/2, 2000, 0.05)
+        super().__init__(start_pos, game_engine_constants.TILE_SIZE/2, 0.05, 2000)
 
         # Basic Properties
 
@@ -55,7 +39,8 @@ class BasePlayer(Body):
 
         # Guns
 
-        self.weapon = weapons.Hitscan(1, self, 1000)
+        #self.weapon = weapons.Hitscan(1, self, 1000)
+        self.weapon = weapons.RocketLauncher(1, self, 1000)
 
         # Physics/Movement
 
@@ -149,6 +134,7 @@ class ServerPlayer(BasePlayer):
         super().__init__(start_pos, width, height,player_id, socket)
 
     def update_aim(self, dm):
+        # TODO instead of this we should have sensitivity be client side
       self.rotation_angle = (self.rotation_angle + dm * self.sensitivity) % math.tau
 
     def update_position(self, dx, dy, delta_time):

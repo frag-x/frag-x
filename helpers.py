@@ -23,6 +23,16 @@ def point_within_map(point) -> bool:
     y_valid = 0 <= point[1] <= game_engine_constants.MAP_DIM_Y
     return x_valid and y_valid
 
+
+def part_of_beam(point, beam):
+    """Given a point on the line defined by the beams line segment,
+    check if the point is part of the line segment"""
+    x,y = point[0], point[1]
+    min_x = min(0, beam.end_point.x - beam.start_point.x)
+    max_x = max(0, beam.end_point.x - beam.start_point.x)
+    print(f"is {point} between {min_x, max_x}?")
+    return min_x <= x <= max_x
+
 def valid_2d_index_for_partitioned_map_grid(idx, pmg):
     x, y = idx
     return 0 <= x <= pmg.num_x_partitions - 1 and 0 <= y <= pmg.num_y_partitions -1
@@ -45,6 +55,13 @@ def get_slope_from_deltas(delta_x, delta_y):
 def translate_point_for_camera(player, point: pygame.math.Vector2):
     offset = game_engine_constants.SCREEN_CENTER_POINT - player.pos
     return point + offset
+
+def get_partition_index(partitioned_map_grid, position):
+    partition_idx_x = int(position[0] // partitioned_map_grid.partition_width)
+    partition_idx_y = int(position[1] // partitioned_map_grid.partition_height)
+
+    return (partition_idx_x, partition_idx_y)
+
 
 
 #def get_quadrant_info(point_1, point_2):

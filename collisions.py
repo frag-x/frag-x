@@ -274,7 +274,3 @@ def bottom_reflect(body, unstick_amount, closest_v, velocity_reduction_multiplie
     # Unstick player
     body.pos = closest_v + pygame.math.Vector2(0, unstick_amount)
 
-
-
-
-

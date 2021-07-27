@@ -25,7 +25,7 @@ class Message:
         self.message_type = message_type
 
 class InputMessage(Message):
-    def __init__(self, player_id, net_x_movement, net_y_movement, mouse_movement, time_since_last_client_frame, firing):
+    def __init__(self, player_id, net_x_movement, net_y_movement, mouse_movement, time_since_last_client_frame, firing, weapon_request):
         super().__init__(ServerMessageType.PLAYER_INPUTS.value)
         self.player_id = player_id
         self.net_x_movement = net_x_movement
@@ -33,6 +33,7 @@ class InputMessage(Message):
         self.mouse_movement = mouse_movement
         self.time_since_last_client_frame = time_since_last_client_frame
         self.firing = firing
+        self.weapon_request = weapon_request
 
 class PositionMessage(Message):
     def __init__(self, message_type, x, y):

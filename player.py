@@ -39,7 +39,8 @@ class BasePlayer(body.ConstantAccelerationBody):
         # Guns
 
         #self.weapon = weapons.Hitscan(1, self, 1000)
-        self.weapon = weapons.RocketLauncher(2, self, 1000)
+        self.weapons = [weapons.RocketLauncher(2, self, 1000), weapons.Hitscan(1, self, 1000)]
+        self.weapon = self.weapons[0] # TODO rename to active weapon
 
         # Physics/Movement
 
@@ -47,12 +48,12 @@ class BasePlayer(body.ConstantAccelerationBody):
         self.movement_vector = pygame.math.Vector2(0,0)
 
 
-class ClientPlayer(BasePlayer, pygame.sprite.Sprite):
+class ClientPlayer(BasePlayer, pygame.sprite.Sprite): # TODO remove dependency on sprite
     """A client player is a representation of a player which only stores enough information to draw
     it to the screen
     """
 
-    def __init__(self,start_pos, width, height,color, movement_keys, player_id, server):
+    def __init__(self,start_pos, width, height,color, movement_keys, weapon_keys, player_id, server):
         """
         Initialize a player
 
@@ -77,6 +78,7 @@ class ClientPlayer(BasePlayer, pygame.sprite.Sprite):
         self.rect = self.image.get_rect()
 
         self.movement_keys = movement_keys
+        self.weapon_keys = weapon_keys
 
     def set_pos(self, x,y):
         """Set the players position and also fixes the camera to stay centered on the player"""
@@ -94,9 +96,18 @@ class ClientPlayer(BasePlayer, pygame.sprite.Sprite):
         x_movement = int(keys[r]) - int(keys[l]) 
         y_movement = -(int(keys[u]) - int(keys[d]))
 
+        weapon_choice = -1
+        for key in self.weapon_keys:
+            if keys[key]:
+                if key == pygame.K_c:
+                    weapon_choice = 0
+                elif key == pygame.K_x:
+                    weapon_choice = 1
+
+
         firing = int(pygame.mouse.get_pressed()[0])
         
-        inputs = (self.player_id, x_movement, y_movement, dm, delta_time, firing)
+        inputs = (self.player_id, x_movement, y_movement, dm, delta_time, firing, weapon_choice)
         
         # instead of a string use a custom class designed for this...
         message = str(client_server_communication.ServerMessageType.PLAYER_INPUTS.value) + '|' +  converters.player_data_to_str(inputs)

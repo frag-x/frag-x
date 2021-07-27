@@ -13,11 +13,16 @@ GAME_TITLE = "frag-x"
 ARROW_MOVEMENT_KEYS = [pygame.K_LEFT, pygame.K_UP, pygame.K_RIGHT, pygame.K_DOWN]
 WASD_MOVEMENT_KEYS = [pygame.K_a, pygame.K_w, pygame.K_d, pygame.K_s]
 
+# Weapon keys maps onto the weapons in this order: # TODO make this a dictionary
+# rocket launcher, rail gun
+WEAPON_KEYS = [pygame.K_c, pygame.K_x] 
+
 MAX_SPEED = 4000
 
 BUF_SIZE = 2 ** 12 
 
-RUNNING_LOCALLY = True
+RUNNING_LOCALLY = False
+RUNNING_ON_LAN = True
 #RUNNING_LOCALLY = False
 
 CLIENT_GAME_SIMULATION = True
@@ -46,6 +51,7 @@ LOCAL_IP = "localhost"
 # TODO LAN: https://stackoverflow.com/questions/20695493/python-connect-via-lan
 #REMOTE_IP = "cuppajoeman.com"
 REMOTE_IP = "168.100.233.209"
+LAN_IP = "192.168.2.24"
 #REMOTE_IP = socket.gethostname()
 
 PORT = 50000

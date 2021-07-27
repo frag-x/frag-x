@@ -198,11 +198,11 @@ while True:
 
     while not state_queue.empty(): # TODO why does removing this cause immense lag?
         #print("q is drainable")
-        player_id, dx, dy, dm, delta_time, firing = state_queue.get()
+        player_id, dx, dy, dm, delta_time, firing, weapon_request = state_queue.get()
 
         # TODO store input messages directly in the queue or something like that.
 
-        input_message = client_server_communication.InputMessage(player_id, dx, dy, dm, delta_time, firing)
+        input_message = client_server_communication.InputMessage(player_id, dx, dy, dm, delta_time, firing, weapon_request)
 
         SGM.perform_all_server_operations(input_message)
 

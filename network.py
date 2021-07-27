@@ -1,6 +1,7 @@
 import socket
 from typing import Tuple
 from game_engine_constants import BUF_SIZE, LOCAL_IP, PORT, REMOTE_IP, RUNNING_LOCALLY
+import game_engine_constants
 
 
 class Network:
@@ -8,6 +9,8 @@ class Network:
         self.client = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         if RUNNING_LOCALLY:
            self.server_address = (LOCAL_IP, PORT)
+        elif game_engine_constants.RUNNING_ON_LAN:
+           self.server_address = (game_engine_constants.LAN_IP, PORT)
         else:
            self.server_address = (REMOTE_IP, PORT)
 

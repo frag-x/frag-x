@@ -65,7 +65,7 @@ def parse_player_position_message(message_list, client_game_manager):
     for player_data in message_list:
         if player_data.player_id not in client_game_manager.id_to_player:
             # TODO remove the network from a player the game manager will do that
-            client_game_manager.id_to_player[player_data.player_id] = player.ClientPlayer((player_data.x,player_data.y), 50, 50, (50, 255, 5),game_engine_constants.ARROW_MOVEMENT_KEYS, player_data.player_id, client_game_manager.network)
+            client_game_manager.id_to_player[player_data.player_id] = player.ClientPlayer((player_data.x,player_data.y), 50, 50, (50, 255, 5),game_engine_constants.ARROW_MOVEMENT_KEYS, game_engine_constants.WEAPON_KEYS, player_data.player_id, client_game_manager.network)
             client_game_manager.all_sprites.add(client_game_manager.id_to_player[player_data.player_id])
         else:
             # this needs to be locked because if we are doing collisions or hitscan which depends on the position of the player then we can have issues where their position is updated after translating a point with respect to it's original position and then there are no valid 
@@ -108,7 +108,7 @@ class ServerGameManager(GameManager):
 
         for p in players:
             # TODO check if their position has changed since last time otherwise don't append it
-            for projectile in p.weapon.fired_projectiles:
+            for projectile in p.weapons[0].fired_projectiles:
                 projectile_position_messages.append(client_server_communication.ProjectilePositionMessage(projectile.pos.x, projectile.pos.y))
                 
             player_position_messages.append(client_server_communication.PlayerPositionMessage(p))
@@ -147,6 +147,7 @@ class ServerGameManager(GameManager):
         time_since_last_client_frame = input_message.time_since_last_client_frame
         mouse_movement = input_message.mouse_movement
         firing = input_message.firing
+        weapon_request = input_message.weapon_request
 
         if type(self.game_mode) is game_modes.FirstToNFrags:
             if player.dead:
@@ -161,6 +162,8 @@ class ServerGameManager(GameManager):
                 return # We don't deal with their inputs if they're dead
 
         self.update_player_attributes(player, net_x_movement, net_y_movement, time_since_last_client_frame, mouse_movement)
+        if weapon_request != -1: # this means they haven't done a request # TODO add this to u_p_a above
+            player.weapon = player.weapons[weapon_request]
 
         if firing:
             self.operate_player_weapon(player)
@@ -174,19 +177,17 @@ class ServerGameManager(GameManager):
 
         # TODO Does using the players delta time make sense?
         # We should rather update this based on the server timestep?
-        player.weapon.update_projectile_positions(time_since_last_client_frame)
+        player.weapons[0].update_projectile_positions(time_since_last_client_frame)
 
     def operate_player_weapon(self, player):
         """Given a player, verify if the player is allowed to fire the weapon again, and if they are fire the weapon"""
         # TODO remove this once weapon switching is enabled
-        hitscan = False # testing projectile
         if player.weapon.time_since_last_shot >= player.weapon.seconds_per_shot:
             player.weapon.time_since_last_shot = 0
             # TODO have an enum with the types of weapons associated with the firing action, then use that here
-            if hitscan:
+            if type(player.weapon) is weapons.Hitscan:
                 self.analyze_hitscan_shot(player)
-            else: # allowed because the only other weapon implemented is the rocket launcher
-                print("firing rl")
+            elif type(player.weapon) is weapons.RocketLauncher: # allowed because the only other weapon implemented is the rocket launcher
                 player.weapon.fire_projectile()
         
 
@@ -194,10 +195,15 @@ class ServerGameManager(GameManager):
         """Given the fact that a player is firing a hitscan weapon and has waited long enough (the shot is valid), check to see if the shot hits another player, if it does then apply a force to that player"""
         beam = firing_player.weapon.get_beam()
 
+        if dev_constants.DEBUGGING_HITSCAN_WEAPON:
+            dev_constants.BEAMS_FOR_DEBUGGING.append(beam)
+            #pygame.draw.line(dev_constants.SCREEN_FOR_DEBUGGING, pygame.color.THECOLORS['green'], helpers.translate_point_for_camera(firing_player, beam.start_point), helpers.translate_point_for_camera(firing_player, beam.end_point))
+
 
         closest_hit, closest_entity = intersections.get_closest_intersecting_object_in_pmg(firing_player.weapon, self.partitioned_map_grid, beam)
 
-        if type(closest_entity) is player.ServerPlayer:
+        #if type(closest_entity) is player.ServerPlayer:
+        if type(closest_entity) is player.KillableServerPlayer:
             # Then also send a weapon message saying hit and draw a line shooting the other player
             hit_v = pygame.math.Vector2(0,0)
             # Because from polar is in deg apparently ...
@@ -243,7 +249,7 @@ class ServerGameManager(GameManager):
         """Given a player, we consider all their actively fired rockets and if any of them are colliding with walls then we explode them"""
         # TODO also check for collisions with OTHER players as well
         projectiles_to_explode = set()
-        for rocket in player.weapon.fired_projectiles:
+        for rocket in player.weapons[0].fired_projectiles:
             projectile_idx_x, projectile_idx_y = helpers.get_partition_index(self.partitioned_map_grid, rocket.pos)
             # TODO protect this incase a projectile gets out of the map
             projectile_partition = self.partitioned_map_grid.collision_partitioned_map[projectile_idx_y][projectile_idx_x]

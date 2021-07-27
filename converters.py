@@ -8,8 +8,8 @@ def player_data_to_str(player_data):
 def str_to_player_data(player_data: str):
     """Here we x, y, mouse can be referring to delta's coming into the server, or in the 
     client where they'll be absolute positions or angles"""
-    player_id, x, y, mouse, delta_time, firing = player_data.split("|")
-    return [player_id, float(x), float(y), float(mouse), float(delta_time), int(firing)]
+    player_id, x, y, mouse, delta_time, firing, weapon_request = player_data.split("|")
+    return [player_id, float(x), float(y), float(mouse), float(delta_time), int(firing), int(weapon_request)]
 
 def str_to_player_data_no_dt(player_data: str):
     """Here we x, y, mouse can be referring to delta's coming into the server, or in the 

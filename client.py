@@ -58,7 +58,7 @@ print(f"You are player {player_id}")
 # initially we don't know what our id is we only get it back from the server so we need to do 
 # a type of responce thing..
 rand_color = random.choices(range(256), k=3)
-curr_player = ClientPlayer(SCREEN_CENTER_POINT, 50, 50, rand_color,WASD_MOVEMENT_KEYS, player_id, fn)
+curr_player = ClientPlayer(SCREEN_CENTER_POINT, 50, 50, rand_color,WASD_MOVEMENT_KEYS, game_engine_constants.WEAPON_KEYS, player_id, fn)
 
 cgm.all_sprites.add(curr_player)
 
@@ -75,9 +75,9 @@ if game_engine_constants.CLIENT_GAME_SIMULATION:
 def mock_server():
     """This function gets run as a thread and simulates what the server does so we can update the players view without waiting for the server responce, when the server responce comes then we can check positions and fix them if required"""
     while True:
-        player_id, dx, dy, dm, delta_time, firing = game_engine_constants.MOCK_SERVER_QUEUE.get()
+        player_id, dx, dy, dm, delta_time, firing, weapon_request = game_engine_constants.MOCK_SERVER_QUEUE.get()
 
-        input_message = client_server_communication.InputMessage(player_id, dx, dy, dm, delta_time, firing)
+        input_message = client_server_communication.InputMessage(player_id, dx, dy, dm, delta_time, firing, weapon_request)
 
         SGM.perform_all_server_operations(input_message)
 
@@ -190,6 +190,9 @@ while running:
             
         for point_v in dev_constants.INTERSECTED_PARTITION_SEAMS_FOR_DEBUGGING:
             pygame.draw.circle(dev_constants.SCREEN_FOR_DEBUGGING,pygame.color.THECOLORS['yellow']  , point_v + curr_player.camera_v, 3)
+
+        for beam in dev_constants.BEAMS_FOR_DEBUGGING:
+            pygame.draw.line(dev_constants.SCREEN_FOR_DEBUGGING, pygame.color.THECOLORS['green'], beam.start_point + curr_player.camera_v, beam.end_point + curr_player.camera_v)
 
     cgm.draw_projectiles(curr_player.camera_v)
 

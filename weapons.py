@@ -4,8 +4,12 @@ import logging
 #logging.basicConfig(level=logging.INFO)
 import helpers
 import pygame
-import typing
+import typing, enum
 import game_engine_constants, dev_constants, body
+
+class WeaponTypes(enum.Enum):
+    RAIL_GUN = 0
+    ROCKET_LAUNCHER = 1
 
 class Weapon:
     def __init__(self, fire_rate: float, owner, power):
@@ -105,7 +109,7 @@ class Hitscan(Weapon):
                 if screen_for_debug:
                     pygame.draw.line(screen_for_debug, pygame.color.THECOLORS['purple'], helpers.translate_point_for_camera(self.owner, self.owner.pos), helpers.translate_point_for_camera(self.owner, location))
                 # This is guarenteed to be reached
-                return HitscanBeam(self.owner.pos, location)
+                return HitscanBeam(helpers.copy_vector(self.owner.pos), location)
         #assert 1 == 0
 
 

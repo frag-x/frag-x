@@ -5,7 +5,7 @@ from player import ClientPlayer
 from game_engine_constants import ARROW_MOVEMENT_KEYS, WASD_MOVEMENT_KEYS, WIDTH, HEIGHT, FPS, GAME_TITLE, SCREEN_CENTER_POINT, ORIGIN, BUF_SIZE, DEV_MAP
 from converters import str_to_player_data_no_dt
 from threading import Thread, Lock
-import map_loading, dev_constants, managers, client_server_communication, player
+import map_loading, dev_constants, managers, client_server_communication, player, game_modes
 import pickle
 import time
 import random
@@ -34,7 +34,7 @@ cgm = managers.ClientGameManager(screen, DEV_MAP)
 # The client uses the server logic to simulate live reactions
 # and uses the servers responce to fix/verify differences
 if game_engine_constants.CLIENT_GAME_SIMULATION:
-    SGM = managers.ServerGameManager(DEV_MAP)
+    SGM = managers.ServerGameManager(DEV_MAP, game_modes.FirstToNFrags(1))
     game_engine_constants.MOCK_SERVER_QUEUE = queue.Queue()
 
 dev_constants.CLIENT_VISUAL_DEBUGGING = True
@@ -68,7 +68,8 @@ if game_engine_constants.CLIENT_GAME_SIMULATION:
     # "connecting"
     mock_socket = None
     # not using .add_player because that would generate a different id
-    SGM.id_to_player[player_id] = player.ServerPlayer(game_engine_constants.SCREEN_CENTER_POINT, 50, 50, player_id, mock_socket)
+    SGM.id_to_player[player_id] = player.KillableServerPlayer(game_engine_constants.SCREEN_CENTER_POINT, 50, 50, player_id, mock_socket) # for testing out first to n frags
+    # SGM.id_to_player[player_id] = player.ServerPlayer(game_engine_constants.SCREEN_CENTER_POINT, 50, 50, player_id, mock_socket)
 
 
 def mock_server():

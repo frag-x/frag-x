@@ -39,7 +39,7 @@ class BasePlayer(body.ConstantAccelerationBody):
         # Guns
 
         #self.weapon = weapons.Hitscan(1, self, 1000)
-        self.weapon = weapons.RocketLauncher(1, self, 1000)
+        self.weapon = weapons.RocketLauncher(2, self, 1000)
 
         # Physics/Movement
 
@@ -181,3 +181,13 @@ class ServerPlayer(BasePlayer):
         self.velocity += new_velocity_update
         if magnitude(self.velocity) > self.max_speed:
             self.velocity = self.velocity.normalize()  * self.max_speed
+
+
+class KillableServerPlayer(ServerPlayer):
+
+    def __init__(self,start_pos, width, height, player_id, socket):
+        super().__init__(start_pos, width, height,player_id, socket)
+        self.health = 100
+        self.num_frags = 0 # A killable player can also kill others (TODO what about weird game modes)
+        self.dead = False
+        self.time_dead = 0

@@ -1,6 +1,6 @@
 import pygame, threading, uuid, math
-import client_server_communication, network, game_engine_constants, dev_constants, player, intersections, map_loading, collisions, helpers, weapons
-from player import ServerPlayer
+import client_server_communication, network, game_engine_constants, dev_constants, player, intersections, map_loading, collisions, helpers, weapons, game_modes
+from player import ServerPlayer, KillableServerPlayer
 
 class GameManager:
     def __init__(self, map_name):
@@ -90,21 +90,11 @@ message_type_to_command_client = {client_server_communication.ClientMessageType.
 
 
 
-
-
-
-
-
-
-
-
-
-
-
 class ServerGameManager(GameManager):
-    """This class in in charge of all server operations"""
-    def __init__(self, map_name):
+    """This class in in charge of all server operations for a game"""
+    def __init__(self, map_name, game_mode):
         super().__init__(map_name)
+        self.game_mode = game_mode
 
     def construct_game_state_message(self) -> client_server_communication.GameStateMessage:
         """Collects and returns all the information about the current game state"""
@@ -130,7 +120,10 @@ class ServerGameManager(GameManager):
     def add_player(self, client_socket):
         # Could this not being locked cause a problem?
         player_id = str(uuid.uuid1())
-        self.id_to_player[player_id] = player.ServerPlayer(game_engine_constants.SCREEN_CENTER_POINT, 50, 50, player_id, client_socket)
+        if type(self.game_mode) is game_modes.FirstToNFrags:
+            self.id_to_player[player_id] = player.KillableServerPlayer(game_engine_constants.SCREEN_CENTER_POINT, 50, 50, player_id, client_socket)
+        else:
+            self.id_to_player[player_id] = player.ServerPlayer(game_engine_constants.SCREEN_CENTER_POINT, 50, 50, player_id, client_socket)
         print(f'added player {self.id_to_player}')
 
         # TODO this will probably be removed
@@ -140,6 +133,11 @@ class ServerGameManager(GameManager):
         players = list(self.id_to_player.values())
         self.consume_player_inputs(input_message)
         self.simulate_collisions(players)
+        game_over, winner = self.game_mode.is_game_over(players)
+        if game_over: # TODO figure this out with a type of switch or something
+            print(f"GAME OVER, winner is {winner}") # and stop everything. kill this thread?
+
+
 
     def consume_player_inputs(self, input_message: client_server_communication.InputMessage):
         """Update the players attributes based on their input and operate their weapon if required"""
@@ -149,6 +147,18 @@ class ServerGameManager(GameManager):
         time_since_last_client_frame = input_message.time_since_last_client_frame
         mouse_movement = input_message.mouse_movement
         firing = input_message.firing
+
+        if type(self.game_mode) is game_modes.FirstToNFrags:
+            if player.dead:
+                player.time_dead += time_since_last_client_frame # TODO don't do this the first time we find that they're dead?
+                if player.time_dead >= self.game_mode.respawn_time:
+                    # TODO turn this into a reset player method or something
+                    player.dead = False
+                    player.time_dead = 0
+                    player.health = 100
+                    player.pos = pygame.math.Vector2(game_engine_constants.SCREEN_CENTER_POINT)
+                    player.velocity = pygame.math.Vector2(0,0)
+                return # We don't deal with their inputs if they're dead
 
         self.update_player_attributes(player, net_x_movement, net_y_movement, time_since_last_client_frame, mouse_movement)
 
@@ -268,14 +278,14 @@ class ServerGameManager(GameManager):
                             
 
                         # Have to import this because player.ServerPlayer wouldn't work as the variable is also being used
-                        if type(closest_entity) is ServerPlayer:
-                            print("=== Player hit ===")
-                            print(f"Explosion at {rocket_explosion.pos - player.pos} hit by beam {beam.direction_vector}")
-                            # Then also send a weapon message saying hit and draw a line shooting the other player
-                            print(beam.direction_vector * rocket_explosion.power)
-                            print(f"old vel {closest_entity.velocity}")
+                        #if type(closest_entity) is ServerPlayer:
+                        if type(closest_entity) is KillableServerPlayer:
                             closest_entity.velocity = closest_entity.velocity + (beam.direction_vector * rocket_explosion.power)
-                            print(f"new vel {closest_entity.velocity}")
+                            if type(self.game_mode) is game_modes.FirstToNFrags and player is not closest_entity: # TODO more generally if it's a game mode where players should take damage
+                                closest_entity.health -= 10
+                                if closest_entity.health <= 0:
+                                    closest_entity.dead = True
+                                    player.num_frags += 1
 
         # clean up exploded projectiles
         for projectile in projectiles_to_explode:

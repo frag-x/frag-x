@@ -11,7 +11,7 @@ from threading import Lock, Thread
 import collisions, dev_constants
 import logging
 #logging.basicConfig(level=logging.INFO)
-import map_loading, client_server_communication, helpers, intersections, weapons, managers
+import map_loading, client_server_communication, helpers, intersections, weapons, managers, game_modes
 from queue import Queue
 import time
 import math
@@ -22,7 +22,7 @@ if dev_constants.PROFILING_PROGRAM:
     yappi.start()
 
 
-SGM = managers.ServerGameManager(DEV_MAP)
+SGM = managers.ServerGameManager(DEV_MAP, game_modes.FirstToNFrags(2))
 
 # START MAP LOAD
 

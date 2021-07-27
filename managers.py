@@ -235,22 +235,37 @@ class ServerGameManager(GameManager):
         projectiles_to_explode = set()
         for rocket in player.weapon.fired_projectiles:
             projectile_idx_x, projectile_idx_y = helpers.get_partition_index(self.partitioned_map_grid, rocket.pos)
+            # TODO protect this incase a projectile gets out of the map
             projectile_partition = self.partitioned_map_grid.collision_partitioned_map[projectile_idx_y][projectile_idx_x]
 
             for p_wall in projectile_partition.bounding_walls:
+
                 colliding, closest_v = collisions.colliding_and_closest(rocket, p_wall)
                 if colliding:
+
+                    # TODO don't change the position of the rocket
+                    # Means we have to change all isntances of the call to colliding_and_closest
+                    if rocket.previous_pos is not None:
+                        rocket.pos = helpers.copy_vector(rocket.previous_pos) # this isn't colliding
+                    else:
+                        rocket.pos = helpers.copy_vector(player.pos)
+
+                    colliding, closest_v = collisions.colliding_and_closest(rocket, p_wall)
+
                     projectiles_to_explode.add(rocket)
-                    # Move it out of the wall, that way the beams don't just get lodged in the wall
-                    # TODO instead of exploding it right here get the closest position
-                    # Use colliding and closest
-                    rocket.pos = rocket.previous_pos
-                    rocket_explosion = weapons.Explosion(rocket.pos)
+
+                    rocket_explosion = weapons.Explosion(closest_v)
+
                     if dev_constants.CLIENT_VISUAL_DEBUGGING:
                         dev_constants.EXPLOSIONS_FOR_DEBUGGING.append(rocket_explosion)
                     for beam in rocket_explosion.beams:
                         print("beam", beam)
                         closest_hit, closest_entity = intersections.get_closest_intersecting_object_in_pmg(player.weapon, self.partitioned_map_grid, beam)
+                        if closest_hit is not None:
+                            if dev_constants.DEBUGGING_INTERSECTIONS:
+                                dev_constants.INTERSECTIONS_FOR_DEBUGGING.append(closest_hit)
+
+                            
 
                         # Have to import this because player.ServerPlayer wouldn't work as the variable is also being used
                         if type(closest_entity) is ServerPlayer:

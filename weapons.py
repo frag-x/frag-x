@@ -476,6 +476,11 @@ class Hitscan(Weapon):
 
                     m = fire_slope
 
+                    if m == math.inf:
+                        pass
+
+                    
+
                     a = (m**2) + 1
                     b = -2 * (p + (m * q)) 
                     c = (p**2) + (q**2) - (r**2)
@@ -533,7 +538,7 @@ class RocketLauncher(Weapon):
 
 
 class Explosion:
-    def __init__(self, pos, radius=200, power=500, num_shards=16):
+    def __init__(self, pos, radius=100, power=500, num_shards=16):
         self.pos = pos
         self.radius = radius
         self.power = power
@@ -544,7 +549,7 @@ class Explosion:
     def generate_beams(self):
         angle_fraction = math.tau/self.num_shards
         for i in range(self.num_shards):
-            angle = angle_fraction * i + math.tau/8 # TODO remove this
+            angle = angle_fraction * i  
             x = math.cos(angle) * self.radius
             y = math.sin(angle) * self.radius
 

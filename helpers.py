@@ -28,10 +28,19 @@ def part_of_beam(point, beam):
     """Given a point on the line defined by the beams line segment,
     check if the point is part of the line segment"""
     x,y = point[0], point[1]
-    min_x = min(0, beam.end_point.x - beam.start_point.x)
-    max_x = max(0, beam.end_point.x - beam.start_point.x)
-    #print(f"is {point} between {min_x, max_x}?")
-    return min_x <= x <= max_x
+    if beam.slope == math.inf: # check if it's between y values then
+        value = y
+        lower_bound = min(0, beam.end_point.y - beam.start_point.y)
+        upper_bound = max(0, beam.end_point.y - beam.start_point.y)
+    else: # then we can use x values
+        value = x
+        lower_bound = min(0, beam.end_point.x - beam.start_point.x)
+        upper_bound = max(0, beam.end_point.x - beam.start_point.x)
+    #return min_x < x < max_x # excluding endpoints so that explosions can spawn at corners of squares
+    return lower_bound < value < upper_bound
+
+def copy_vector(v):
+    return pygame.math.Vector2(v.x, v.y)
 
 def valid_2d_index_for_partitioned_map_grid(idx, pmg):
     x, y = idx

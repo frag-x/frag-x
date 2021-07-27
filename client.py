@@ -177,6 +177,19 @@ while running:
                 pygame.draw.line(dev_constants.SCREEN_FOR_DEBUGGING, pygame.color.THECOLORS['green'], beam.start_point + curr_player.camera_v, beam.end_point + curr_player.camera_v)
 
 
+    if dev_constants.DEBUGGING_INTERSECTIONS:
+        for hit_v in dev_constants.INTERSECTIONS_FOR_DEBUGGING:
+            pygame.draw.circle(dev_constants.SCREEN_FOR_DEBUGGING,pygame.color.THECOLORS['purple']  , hit_v + curr_player.camera_v, 3)
+
+        for partition in dev_constants.INTERSECTED_PARTITIONS_FOR_DEBUGGING:
+            pygame.draw.rect(screen,pygame.color.THECOLORS['blueviolet'] , partition.rect.move(curr_player.camera_v), width=1)
+
+        for point_v in dev_constants.INTERSECTED_PARTITION_PATCH_MARKERS:
+            pygame.draw.circle(dev_constants.SCREEN_FOR_DEBUGGING,pygame.color.THECOLORS['red']  , point_v + curr_player.camera_v, 3)
+            
+        for point_v in dev_constants.INTERSECTED_PARTITION_SEAMS_FOR_DEBUGGING:
+            pygame.draw.circle(dev_constants.SCREEN_FOR_DEBUGGING,pygame.color.THECOLORS['yellow']  , point_v + curr_player.camera_v, 3)
+
     cgm.draw_projectiles(curr_player.camera_v)
 
     firing = int(pygame.mouse.get_pressed()[0])

@@ -1,7 +1,7 @@
 import pygame
 
-WIDTH = 1366
-HEIGHT = 786
+WIDTH = 1000
+HEIGHT = 1000
 FPS = 60
 SERVER_TICK_RATE_HZ = 60
 

@@ -86,38 +86,53 @@ def game_state_watcher():
     # CONNECT LOOP
     recv_buffer = b""
     while True:
-        try: 
-            data = fn.client.recv(BUF_SIZE)
+        if True:
 
-            if not data:
-                # Likely means we've disconnected
-                break
-            else:
-                #print(f'Received: {data.decode("utf-8")}')
-                if False:
-                    recv_buffer += data
+            def recv_exactly(socket, size):
+                data = b""
+                while len(data) < size:
+                    chunk = socket.recv(size - len(data))
+                    if chunk == b"":
+                        raise IOError("...something")
+                    data += chunk
+                return data
 
-                    if len(recv_buffer) >= 4:
-                        message_size = int.from_bytes(recv_buffer[:4], "little")
+            size_bytes = recv_exactly(fn.client, 4)
+            size = int.from_bytes(size_bytes, "little")
+            data = recv_exactly(fn.client, size)
+        else:
+            try: 
+                data = fn.client.recv(BUF_SIZE)
 
-                        if len(recv_buffer) - 4 >= message_size:
-                            message = pickle.loads(recv_buffer[4:4+message_size])
-                            recv_buffer = recv_buffer[4+message_size:]
-
-                            # Do stuff with message
-
-                            if dev_constants.DEBUGGING_NETWORK_MESSAGES:
-                                print(f"GAME STATE RECEIVED: {message}, with size: {len(message)}")
-                            print(f"GAME STATE RECEIVED: {message}")
-
-                            cgm.client_message_parser.run_command_from_message(message)
+                if not data:
+                    # Likely means we've disconnected
+                    break
                 else:
-                        cgm.client_message_parser.run_command_from_message(pickle.loads(data))
+                    #print(f'Received: {data.decode("utf-8")}')
+                    if False:
+                        recv_buffer += data
+
+                        if len(recv_buffer) >= 4:
+                            message_size = int.from_bytes(recv_buffer[:4], "little")
+
+                            if len(recv_buffer) - 4 >= message_size:
+                                message = pickle.loads(recv_buffer[4:4+message_size])
+                                recv_buffer = recv_buffer[4+message_size:]
+
+                                # Do stuff with message
+
+                                if dev_constants.DEBUGGING_NETWORK_MESSAGES:
+                                    print(f"GAME STATE RECEIVED: {message}, with size: {len(message)}")
+                                print(f"GAME STATE RECEIVED: {message}")
+
+                                cgm.client_message_parser.run_command_from_message(message)
+                    else:
+                            cgm.client_message_parser.run_command_from_message(pickle.loads(data))
 
 
-        except Exception as e:
-            print(f"wasn't able to get data because {e}")
-            break
+            except Exception as e:
+                print(f"wasn't able to get data because {e}")
+                break
 
 
 

@@ -71,7 +71,7 @@ def game_state_sender(game_state_queue):
                 #if dev_constants.DEBUGGING_NETWORK_MESSAGES:
                 print(pickle.dumps(game_state_message))
                 byte_message = pickle.dumps(game_state_message)
-                if False:
+                if True:
                     p.socket.sendall(len(byte_message).to_bytes(4, "little") + byte_message)
                 else:
                     p.socket.sendall(byte_message)

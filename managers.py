@@ -309,7 +309,6 @@ class ServerGameManager(GameManager):
                     if dev_constants.CLIENT_VISUAL_DEBUGGING:
                         dev_constants.EXPLOSIONS_FOR_DEBUGGING.append(rocket_explosion)
                     for beam in rocket_explosion.beams:
-                        print("beam", beam)
                         closest_hit, closest_entity = intersections.get_closest_intersecting_object_in_pmg(player.weapon, self.partitioned_map_grid, beam)
                         if closest_hit is not None:
                             self.beam_messages.append(client_server_communication.BeamMessage(beam.start_point, closest_hit))

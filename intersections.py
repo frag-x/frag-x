@@ -44,7 +44,6 @@ def get_intersecting_partitions(weapon, partitioned_map_grid, beam: weapons.Hits
         for vxpst in valid_x_partition_seams_translated:
             # TODO check if this is within 
             if beam.slope == 0:
-                print("zero slope")
                 y = 0 # because it's relative to the beams start point
             else:
                 y = beam.slope * vxpst
@@ -61,7 +60,6 @@ def get_intersecting_partitions(weapon, partitioned_map_grid, beam: weapons.Hits
             intersecting_top_of_quad_patch = (0 <= untranslated_y % partitioned_map_grid.partition_height  <= game_engine_constants.TILE_SIZE)
 
             if intersecting_bottom_of_quad_patch or intersecting_top_of_quad_patch:
-                #print("At a quad_patch intersection")
                 if intersecting_bottom_of_quad_patch:
                     # Then we round up
                     quad_patch_center = (untranslated_x, (untranslated_y // partitioned_map_grid.partition_height + 1) * partitioned_map_grid.partition_height)
@@ -92,12 +90,10 @@ def get_intersecting_partitions(weapon, partitioned_map_grid, beam: weapons.Hits
 
                 for index in collision_partition_indices:
                     x, y = index
-                    #print(f"About to Index: {(x,y)} out of {partitioned_map_grid.num_x_partitions, partitioned_map_grid.num_y_partitions}")
                     intersecting_partitions.add(partitioned_map_grid.partitioned_map[y][x])
 
             else:
                 # Then we're at a double intersection
-                #print("double intersection")
 
                 double_patch_upper = (untranslated_x, (untranslated_y // partitioned_map_grid.partition_height ) * partitioned_map_grid.partition_height)
 
@@ -123,7 +119,6 @@ def get_intersecting_partitions(weapon, partitioned_map_grid, beam: weapons.Hits
 
                 for index in collision_partition_indices:
                     x, y = index
-                    #print(f"About to Index: {(x,y)} out of {partitioned_map_grid.num_x_partitions, partitioned_map_grid.num_y_partitions}")
                     intersecting_partitions.add(partitioned_map_grid.partitioned_map[y][x])
 
     ## vypst: valid y partition seam translated 
@@ -146,7 +141,6 @@ def get_intersecting_partitions(weapon, partitioned_map_grid, beam: weapons.Hits
             intersecting_right_of_quad_patch = (0 <= untranslated_x % partitioned_map_grid.partition_width  <= game_engine_constants.TILE_SIZE)
 
             if intersecting_right_of_quad_patch or intersecting_left_of_quad_patch:
-                #print("At a quad_patch intersection")
                 if intersecting_left_of_quad_patch:
                     # Then we round up
                     quad_patch_center = ((untranslated_x // partitioned_map_grid.partition_width + 1) * partitioned_map_grid.partition_width, untranslated_y)
@@ -178,12 +172,10 @@ def get_intersecting_partitions(weapon, partitioned_map_grid, beam: weapons.Hits
 
                 for index in collision_partition_indices:
                     x, y = index
-                    #print(f"About to Index: {(x,y)} out of {partitioned_map_grid.num_x_partitions, partitioned_map_grid.num_y_partitions}")
                     intersecting_partitions.add(partitioned_map_grid.partitioned_map[y][x])
 
             else:
                 # Then we're at a double intersection
-                #print("double intersection")
 
                 double_patch_left = ((untranslated_x // partitioned_map_grid.partition_width) * partitioned_map_grid.partition_height, untranslated_y)
 
@@ -208,7 +200,6 @@ def get_intersecting_partitions(weapon, partitioned_map_grid, beam: weapons.Hits
 
                 for index in collision_partition_indices:
                     x, y = index
-                    #print(f"About to Index: {(x,y)} out of {partitioned_map_grid.num_x_partitions, partitioned_map_grid.num_y_partitions}")
                     #intersecting_partitions.add(partitioned_map_grid.collision_partitioned_map[y][x])
                     intersecting_partitions.add(partitioned_map_grid.partitioned_map[y][x])
     return intersecting_partitions
@@ -251,7 +242,6 @@ def get_closest_intersecting_object_in_pmg(weapon, partitioned_map_grid, beam, s
 #    if dev_constants.CLIENT_VISUAL_DEBUGGING:
 #        pygame.draw.circle(dev_constants.SCREEN_FOR_DEBUGGING, pygame.color.THECOLORS['gold'], helpers.translate_point_for_camera(weapon.owner, closest_hit), game_engine_constants.DEBUG_RADIUS)
 #
-    print(f"Closest Hit {closest_entity} at {closest_hit}")
     return closest_hit, closest_entity
 
 
@@ -283,10 +273,7 @@ def get_closest_intersecting_object_in_partition(weapon, beam, pmg, screen_for_d
         if screen_for_debug is not None:
             pygame.draw.rect(screen_for_debug,pygame.color.THECOLORS['purple']  , b_wall.rect.move(weapon.owner.camera_v), width=1)
         top, left, bottom, right = b_wall.rect.top, b_wall.rect.left, b_wall.rect.bottom, b_wall.rect.right 
-        ##print( top, left, bottom, right)
         translated_top, translated_left, translated_bottom, translated_right = top - fire_origin.y, left - fire_origin.x, bottom - fire_origin.y, right - fire_origin.x
-        ##print("translated_top", "translated_left", "translated_bottom", "translated_right" )
-        ##print(translated_top, translated_left, translated_bottom, translated_right )
 
         # y = fire_slope x <=> y/fire_slope = x (assuming fire_slope is non-zero)
 
@@ -304,14 +291,12 @@ def get_closest_intersecting_object_in_partition(weapon, beam, pmg, screen_for_d
 
             if translated_top <= yr <= translated_bottom and helpers.part_of_beam((xr, yr), beam):
                 # Hit right side
-                #print(f"hit right at ({translated_right}, {yr})")
                 hit = pygame.math.Vector2((translated_right, yr))
                 if (helpers.get_sign(hit.x), helpers.get_sign(hit.y)) == quadrant_info:
                     closest_hit, closest_entity = update_closest(hit, b_wall, closest_hit, closest_entity)
 
             if translated_top <= yl <= translated_bottom and helpers.part_of_beam((xl, yl), beam):
                 # Hit right side
-                #print(f"hit left at ({translated_left}, {yl})")
                 hit = pygame.math.Vector2((translated_left, yl))
                 if (helpers.get_sign(hit.x), helpers.get_sign(hit.y)) == quadrant_info:
                     closest_hit, closest_entity = update_closest(hit, b_wall, closest_hit, closest_entity)
@@ -329,20 +314,17 @@ def get_closest_intersecting_object_in_partition(weapon, beam, pmg, screen_for_d
                 xb = yb / fire_slope
 
             if translated_left <= xt <= translated_right and helpers.part_of_beam((xt, yt), beam):
-                #print(f"hit top at ({xt}, {translated_top})")
                 hit = pygame.math.Vector2((xt, translated_top))
                 if (helpers.get_sign(hit.x), helpers.get_sign(hit.y)) == quadrant_info:
                     closest_hit, closest_entity = update_closest(hit, b_wall, closest_hit, closest_entity)
 
             if translated_left <= xb <= translated_right and helpers.part_of_beam((xb, yb), beam):
-                #print(f"hit bottom at ({xb}, {translated_bottom})")
                 hit = pygame.math.Vector2((xb, translated_bottom))
                 if (helpers.get_sign(hit.x), helpers.get_sign(hit.y)) == quadrant_info:
                     closest_hit, closest_entity = update_closest(hit, b_wall, closest_hit, closest_entity)
 
             #if len(hits) != 0:
 
-    print(f"players in partition {pmg.players}")
     for body in pmg.players:
 
         #if body is not weapon.owner: # can't shoot self
@@ -377,7 +359,6 @@ def get_closest_intersecting_object_in_partition(weapon, beam, pmg, screen_for_d
             m = beam.slope
 
             if m == math.inf:
-                print("============================================= dealing with vertical explosion")
                 # In this case then we are setting x = 0 in the equation and getting solutions
                 """
                 (x - p)**2 + (y - q)**2 = r**2 & x = 0
@@ -399,7 +380,6 @@ def get_closest_intersecting_object_in_partition(weapon, beam, pmg, screen_for_d
             discriminant = b**2 - (4 * a * c)
 
             if discriminant >= 0:
-                #print("hit ball")
                 # Then we have at least one solution
                 if m == math.inf:
                     y = (-b + (discriminant)**(1/2) ) / (2 * a) 
@@ -408,7 +388,6 @@ def get_closest_intersecting_object_in_partition(weapon, beam, pmg, screen_for_d
                     x = (-b + (discriminant)**(1/2) ) / (2 * a) 
                     y = m * x
                 hit = pygame.math.Vector2((x,y))
-                print(f"ball check - hit at {x, y}")
                 if (helpers.get_sign(hit.x), helpers.get_sign(hit.y)) == quadrant_info and helpers.part_of_beam(hit, beam):
                     closest_hit, closest_entity = update_closest(hit, body, closest_hit, closest_entity)
                 if discriminant > 0:
@@ -420,14 +399,11 @@ def get_closest_intersecting_object_in_partition(weapon, beam, pmg, screen_for_d
                         xn = (-b - (discriminant)**(1/2) ) / (2 * a) 
                         yn = m * xn
                     hit = pygame.math.Vector2((xn,yn))
-                    print(f"ball check 2 - hit at {xn, yn}")
-                    print((helpers.get_sign(hit.x), helpers.get_sign(hit.y)),  quadrant_info, (helpers.get_sign(hit.x), helpers.get_sign(hit.y)) == quadrant_info,   helpers.part_of_beam(hit, beam))
             
                     if (helpers.get_sign(hit.x), helpers.get_sign(hit.y)) == quadrant_info and helpers.part_of_beam(hit, beam): # notice how we have to use the translated hit for part of beam
                         closest_hit, closest_entity = update_closest(hit, body, closest_hit, closest_entity)
 
     if closest_hit is not None:
-        print(f"closest hit at {closest_hit + beam.start_point}, it is {closest_entity}")
         # returns position relative to player which is good
         return closest_hit, closest_entity
     else: 

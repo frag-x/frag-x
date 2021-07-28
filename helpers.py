@@ -72,6 +72,14 @@ def get_partition_index(partitioned_map_grid, position):
     return (partition_idx_x, partition_idx_y)
 
 
+def recv_exactly(socket, size):
+    data = b""
+    while len(data) < size:
+        chunk = socket.recv(size - len(data))
+        if chunk == b"":
+            raise IOError("...something")
+        data += chunk
+    return data
 
 #def get_quadrant_info(point_1, point_2):
 #    """Considering point_1 as the origin, this function returns which quadrant point_2 is in"""

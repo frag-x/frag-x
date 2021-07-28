@@ -5,7 +5,7 @@ from player import ClientPlayer
 from game_engine_constants import ARROW_MOVEMENT_KEYS, WASD_MOVEMENT_KEYS, WIDTH, HEIGHT, FPS, GAME_TITLE, SCREEN_CENTER_POINT, ORIGIN, BUF_SIZE, DEV_MAP
 from converters import str_to_player_data_no_dt
 from threading import Thread, Lock
-import map_loading, dev_constants, managers, client_server_communication, player, game_modes
+import map_loading, dev_constants, managers, client_server_communication, player, game_modes, helpers
 import pickle
 import time
 import random
@@ -87,19 +87,11 @@ def game_state_watcher():
     recv_buffer = b""
     while True:
         if True:
-
-            def recv_exactly(socket, size):
-                data = b""
-                while len(data) < size:
-                    chunk = socket.recv(size - len(data))
-                    if chunk == b"":
-                        raise IOError("...something")
-                    data += chunk
-                return data
-
-            size_bytes = recv_exactly(fn.client, 4)
+            size_bytes = helpers.recv_exactly(fn.client, 4)
             size = int.from_bytes(size_bytes, "little")
-            data = recv_exactly(fn.client, size)
+            data = helpers.recv_exactly(fn.client, size)
+            message = pickle.loads(data)
+            cgm.client_message_parser.run_command_from_message(message)
         else:
             try: 
                 data = fn.client.recv(BUF_SIZE)

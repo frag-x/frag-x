@@ -62,15 +62,16 @@ def game_state_sender(game_state_queue):
         # Incase someone joins in the middle - would that be so bad??? - TODO maybe remove these locks
 
         # consume the message
-        game_state_message = game_state_queue.get()
+        if not game_state_queue.empty(): # TODO why does removing this cause immense lag?
+            game_state_message = game_state_queue.get()
 
-        # Send the game state to each of the players
-        # TODO instead of doing this use the socket they are connected on
-        for p in list(SGM.id_to_player.values()):
-            #if dev_constants.DEBUGGING_NETWORK_MESSAGES:
-            #print(pickle.dumps(game_state_message))
-            byte_message = pickle.dumps(game_state_message)
-            p.socket.sendall(len(byte_message).to_bytes(4, "little") + byte_message)
+            # Send the game state to each of the players
+            # TODO instead of doing this use the socket they are connected on
+            for p in list(SGM.id_to_player.values()):
+                #if dev_constants.DEBUGGING_NETWORK_MESSAGES:
+                #print(pickle.dumps(game_state_message))
+                byte_message = pickle.dumps(game_state_message)
+                p.socket.sendall(len(byte_message).to_bytes(4, "little") + byte_message)
 
 
 

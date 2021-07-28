@@ -108,6 +108,7 @@ def game_state_watcher():
 
                         if dev_constants.DEBUGGING_NETWORK_MESSAGES:
                             print(f"GAME STATE RECEIVED: {message}, with size: {len(message)}")
+                        print(f"GAME STATE RECEIVED: {message}")
 
                         cgm.client_message_parser.run_command_from_message(message)
 

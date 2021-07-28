@@ -99,10 +99,8 @@ def game_state_watcher():
 
                 if len(recv_buffer) >= 4:
                     message_size = int.from_bytes(recv_buffer[:4], "little")
-                    print(recv_buffer, message_size)
 
                     if len(recv_buffer) - 4 >= message_size:
-                        print(f"raw_message {recv_buffer[4:4+message_size]}")
                         message = pickle.loads(recv_buffer[4:4+message_size])
                         recv_buffer = recv_buffer[4+message_size:]
 

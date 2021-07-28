@@ -84,18 +84,42 @@ def mock_server():
 
 def game_state_watcher():
     # CONNECT LOOP
+    recv_buffer = b""
     while True:
-        logging.info("watching for game state")
-        raw_data = fn.client.recv(BUF_SIZE)
-        print(raw_data)
-        message = pickle.loads(raw_data)
-        if dev_constants.DEBUGGING_NETWORK_MESSAGES:
-            print("Looking for messages")
-            print(f"GAME STATE RECEIVED: {message}, with size: {len(raw_data)}")
+        try: 
+            data = fn.client.recv(BUF_SIZE)
+
+            if not data:
+                # Likely means we've disconnected
+                break
+            else:
+                #print(f'Received: {data.decode("utf-8")}')
+
+                recv_buffer += data
+
+                if len(recv_buffer) >= 4:
+                    message_size = int.from_bytes(recv_buffer[:4], "little")
+                    print(recv_buffer, message_size)
+
+                    if len(recv_buffer) - 4 >= message_size:
+                        print(f"raw_message {recv_buffer[4:4+message_size]}")
+                        message = pickle.loads(recv_buffer[4:4+message_size])
+                        recv_buffer = recv_buffer[4+message_size:]
+
+                        # Do stuff with message
+
+                        if dev_constants.DEBUGGING_NETWORK_MESSAGES:
+                            print(f"GAME STATE RECEIVED: {message}, with size: {len(message)}")
+
+                        cgm.client_message_parser.run_command_from_message(message)
+
+
+        except Exception as e:
+            print(f"wasn't able to get data because {e}")
+            break
 
 
 
-        cgm.client_message_parser.run_command_from_message(message)
 
         #for player_state in game_state:
         #    logging.info(f"player state: {player_state}")

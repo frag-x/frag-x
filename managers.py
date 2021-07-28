@@ -7,6 +7,7 @@ class GameManager:
         self.id_to_player = {}
         # TODO make this a set eventually
         self.projectiles = []
+        self.beam_messages = []
         self.partitioned_map_grid = map_loading.PartitionedMapGrid(map_loading.get_pixels(map_name),10, 10)
 
 class ClientGameManager(GameManager):
@@ -29,8 +30,12 @@ class ClientGameManager(GameManager):
     def draw_projectiles(self, camera_v):
         for projectile_message in self.projectiles:
             pos = pygame.math.Vector2(projectile_message.x, projectile_message.y)
-            radius = game_engine_constants.TILE_SIZE/4
+            radius = game_engine_constants.TILE_SIZE/4 # TODO use shared variable with server
             pygame.draw.circle(self.screen, pygame.color.THECOLORS['chartreuse4'], pos + camera_v, radius)
+
+    def draw_beams(self, camera_v):
+        for beam_message in self.beam_messages:
+            pygame.draw.line(self.screen, pygame.color.THECOLORS['chartreuse4'], beam_message.start_point + camera_v, beam_message.end_point + camera_v)
 
     def consume_message(self, message):
         pass
@@ -79,9 +84,13 @@ def parse_player_position_message(message_list, client_game_manager):
 def parse_game_state_message(game_state_message: client_server_communication.GameStateMessage, client_game_manager: ClientGameManager):
     parse_player_position_message(game_state_message.player_position_messages, client_game_manager)
     parse_projectile_position_message(game_state_message.projectile_position_messages, client_game_manager)
+    parse_beam_messages(game_state_message.beam_messages, client_game_manager)
 
 def parse_projectile_position_message(message_list, client_game_manager):
         client_game_manager.projectiles = message_list
+
+def parse_beam_messages(message_list, client_game_manager):
+    client_game_manager.beam_messages.extend(message_list)
 
 
 #message_type_to_command_client = {ClientMessageType.PLAYER_POSITIONS.value: parse_player_position_message, ClientMessageType.PROJECTILE_POSITIONS.value: parse_projectile_position_message}
@@ -113,7 +122,7 @@ class ServerGameManager(GameManager):
                 
             player_position_messages.append(client_server_communication.PlayerPositionMessage(p))
 
-        game_state_message = client_server_communication.GameStateMessage(player_position_messages, projectile_position_messages)
+        game_state_message = client_server_communication.GameStateMessage(player_position_messages, projectile_position_messages, self.beam_messages) 
 
         return game_state_message
 
@@ -129,13 +138,17 @@ class ServerGameManager(GameManager):
         # TODO this will probably be removed
         return player_id
 
-    def perform_all_server_operations(self, input_message):
+    def perform_all_server_operations(self, input_message, game_state_queue=None): # None for if client is running this
+        self.beam_messages = [] # reset beam messages
         players = list(self.id_to_player.values())
         self.consume_player_inputs(input_message)
         self.simulate_collisions(players)
         game_over, winner = self.game_mode.is_game_over(players)
         if game_over: # TODO figure this out with a type of switch or something
             print(f"GAME OVER, winner is {winner}") # and stop everything. kill this thread?
+
+        if game_state_queue is not None:
+            game_state_queue.put(self.construct_game_state_message())
 
 
 
@@ -202,6 +215,10 @@ class ServerGameManager(GameManager):
 
         closest_hit, closest_entity = intersections.get_closest_intersecting_object_in_pmg(firing_player.weapon, self.partitioned_map_grid, beam)
 
+        #if closest_hit is not None: # this is guranteed because it's bounded by the map extents
+        self.beam_messages.append(client_server_communication.BeamMessage(beam.start_point, closest_hit))
+
+
         #if type(closest_entity) is player.ServerPlayer:
         if type(closest_entity) is player.KillableServerPlayer:
             # Then also send a weapon message saying hit and draw a line shooting the other player
@@ -211,12 +228,33 @@ class ServerGameManager(GameManager):
             deg = firing_player.rotation_angle * 360/math.tau
             hit_v.from_polar((firing_player.weapon.power, deg))
             closest_entity.velocity += hit_v
+            if type(self.game_mode) is game_modes.FirstToNFrags and firing_player is not closest_entity: # TODO more generally if it's a game mode where players should take damage
+                closest_entity.health -= 60
+                if closest_entity.health <= 0:
+                    closest_entity.dead = True
+                    firing_player.num_frags += 1
 
     def simulate_collisions(self, players):
         # remove players from parition - we will update the positions in the loop
         self.partitioned_map_grid.reset_players_in_partitions()
 
         n = len(players)
+
+
+        # START UPDATE PARTITIONS
+        for i in range(n):
+            p1 = players[i]
+
+            partition_idx_x, partition_idx_y = helpers.get_partition_index(self.partitioned_map_grid, p1.pos)
+
+            curr_partition = self.partitioned_map_grid.partitioned_map[partition_idx_y][partition_idx_x]
+            curr_collision_partition = self.partitioned_map_grid.collision_partitioned_map[partition_idx_y][partition_idx_x]
+            # Put the player in the corresponding partition
+            curr_partition.players.append(p1)
+
+        # END UPDATE PARTITIONS
+
+
         for i in range(n):
             p1 = players[i]
             # Checks for collisions with other bodies
@@ -226,11 +264,7 @@ class ServerGameManager(GameManager):
                     collisions.elastic_collision_update(p1, p2)
 
             partition_idx_x, partition_idx_y = helpers.get_partition_index(self.partitioned_map_grid, p1.pos)
-
-            curr_partition = self.partitioned_map_grid.partitioned_map[partition_idx_y][partition_idx_x]
             curr_collision_partition = self.partitioned_map_grid.collision_partitioned_map[partition_idx_y][partition_idx_x]
-            # Put the player in the corresponding partition
-            curr_partition.players.append(p1)
 
             self.simulate_wall_collision(p1, curr_collision_partition)
 
@@ -277,6 +311,10 @@ class ServerGameManager(GameManager):
                     for beam in rocket_explosion.beams:
                         print("beam", beam)
                         closest_hit, closest_entity = intersections.get_closest_intersecting_object_in_pmg(player.weapon, self.partitioned_map_grid, beam)
+                        if closest_hit is not None:
+                            self.beam_messages.append(client_server_communication.BeamMessage(beam.start_point, closest_hit))
+                        else:
+                            self.beam_messages.append(client_server_communication.BeamMessage(beam.start_point, beam.end_point))
                         if closest_hit is not None:
                             if dev_constants.DEBUGGING_INTERSECTIONS:
                                 dev_constants.INTERSECTIONS_FOR_DEBUGGING.append(closest_hit)

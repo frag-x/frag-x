@@ -58,12 +58,11 @@ player_start_positions = [ORIGIN, SCREEN_CENTER_POINT]
 def game_state_sender(game_state_queue):
     while True:
 
-        # consume the message
-        _ = game_state_queue.get()
 
         # Incase someone joins in the middle - would that be so bad??? - TODO maybe remove these locks
 
-        game_state_message = SGM.construct_game_state_message()
+        # consume the message
+        game_state_message = game_state_queue.get()
 
         # Send the game state to each of the players
         # TODO instead of doing this use the socket they are connected on
@@ -204,7 +203,7 @@ while True:
 
         input_message = client_server_communication.InputMessage(player_id, dx, dy, dm, delta_time, firing, weapon_request)
 
-        SGM.perform_all_server_operations(input_message)
+        SGM.perform_all_server_operations(input_message, game_state_queue)
 
         #hitscan = False
 
@@ -342,7 +341,8 @@ while True:
     #projectile_data_queue.put("send request")
     #positional_player_data_queue.put("send request")
 
-    game_state_queue.put("send request")
+    
+    #game_state_queue.put("send request")
 
     # === END SEND PLAYER POSITIONS ===
 

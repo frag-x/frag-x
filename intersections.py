@@ -346,7 +346,7 @@ def get_closest_intersecting_object_in_partition(weapon, beam, pmg, screen_for_d
     for body in pmg.players:
 
         #if body is not weapon.owner: # can't shoot self
-        if type(weapon) is weapons.Hitscan and body is not weapon.owner: # can't shoot self TODO remove dependence on weapon, probably move this logic elsewhere
+        if (type(weapon) is weapons.Hitscan and body is not weapon.owner) or type(weapon) is weapons.RocketLauncher: # can't shoot self TODO remove dependence on weapon, probably move this logic elsewhere
 
             """
             Assuming p, q are written with respect to the fire origin:

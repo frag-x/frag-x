@@ -172,10 +172,10 @@ while running:
             for b_wall in partition.bounding_walls:
                 pygame.draw.rect(screen, b_wall.color, b_wall.rect.move(curr_player.camera_v))
 
-    if dev_constants.CLIENT_VISUAL_DEBUGGING:
-        for explosion in dev_constants.EXPLOSIONS_FOR_DEBUGGING:
-            for beam in explosion.beams:
-                pygame.draw.line(dev_constants.SCREEN_FOR_DEBUGGING, pygame.color.THECOLORS['green'], beam.start_point + curr_player.camera_v, beam.end_point + curr_player.camera_v)
+    #if dev_constants.CLIENT_VISUAL_DEBUGGING:
+    #    for explosion in dev_constants.EXPLOSIONS_FOR_DEBUGGING:
+    #        for beam in explosion.beams:
+    #            pygame.draw.line(dev_constants.SCREEN_FOR_DEBUGGING, pygame.color.THECOLORS['green'], beam.start_point + curr_player.camera_v, beam.end_point + curr_player.camera_v)
 
 
     if dev_constants.DEBUGGING_INTERSECTIONS:
@@ -195,6 +195,7 @@ while running:
             pygame.draw.line(dev_constants.SCREEN_FOR_DEBUGGING, pygame.color.THECOLORS['green'], beam.start_point + curr_player.camera_v, beam.end_point + curr_player.camera_v)
 
     cgm.draw_projectiles(curr_player.camera_v)
+    cgm.draw_beams(curr_player.camera_v)
 
     firing = int(pygame.mouse.get_pressed()[0])
 

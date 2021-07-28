@@ -3,6 +3,8 @@ import typing
 
 # TODO don't use the values but rather just use the enum itself?
 
+# A message represents the minimal amount of information required to send across the network to make client and server function correctly
+
 class ServerMessageType(Enum):
     """A message received by the server"""
     PLAYER_INPUTS = 0
@@ -52,9 +54,14 @@ class ProjectilePositionMessage(PositionMessage):
     def __init__(self, x, y):
         super().__init__(ClientMessageType.PROJECTILE_POSITIONS.value, x, y)
 
+class BeamMessage:
+    def __init__(self, start_point, end_point):
+        self.start_point = start_point
+        self.end_point = end_point
+
 class GameStateMessage(Message):
-    def __init__(self, player_position_messages: typing.List[PlayerPositionMessage], projectile_position_messages: typing.List[ProjectilePositionMessage]):
+    def __init__(self, player_position_messages: typing.List[PlayerPositionMessage], projectile_position_messages: typing.List[ProjectilePositionMessage], beam_messages: typing.List[BeamMessage]):
         super().__init__(ClientMessageType.GAME_STATE_MESSAGE.value)
         self.player_position_messages = player_position_messages
         self.projectile_position_messages = projectile_position_messages
-
+        self.beam_messages = beam_messages

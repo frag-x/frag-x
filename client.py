@@ -94,23 +94,25 @@ def game_state_watcher():
                 break
             else:
                 #print(f'Received: {data.decode("utf-8")}')
+                if False:
+                    recv_buffer += data
 
-                recv_buffer += data
+                    if len(recv_buffer) >= 4:
+                        message_size = int.from_bytes(recv_buffer[:4], "little")
 
-                if len(recv_buffer) >= 4:
-                    message_size = int.from_bytes(recv_buffer[:4], "little")
+                        if len(recv_buffer) - 4 >= message_size:
+                            message = pickle.loads(recv_buffer[4:4+message_size])
+                            recv_buffer = recv_buffer[4+message_size:]
 
-                    if len(recv_buffer) - 4 >= message_size:
-                        message = pickle.loads(recv_buffer[4:4+message_size])
-                        recv_buffer = recv_buffer[4+message_size:]
+                            # Do stuff with message
 
-                        # Do stuff with message
+                            if dev_constants.DEBUGGING_NETWORK_MESSAGES:
+                                print(f"GAME STATE RECEIVED: {message}, with size: {len(message)}")
+                            print(f"GAME STATE RECEIVED: {message}")
 
-                        if dev_constants.DEBUGGING_NETWORK_MESSAGES:
-                            print(f"GAME STATE RECEIVED: {message}, with size: {len(message)}")
-                        print(f"GAME STATE RECEIVED: {message}")
-
-                        cgm.client_message_parser.run_command_from_message(message)
+                            cgm.client_message_parser.run_command_from_message(message)
+                else:
+                        cgm.client_message_parser.run_command_from_message(pickle.loads(data))
 
 
         except Exception as e:

@@ -259,6 +259,8 @@ class ServerGameManager(GameManager):
             p1 = players[i]
             # Checks for collisions with other bodies
             for j in range(i+1, n): # Note that in combination with the outer for loop this iterates through each pair of players only once
+                # TODO only have to check within the collision partitions
+                # TODO need a way to generate collision partitions given a point
                 p2 = players[j]
                 if collisions.bodies_colliding(p1.pos, p1.radius, p2.pos, p2.radius):
                     collisions.elastic_collision_update(p1, p2)
@@ -283,52 +285,87 @@ class ServerGameManager(GameManager):
         """Given a player, we consider all their actively fired rockets and if any of them are colliding with walls then we explode them"""
         # TODO also check for collisions with OTHER players as well
         projectiles_to_explode = set()
+        collided = False
         for rocket in player.weapons[0].fired_projectiles:
             projectile_idx_x, projectile_idx_y = helpers.get_partition_index(self.partitioned_map_grid, rocket.pos)
-            # TODO protect this incase a projectile gets out of the map
+            # TODO protect this incase a projectile gets out of the map, if outside map then delete it?:
             projectile_partition = self.partitioned_map_grid.collision_partitioned_map[projectile_idx_y][projectile_idx_x]
+            temp_projectile_partition = self.partitioned_map_grid.partitioned_map[projectile_idx_y][projectile_idx_x] # TODO we need to actually use collision partitions for this
 
-            for p_wall in projectile_partition.bounding_walls:
+            for partition_player in temp_projectile_partition.players:
+                if partition_player is not player: # you don't collide with your own rockets
+                    if collisions.bodies_colliding(rocket.pos, rocket.radius, partition_player.pos, partition_player.radius):
+                        collided = True
+                        projectiles_to_explode.add(rocket)
+                        if rocket.previous_pos is not None:
+                            rocket_explosion = weapons.Explosion(rocket.previous_pos)
+                        else:
+                            rocket_explosion = weapons.Explosion(rocket.pos)
+                        for beam in rocket_explosion.beams: # TODO move all this code to a function do_explosion or something
+                            closest_hit, closest_entity = intersections.get_closest_intersecting_object_in_pmg(player.weapon, self.partitioned_map_grid, beam)
+                            if closest_hit is not None:
+                                self.beam_messages.append(client_server_communication.BeamMessage(beam.start_point, closest_hit))
+                            else:
+                                self.beam_messages.append(client_server_communication.BeamMessage(beam.start_point, beam.end_point))
+                            if closest_hit is not None:
+                                if dev_constants.DEBUGGING_INTERSECTIONS:
+                                    dev_constants.INTERSECTIONS_FOR_DEBUGGING.append(closest_hit)
 
-                colliding, closest_v = collisions.colliding_and_closest(rocket, p_wall)
-                if colliding:
+                                
 
-                    # TODO don't change the position of the rocket
-                    # Means we have to change all isntances of the call to colliding_and_closest
-                    if rocket.previous_pos is not None:
-                        rocket.pos = helpers.copy_vector(rocket.previous_pos) # this isn't colliding
-                    else:
-                        rocket.pos = helpers.copy_vector(player.pos)
+                            # Have to import this because player.ServerPlayer wouldn't work as the variable is also being used
+                            #if type(closest_entity) is ServerPlayer:
+                            if type(closest_entity) is KillableServerPlayer:
+                                closest_entity.velocity = closest_entity.velocity + (beam.direction_vector * rocket_explosion.power)
+                                if type(self.game_mode) is game_modes.FirstToNFrags and player is not closest_entity: # TODO more generally if it's a game mode where players should take damage
+                                    closest_entity.health -= 10
+                                    if closest_entity.health <= 0:
+                                        closest_entity.dead = True
+                                        player.num_frags += 1
+
+            if not collided:
+                for p_wall in projectile_partition.bounding_walls:
 
                     colliding, closest_v = collisions.colliding_and_closest(rocket, p_wall)
+                    if colliding:
 
-                    projectiles_to_explode.add(rocket)
-
-                    rocket_explosion = weapons.Explosion(closest_v)
-
-                    if dev_constants.CLIENT_VISUAL_DEBUGGING:
-                        dev_constants.EXPLOSIONS_FOR_DEBUGGING.append(rocket_explosion)
-                    for beam in rocket_explosion.beams:
-                        closest_hit, closest_entity = intersections.get_closest_intersecting_object_in_pmg(player.weapon, self.partitioned_map_grid, beam)
-                        if closest_hit is not None:
-                            self.beam_messages.append(client_server_communication.BeamMessage(beam.start_point, closest_hit))
+                        # TODO don't change the position of the rocket
+                        # Means we have to change all isntances of the call to colliding_and_closest
+                        if rocket.previous_pos is not None:
+                            rocket.pos = helpers.copy_vector(rocket.previous_pos) # this isn't colliding
                         else:
-                            self.beam_messages.append(client_server_communication.BeamMessage(beam.start_point, beam.end_point))
-                        if closest_hit is not None:
-                            if dev_constants.DEBUGGING_INTERSECTIONS:
-                                dev_constants.INTERSECTIONS_FOR_DEBUGGING.append(closest_hit)
+                            rocket.pos = helpers.copy_vector(player.pos)
 
-                            
+                        colliding, closest_v = collisions.colliding_and_closest(rocket, p_wall)
 
-                        # Have to import this because player.ServerPlayer wouldn't work as the variable is also being used
-                        #if type(closest_entity) is ServerPlayer:
-                        if type(closest_entity) is KillableServerPlayer:
-                            closest_entity.velocity = closest_entity.velocity + (beam.direction_vector * rocket_explosion.power)
-                            if type(self.game_mode) is game_modes.FirstToNFrags and player is not closest_entity: # TODO more generally if it's a game mode where players should take damage
-                                closest_entity.health -= 10
-                                if closest_entity.health <= 0:
-                                    closest_entity.dead = True
-                                    player.num_frags += 1
+                        projectiles_to_explode.add(rocket)
+
+                        rocket_explosion = weapons.Explosion(closest_v)
+
+                        if dev_constants.CLIENT_VISUAL_DEBUGGING:
+                            dev_constants.EXPLOSIONS_FOR_DEBUGGING.append(rocket_explosion)
+                        for beam in rocket_explosion.beams:
+                            closest_hit, closest_entity = intersections.get_closest_intersecting_object_in_pmg(player.weapon, self.partitioned_map_grid, beam)
+                            if closest_hit is not None:
+                                self.beam_messages.append(client_server_communication.BeamMessage(beam.start_point, closest_hit))
+                            else:
+                                self.beam_messages.append(client_server_communication.BeamMessage(beam.start_point, beam.end_point))
+                            if closest_hit is not None:
+                                if dev_constants.DEBUGGING_INTERSECTIONS:
+                                    dev_constants.INTERSECTIONS_FOR_DEBUGGING.append(closest_hit)
+
+                                
+
+                            # Have to import this because player.ServerPlayer wouldn't work as the variable is also being used
+                            #if type(closest_entity) is ServerPlayer:
+                            if type(closest_entity) is KillableServerPlayer:
+                                closest_entity.velocity = closest_entity.velocity + (beam.direction_vector * rocket_explosion.power)
+                                if type(self.game_mode) is game_modes.FirstToNFrags and player is not closest_entity: # TODO more generally if it's a game mode where players should take damage
+                                    closest_entity.health -= 10
+                                    if closest_entity.health <= 0:
+                                        closest_entity.dead = True
+                                        player.num_frags += 1
+
 
         # clean up exploded projectiles
         for projectile in projectiles_to_explode:

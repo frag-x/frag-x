@@ -19,7 +19,7 @@ WEAPON_KEYS = [pygame.K_c, pygame.K_x]
 
 MAX_SPEED = 4000
 
-BUF_SIZE = 2 ** 12 
+BUF_SIZE = 2 ** 13
 
 RUNNING_LOCALLY = False
 RUNNING_ON_LAN = True

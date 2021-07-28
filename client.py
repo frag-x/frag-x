@@ -87,10 +87,13 @@ def game_state_watcher():
     while True:
         logging.info("watching for game state")
         raw_data = fn.client.recv(BUF_SIZE)
+        print(raw_data)
         message = pickle.loads(raw_data)
         if dev_constants.DEBUGGING_NETWORK_MESSAGES:
             print("Looking for messages")
             print(f"GAME STATE RECEIVED: {message}, with size: {len(raw_data)}")
+
+
 
         cgm.client_message_parser.run_command_from_message(message)
 

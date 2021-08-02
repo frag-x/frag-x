@@ -22,7 +22,7 @@ MAX_SPEED = 4000
 BUF_SIZE = 2 ** 12 
 
 RUNNING_LOCALLY = False
-RUNNING_ON_LAN = True
+RUNNING_ON_LAN = False
 #RUNNING_LOCALLY = False
 
 CLIENT_GAME_SIMULATION = True
@@ -52,7 +52,7 @@ LOCAL_IP = "localhost"
 #REMOTE_IP = "cuppajoeman.com"
 REMOTE_IP = "168.100.233.209"
 LAN_IP = "192.168.2.24"
-LAN_IP = "192.168.2.21"
+#LAN_IP = "192.168.2.21"
 #REMOTE_IP = socket.gethostname()
 
 #PORT = 50000

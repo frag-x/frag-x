@@ -17,9 +17,8 @@ def create_blank_map(filename):
     w, h = img.size
     return [[None for x in range(w)] for y in range(h)]
 
-
-class Wall:
-    def __init__(self, x, y, color = pygame.color.THECOLORS['grey']):
+class Tile:
+    def __init__(self, x, y, color):
         self.size = game_engine_constants.TILE_SIZE
         self.x_idx = x
         self.y_idx = y
@@ -29,6 +28,14 @@ class Wall:
 
         self.rect = pygame.Rect(self.x, self.y, self.size, self.size)
         self.color = color
+
+class Space(Tile):
+    pass # TODO is this class required?
+
+
+class Wall(Tile):
+    def __init__(self, x, y, color = pygame.color.THECOLORS['grey']):
+        super().__init__(x, y, color)
 
 class BoundingWall(Wall):
     def __init__(self, x, y, color = pygame.color.THECOLORS['grey']):

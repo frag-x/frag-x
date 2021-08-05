@@ -25,7 +25,7 @@ MAX_SPEED = 1000
 
 BUF_SIZE = 2 ** 12
 
-RUNNING_LOCALLY = False
+RUNNING_LOCALLY = True
 RUNNING_ON_LAN = False
 # RUNNING_LOCALLY = False
 
@@ -58,7 +58,6 @@ MAP_DIM_Y = MAP_BASE_DIM_Y * TILE_SIZE
 LOCAL_IP = "localhost"
 # s.close()
 
-# TODO LAN: https://stackoverflow.com/questions/20695493/python-connect-via-lan
 # REMOTE_IP = "cuppajoeman.com"
 REMOTE_IP = "168.100.233.209"
 LAN_IP = "192.168.2.24"

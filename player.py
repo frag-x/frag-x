@@ -105,7 +105,6 @@ class ClientPlayer(
         # we only look at the x component of mouse input
         dm, _ = pygame.mouse.get_rel()
         dm *= self.sensitivity
-        print(dm)
 
         keys = pygame.key.get_pressed()
 

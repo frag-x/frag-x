@@ -15,7 +15,7 @@ class BasePlayer(body.ConstantAccelerationBody):
         pygame.sprite.Sprite.__init__(self)
         self.pos = pygame.math.Vector2(start_pos)
 
-        super().__init__(start_pos, game_engine_constants.PLAYER_RADIUS, 0.05, 2000)
+        super().__init__(start_pos, game_engine_constants.PLAYER_RADIUS, 0.05, 1000)
 
         # Basic Properties
 

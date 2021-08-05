@@ -547,7 +547,7 @@ class ServerGameManager(GameManager):
 
         # clean up exploded projectiles
         for projectile in projectiles_to_explode:
-            player.weapon.fired_projectiles.remove(projectile)
+            player.weapons[0].fired_projectiles.remove(projectile)
 
 
 class WinnableServerGameManager(ServerGameManager):  # TODO abstract class

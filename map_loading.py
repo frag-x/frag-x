@@ -304,7 +304,7 @@ def is_wall(x, y, pixel_map):
 
 def is_spawn(x, y, pixel_map):
     color = pixel_map[y][x]
-    return color == (100, 100, 100)
+    return color == (100, 100, 100, 255) or color == (100, 100, 100)
 
 
 def is_empty(x, y, pixel_map):

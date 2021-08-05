@@ -34,7 +34,7 @@ class BasePlayer(body.ConstantAccelerationBody):
         # Aiming
 
         self.rotation_angle = 0
-        self.sensitivity = 2 * 1 / 1000
+        self.sensitivity = 0.5 * 1 / 1000
 
         # Guns
 

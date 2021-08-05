@@ -34,7 +34,7 @@ class BasePlayer(body.ConstantAccelerationBody):
         # Aiming
 
         self.rotation_angle = 0
-        self.sensitivity = 2 * 1 / 1000
+        self.sensitivity = 0.5 * 1 / 1000
 
         # Guns
 
@@ -184,7 +184,7 @@ class ServerPlayer(BasePlayer):
 
     def update_aim(self, dm):
         # TODO instead of this we should have sensitivity be client side
-        self.rotation_angle = (self.rotation_angle + dm * self.sensitivity) % math.tau
+        self.rotation_angle = (self.rotation_angle + (dm * self.sensitivity)) % math.tau
 
     def update_position(self, dx, dy, delta_time):
 

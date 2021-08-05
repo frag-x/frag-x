@@ -586,7 +586,6 @@ class FirstToNFragsDMServerGameManager(WinnableServerGameManager):
     def is_game_over(self):
         """Figures out if the game is over and if it is then return who the winner is"""
         player_to_frag_count = {p: p.num_frags for p in self.id_to_player.values()}
-        print(player_to_frag_count)
         for player, frag_count in player_to_frag_count.items():
             if (
                 frag_count >= self.game_mode.frags_to_win

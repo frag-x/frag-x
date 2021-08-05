@@ -19,7 +19,8 @@ WASD_MOVEMENT_KEYS = [pygame.K_a, pygame.K_w, pygame.K_d, pygame.K_s]
 # rocket launcher, rail gun
 WEAPON_KEYS = [pygame.K_c, pygame.K_x]
 
-MAX_SPEED = 4000
+# MAX_SPEED = 4000
+MAX_SPEED = 2000
 
 BUF_SIZE = 2 ** 12
 

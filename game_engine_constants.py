@@ -34,7 +34,7 @@ CLIENT_SERVER_MANAGER = None  # what is this???
 MOCK_SERVER_QUEUE = None  # this will be set if CLIENT_GAME_SIMULATION IS TRUE
 
 # DEV_MAP = "maps/simple_map.png"
-DEV_MAP = "maps/m1_no_layers.png"
+DEV_MAP = "maps/dm_m1.png"
 # DEV_MAP = "maps/dm_s2.png"  # TODO automatically add the maps folder so we don't have to type /maps
 # DEV_MAP = "maps/dm_blank.png"  # TODO automatically add the maps folder so we don't have to type /maps
 DM_MAPS = ["maps/dm_m1.png", "maps/dm_s1.png", "maps/dm_s2.png", "maps/dm_blank.png"]

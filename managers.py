@@ -278,7 +278,7 @@ class ServerGameManager(GameManager):
         player.update_position(
             net_x_movement, net_y_movement, time_since_last_client_frame
         )
-        player.update_aim(mouse_movement)
+        # player.update_aim(mouse_movement)
         player.weapon.time_since_last_shot += time_since_last_client_frame
 
         # TODO Does using the players delta time make sense?

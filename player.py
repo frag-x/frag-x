@@ -104,6 +104,7 @@ class ClientPlayer(
 
         # we only look at the x component of mouse input
         dm, _ = pygame.mouse.get_rel()
+        dm *= self.sensitivity
 
         keys = pygame.key.get_pressed()
 
@@ -184,7 +185,8 @@ class ServerPlayer(BasePlayer):
 
     def update_aim(self, dm):
         # TODO instead of this we should have sensitivity be client side
-        self.rotation_angle = (self.rotation_angle + (dm * self.sensitivity)) % math.tau
+        # self.rotation_angle = (self.rotation_angle + (dm * self.sensitivity)) % math.tau
+        self.rotation_angle = (self.rotation_angle + dm) % math.tau
 
     def update_position(self, dx, dy, delta_time):
 

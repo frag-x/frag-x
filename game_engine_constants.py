@@ -65,5 +65,5 @@ LAN_IP = "192.168.2.24"
 # LAN_IP = "192.168.2.21"
 # REMOTE_IP = socket.gethostname()
 
-# PORT = 50000
-PORT = 49999
+PORT = 50000
+# PORT = 49999

@@ -2,7 +2,18 @@ import pygame, queue
 from network import FragNetwork
 import game_engine_constants
 from player import ClientPlayer
-from game_engine_constants import ARROW_MOVEMENT_KEYS, WASD_MOVEMENT_KEYS, WIDTH, HEIGHT, FPS, GAME_TITLE, SCREEN_CENTER_POINT, ORIGIN, BUF_SIZE, DEV_MAP
+from game_engine_constants import (
+    ARROW_MOVEMENT_KEYS,
+    WASD_MOVEMENT_KEYS,
+    WIDTH,
+    HEIGHT,
+    FPS,
+    GAME_TITLE,
+    SCREEN_CENTER_POINT,
+    ORIGIN,
+    BUF_SIZE,
+    DEV_MAP,
+)
 from converters import str_to_player_data_no_dt
 from threading import Thread, Lock
 import map_loading, dev_constants, managers, client_server_communication, player, game_modes, helpers
@@ -12,12 +23,15 @@ import random
 import logging
 from fractions import Fraction
 import math
-#logging.basicConfig(level=logging.INFO)
+
+# logging.basicConfig(level=logging.INFO)
 
 # START MAP LOAD TODO server should only send the name of the map and then we load it in
 
 map_grid = map_loading.MapGrid(map_loading.get_pixels(DEV_MAP))
-partitioned_map_grid = map_loading.PartitionedMapGrid(map_loading.get_pixels(DEV_MAP),10, 10)
+partitioned_map_grid = map_loading.PartitionedMapGrid(
+    map_loading.get_pixels(DEV_MAP), 10, 10
+)
 
 # END MAP LOAD
 
@@ -25,9 +39,20 @@ partitioned_map_grid = map_loading.PartitionedMapGrid(map_loading.get_pixels(DEV
 ## initialize pygame and create window
 pygame.init()
 pygame.mixer.init()  ## For sound
-pygame.font.init() # you have to call this at the start, 
+pygame.font.init()  # you have to call this at the start,
 myfont = pygame.font.SysFont(pygame.font.get_default_font(), 30)
-screen = pygame.display.set_mode((WIDTH, HEIGHT))
+if game_engine_constants.FULL_SCREEN:
+    screen = pygame.display.set_mode((0, 0), pygame.FULLSCREEN)
+    (
+        game_engine_constants.WIDTH,
+        game_engine_constants.HEIGHT,
+    ) = pygame.display.get_surface().get_size()
+    game_engine_constants.SCREEN_CENTER_POINT = (
+        game_engine_constants.WIDTH / 2,
+        game_engine_constants.HEIGHT / 2,
+    )
+else:
+    screen = pygame.display.set_mode((WIDTH, HEIGHT))
 
 cgm = managers.ClientGameManager(screen, DEV_MAP)
 
@@ -42,7 +67,7 @@ if dev_constants.CLIENT_VISUAL_DEBUGGING:
     dev_constants.SCREEN_FOR_DEBUGGING = screen
 
 pygame.display.set_caption(GAME_TITLE)
-clock = pygame.time.Clock()     ## For syncing the FPS
+clock = pygame.time.Clock()  ## For syncing the FPS
 
 ## group all the sprites together for ease of update
 # TODO REMOVE THIS AND JUST USE A SET
@@ -55,10 +80,20 @@ player_id = fn.connect()
 
 print(f"You are player {player_id}")
 
-# initially we don't know what our id is we only get it back from the server so we need to do 
+# initially we don't know what our id is we only get it back from the server so we need to do
 # a type of responce thing..
+spawn = random.choice(partitioned_map_grid.spawns)
 rand_color = random.choices(range(256), k=3)
-curr_player = ClientPlayer(SCREEN_CENTER_POINT, 50, 50, rand_color,WASD_MOVEMENT_KEYS, game_engine_constants.WEAPON_KEYS, player_id, fn)
+curr_player = ClientPlayer(
+    spawn.pos,
+    game_engine_constants.TILE_SIZE,
+    game_engine_constants.TILE_SIZE,
+    rand_color,
+    WASD_MOVEMENT_KEYS,
+    game_engine_constants.WEAPON_KEYS,
+    player_id,
+    fn,
+)
 
 cgm.all_sprites.add(curr_player)
 
@@ -68,18 +103,30 @@ if game_engine_constants.CLIENT_GAME_SIMULATION:
     # "connecting"
     mock_socket = None
     # not using .add_player because that would generate a different id
-    SGM.id_to_player[player_id] = player.KillableServerPlayer(game_engine_constants.SCREEN_CENTER_POINT, 50, 50, player_id, mock_socket) # for testing out first to n frags
+    SGM.id_to_player[player_id] = player.KillableServerPlayer(
+        game_engine_constants.SCREEN_CENTER_POINT, 50, 50, player_id, mock_socket
+    )  # for testing out first to n frags
     # SGM.id_to_player[player_id] = player.ServerPlayer(game_engine_constants.SCREEN_CENTER_POINT, 50, 50, player_id, mock_socket)
 
 
 def mock_server():
     """This function gets run as a thread and simulates what the server does so we can update the players view without waiting for the server responce, when the server responce comes then we can check positions and fix them if required"""
     while True:
-        player_id, dx, dy, dm, delta_time, firing, weapon_request = game_engine_constants.MOCK_SERVER_QUEUE.get()
+        (
+            player_id,
+            dx,
+            dy,
+            dm,
+            delta_time,
+            firing,
+            weapon_request,
+        ) = game_engine_constants.MOCK_SERVER_QUEUE.get()
 
-        input_message = client_server_communication.InputMessage(player_id, dx, dy, dm, delta_time, firing, weapon_request)
+        input_message = client_server_communication.InputMessage(
+            player_id, dx, dy, dm, delta_time, firing, weapon_request
+        )
 
-        SGM.perform_all_server_operations(input_message)
+        SGM.perform_all_server_operations(delta_time, input_message)
 
 
 def game_state_watcher():
@@ -93,14 +140,14 @@ def game_state_watcher():
             message = pickle.loads(data)
             cgm.client_message_parser.run_command_from_message(message)
         else:
-            try: 
+            try:
                 data = fn.client.recv(BUF_SIZE)
 
                 if not data:
                     # Likely means we've disconnected
                     break
                 else:
-                    #print(f'Received: {data.decode("utf-8")}')
+                    # print(f'Received: {data.decode("utf-8")}')
                     if False:
                         recv_buffer += data
 
@@ -108,28 +155,32 @@ def game_state_watcher():
                             message_size = int.from_bytes(recv_buffer[:4], "little")
 
                             if len(recv_buffer) - 4 >= message_size:
-                                message = pickle.loads(recv_buffer[4:4+message_size])
-                                recv_buffer = recv_buffer[4+message_size:]
+                                message = pickle.loads(
+                                    recv_buffer[4 : 4 + message_size]
+                                )
+                                recv_buffer = recv_buffer[4 + message_size :]
 
                                 # Do stuff with message
 
                                 if dev_constants.DEBUGGING_NETWORK_MESSAGES:
-                                    print(f"GAME STATE RECEIVED: {message}, with size: {len(message)}")
+                                    print(
+                                        f"GAME STATE RECEIVED: {message}, with size: {len(message)}"
+                                    )
                                 print(f"GAME STATE RECEIVED: {message}")
 
-                                cgm.client_message_parser.run_command_from_message(message)
+                                cgm.client_message_parser.run_command_from_message(
+                                    message
+                                )
                     else:
-                            cgm.client_message_parser.run_command_from_message(pickle.loads(data))
-
+                        cgm.client_message_parser.run_command_from_message(
+                            pickle.loads(data)
+                        )
 
             except Exception as e:
                 print(f"wasn't able to get data because {e}")
                 break
 
-
-
-
-        #for player_state in game_state:
+        # for player_state in game_state:
         #    logging.info(f"player state: {player_state}")
         #    player_id, x, y, rotation_angle = str_to_player_data_no_dt(player_state)
         #    if player_id not in cgm.id_to_player:
@@ -137,7 +188,7 @@ def game_state_watcher():
         #        cgm.all_sprites.add(cgm.id_to_player[player_id])
         #    else:
         #        #logging.info(cgm.id_to_player, player_id)
-        #        # this needs to be locked because if we are doing collisions or hitscan which depends on the position of the player then we can have issues where their position is updated after translating a point with respect to it's original position and then there are no valid 
+        #        # this needs to be locked because if we are doing collisions or hitscan which depends on the position of the player then we can have issues where their position is updated after translating a point with respect to it's original position and then there are no valid
         #        player_data_lock.acquire()
         #        cgm.id_to_player[player_id].set_pos(x,y)
         #        # In real life we can't change their view or they will freak - do it for now
@@ -145,7 +196,7 @@ def game_state_watcher():
         #        player_data_lock.release()
 
 
-t = Thread(target=game_state_watcher, args=() )
+t = Thread(target=game_state_watcher, args=())
 t.start()
 
 if game_engine_constants.CLIENT_GAME_SIMULATION:
@@ -163,96 +214,115 @@ pygame.mouse.set_visible(False)
 pygame.event.set_grab(True)
 
 while running:
-    
-    #print("running")
 
-    #1 Process input/events
-    clock.tick(FPS)     ## will make the loop run at the same speed all the time
+    # print("running")
+
+    # 1 Process input/events
+    clock.tick(FPS)  ## will make the loop run at the same speed all the time
 
     events = pygame.event.get()
 
-    for event in events:        # gets all the events which have occured till now and keeps tab of them.
+    for (
+        event
+    ) in (
+        events
+    ):  # gets all the events which have occured till now and keeps tab of them.
         ## listening for the the X button at the top
         if event.type == pygame.QUIT:
             running = False
 
-    #2 Update
+    # 2 Update
 
     t = pygame.time.get_ticks()
     # deltaTime in seconds.
-    delta_time = (t - ticks_from_previous_iteration ) / 1000.0
+    delta_time = (t - ticks_from_previous_iteration) / 1000.0
     ticks_from_previous_iteration = t
 
-    #print("update start")
+    # print("update start")
 
     # Note: This sends the users inputs to the server
     cgm.all_sprites.update(events, delta_time)
     curr_player.send_inputs(events, delta_time)
 
-    #print("update end")
+    # print("update end")
 
-    #3 Draw/render
-    screen.fill(pygame.color.THECOLORS['black'])
+    # 3 Draw/render
+    screen.fill(pygame.color.THECOLORS["black"])
 
-    curr_player.camera_v = game_engine_constants.SCREEN_CENTER_POINT - curr_player.pos
-
+    cgm.player_data_lock.acquire()
     for row in partitioned_map_grid.partitioned_map:
         for partition in row:
-            pygame.draw.rect(screen,pygame.color.THECOLORS['gold'] , partition.rect.move(curr_player.camera_v), width=1)
-    
-                
+            pygame.draw.rect(
+                screen,
+                pygame.color.THECOLORS["gold"],
+                partition.rect.move(curr_player.camera_v),
+                width=1,
+            )
+
             for wall in partition.walls:
-                pygame.draw.rect(screen, wall.color, wall.rect.move(curr_player.camera_v))
+                pygame.draw.rect(
+                    screen, wall.color, wall.rect.move(curr_player.camera_v)
+                )
 
             for b_wall in partition.bounding_walls:
-                pygame.draw.rect(screen, b_wall.color, b_wall.rect.move(curr_player.camera_v))
+                pygame.draw.rect(
+                    screen, b_wall.color, b_wall.rect.move(curr_player.camera_v)
+                )
+    cgm.player_data_lock.release()
 
-    #if dev_constants.CLIENT_VISUAL_DEBUGGING:
+    # if dev_constants.CLIENT_VISUAL_DEBUGGING:
     #    for explosion in dev_constants.EXPLOSIONS_FOR_DEBUGGING:
     #        for beam in explosion.beams:
     #            pygame.draw.line(dev_constants.SCREEN_FOR_DEBUGGING, pygame.color.THECOLORS['green'], beam.start_point + curr_player.camera_v, beam.end_point + curr_player.camera_v)
 
-
     if dev_constants.DEBUGGING_INTERSECTIONS:
         for hit_v in dev_constants.INTERSECTIONS_FOR_DEBUGGING:
-            pygame.draw.circle(dev_constants.SCREEN_FOR_DEBUGGING,pygame.color.THECOLORS['purple']  , hit_v + curr_player.camera_v, 3)
+            pygame.draw.circle(
+                dev_constants.SCREEN_FOR_DEBUGGING,
+                pygame.color.THECOLORS["purple"],
+                hit_v + curr_player.camera_v,
+                3,
+            )
 
         for partition in dev_constants.INTERSECTED_PARTITIONS_FOR_DEBUGGING:
-            pygame.draw.rect(screen,pygame.color.THECOLORS['blueviolet'] , partition.rect.move(curr_player.camera_v), width=1)
+            pygame.draw.rect(
+                screen,
+                pygame.color.THECOLORS["blueviolet"],
+                partition.rect.move(curr_player.camera_v),
+                width=1,
+            )
 
         for point_v in dev_constants.INTERSECTED_PARTITION_PATCH_MARKERS:
-            pygame.draw.circle(dev_constants.SCREEN_FOR_DEBUGGING,pygame.color.THECOLORS['red']  , point_v + curr_player.camera_v, 3)
-            
+            pygame.draw.circle(
+                dev_constants.SCREEN_FOR_DEBUGGING,
+                pygame.color.THECOLORS["red"],
+                point_v + curr_player.camera_v,
+                3,
+            )
+
         for point_v in dev_constants.INTERSECTED_PARTITION_SEAMS_FOR_DEBUGGING:
-            pygame.draw.circle(dev_constants.SCREEN_FOR_DEBUGGING,pygame.color.THECOLORS['yellow']  , point_v + curr_player.camera_v, 3)
+            pygame.draw.circle(
+                dev_constants.SCREEN_FOR_DEBUGGING,
+                pygame.color.THECOLORS["yellow"],
+                point_v + curr_player.camera_v,
+                3,
+            )
 
         for beam in dev_constants.BEAMS_FOR_DEBUGGING:
-            pygame.draw.line(dev_constants.SCREEN_FOR_DEBUGGING, pygame.color.THECOLORS['green'], beam.start_point + curr_player.camera_v, beam.end_point + curr_player.camera_v)
+            pygame.draw.line(
+                dev_constants.SCREEN_FOR_DEBUGGING,
+                pygame.color.THECOLORS["green"],
+                beam.start_point + curr_player.camera_v,
+                beam.end_point + curr_player.camera_v,
+            )
 
     cgm.draw_projectiles(curr_player.camera_v)
     cgm.draw_beams(curr_player.camera_v)
 
     firing = int(pygame.mouse.get_pressed()[0])
 
-    #if firing:
-    #    player_data_lock.acquire()
-    #    beam = curr_player.weapon.get_beam(screen)
-    #    player_data_lock.release()
-
-    #    partitions_hit = curr_player.weapon.get_intersecting_partitions(partitioned_map_grid, beam, screen)
-    #    closest_hit, closest_entity = curr_player.weapon.get_closest_intersecting_object_in_pmg(partitioned_map_grid, beam, screen)
-    #    for map_grid_partition in partitions_hit:
-    #        pygame.draw.rect(screen,pygame.color.THECOLORS['blueviolet'] , map_grid_partition.rect.move(curr_player.camera_v), width=1)
-
-    #for wall in map_grid.walls:
-    #    pygame.draw.rect(screen, wall.color, wall.rect.move(camera_v.x, camera_v.y))
-
-    #for b_wall in map_grid.bounding_walls:
-    #    pygame.draw.rect(screen, b_wall.color, b_wall.rect.move(camera_v.x, camera_v.y))
-
-    #cgm.all_sprites.draw(screen)
-
-    # TODO it might be easier to always just draw a circle in the middle of the screen
+    # A drawing is based on a single network message from the server.
+    # The reason why it looks like we have shifted tiles is that we received a message in the middle, so this needs to be locked.
     # instead fo actually simulating its movement that way it seems more solid
     for sprite in cgm.all_sprites:
         # Add the player's camera offset to the coords of all sprites.
@@ -260,17 +330,22 @@ while running:
 
     # FONTS
 
-    font_color = pygame.color.THECOLORS['brown3']
+    font_color = pygame.color.THECOLORS["brown3"]
 
-    speed = myfont.render(str(round(curr_player.velocity.magnitude())), False, font_color)
+    # speed = myfont.render(
+    #    str(round(curr_player.velocity.magnitude())),
+    #    False,
+    #    font_color,  # TODO this needs to be done client side
+    # )
     pos = myfont.render(str(curr_player.pos), False, font_color)
-    #aim_angle_frac = Fraction(curr_player.rotation_angle/math.tau).limit_denominator(10)
-    aim_angle_str = str(9 - math.floor(curr_player.rotation_angle/math.tau * 10)) + "/" + str(10)
-    angle = myfont.render(aim_angle_str+ "τ", False, font_color)
+    aim_angle_str = (
+        str(9 - math.floor(curr_player.rotation_angle / math.tau * 10)) + "/" + str(10)
+    )
+    angle = myfont.render(aim_angle_str + "τ", False, font_color)
 
-    screen.blit(speed,(0,0))
-    screen.blit(pos,(0,25))
-    screen.blit(angle,(0,50))
+    # screen.blit(speed, (0, 0))
+    screen.blit(pos, (0, 25))
+    screen.blit(angle, (0, 50))
 
     ########################
 
@@ -281,6 +356,6 @@ while running:
     ########################
 
     ## Done after drawing everything to the screen
-    pygame.display.flip()       
+    pygame.display.flip()
 
 pygame.quit()

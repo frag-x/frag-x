@@ -1,7 +1,0 @@
-server.cpp: In function 'int main(int, char**)':
-server.cpp:125:98: warning: invalid conversion from 'enet_uint8*' {aka 'unsigned char*'} to 'char*' [-fpermissive]
-           ParseData(server, static_cast<ClientData*>(event.peer->data)->GetID(), event.packet -> data);
-                                                                                  ~~~~~~~~~~~~~~~~^~~~
-server.cpp:35:48: note:   initializing argument 3 of 'void ParseData(ENetHost*, int, char*)'
- void ParseData(ENetHost* server, int id, char* data) {
-                                          ~~~~~~^~~~

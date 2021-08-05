@@ -1,1 +1,0 @@
-g++ main.o -o main.exec -lGL -lGLU -lglfw -lrt -lm -ldl -lX11 -lpthread -lxcb -lXau -lXdmcp

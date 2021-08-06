@@ -34,7 +34,8 @@ class BasePlayer(body.ConstantAccelerationBody):
         # Aiming
 
         self.rotation_angle = 0
-        self.sensitivity = 0.5 * 1 / 1000
+        self.sensitivity_scale = 1 / 1000
+        self.sensitivity = 0.5 * self.sensitivity_scale
 
         # Guns
 
@@ -94,13 +95,16 @@ class ClientPlayer(
         self.movement_keys = movement_keys
         self.weapon_keys = weapon_keys
 
+    def set_sens(self, new_sens):
+        self.sensitivity = new_sens * self.sensitivity_scale
+
     def set_pos(self, x, y):
         """Set the players position and also fixes the camera to stay centered on the player"""
         self.pos = pygame.math.Vector2((x, y))
         self.rect.center = self.pos  # update the image to be at the correct location
         # self.camera_v = game_engine_constants.SCREEN_CENTER_POINT - self.pos
 
-    def send_inputs(self, events, delta_time):
+    def send_inputs(self, events, delta_time, typing):
 
         # we only look at the x component of mouse input
         dm, _ = pygame.mouse.get_rel()
@@ -108,9 +112,14 @@ class ClientPlayer(
 
         keys = pygame.key.get_pressed()
 
-        l, u, r, d = self.movement_keys
-        x_movement = int(keys[r]) - int(keys[l])
-        y_movement = -(int(keys[u]) - int(keys[d]))
+        if typing:
+            x_movement = 0
+            y_movement = 0
+        else:
+            # If the player isn't typing then sample their input devices for gameplay
+            l, u, r, d = self.movement_keys
+            x_movement = int(keys[r]) - int(keys[l])
+            y_movement = -(int(keys[u]) - int(keys[d]))
 
         weapon_choice = -1
         for key in self.weapon_keys:

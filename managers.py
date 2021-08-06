@@ -1,5 +1,6 @@
 import pygame, threading, uuid, math, random
-import client_server_communication, network, game_engine_constants, dev_constants, player, intersections, map_loading, collisions, helpers, weapons, game_modes
+import client_server_communication, network, game_engine_constants, dev_constants, player, intersections, map_loading, collisions, helpers, weapons, game_modes, textbox
+import commands
 from player import ServerPlayer, KillableServerPlayer
 
 
@@ -18,14 +19,32 @@ class GameManager:
 class ClientGameManager(GameManager):
     """A game manager which may be instatiated for the server or the client"""
 
-    def __init__(self, screen, map_name):
+    def __init__(self, screen, font, map_name, curr_player):
         super().__init__(map_name)
         self.screen = screen
-        self.client_message_parser = ClientMessageParser(self)
+        self.font = font
+        self.curr_player = curr_player  # the player controlling this client
+        # This takes the messages from the server and changes the clients information,
+        # for example it updates all the players positions when a new game state comes in
+        # it may be depcricated because i thought I would be sending multiple message types but so far
+        # we are only sending one message type
+        self.client_message_parser = ClientMessageParser(
+            self
+        )  # TODO maybe change naming to not confuse?
         self.player_data_lock = threading.Lock()
         self.network = network.FragNetwork()
         # TODO REMOVE THIS, just for support now
         self.all_sprites = pygame.sprite.Group()
+
+        self.is_typing = False
+
+        self.user_text_box = textbox.TextInputBox(
+            0, 0, game_engine_constants.WIDTH / 3, self.font
+        )
+
+        self.client_command_runner = commands.ClientCommandRunner(self.curr_player)
+
+        # TODO make a perform all client_operations
 
     def set_player_positions(self):
         pass
@@ -349,6 +368,18 @@ class ServerGameManager(GameManager):
             partition_idx_x, partition_idx_y = helpers.get_partition_index(
                 self.partitioned_map_grid, p1.pos
             )
+
+            # TODO the below fix stops the server from crashing,
+            # but we can do better because this kind causes jerkyness?
+            if not helpers.valid_2d_index_for_partitioned_map_grid(
+                (partition_idx_x, partition_idx_y), self.partitioned_map_grid
+            ):
+                p1.pos = (
+                    p1.previous_pos
+                )  # TODO making a large assumption here, what hey don't have a prev pos?
+                partition_idx_x, partition_idx_y = helpers.get_partition_index(
+                    self.partitioned_map_grid, p1.pos
+                )
 
             curr_partition = self.partitioned_map_grid.partitioned_map[partition_idx_y][
                 partition_idx_x

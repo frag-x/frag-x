@@ -1,4 +1,6 @@
 import pygame, queue
+
+import commands
 from network import FragNetwork
 import game_engine_constants
 from player import ClientPlayer
@@ -40,7 +42,9 @@ partitioned_map_grid = map_loading.PartitionedMapGrid(
 pygame.init()
 pygame.mixer.init()  ## For sound
 pygame.font.init()  # you have to call this at the start,
-myfont = pygame.font.SysFont(pygame.font.get_default_font(), 30)
+
+font = pygame.font.SysFont(pygame.font.get_default_font(), 30)
+
 if game_engine_constants.FULL_SCREEN:
     screen = pygame.display.set_mode((0, 0), pygame.FULLSCREEN)
     (
@@ -54,7 +58,6 @@ if game_engine_constants.FULL_SCREEN:
 else:
     screen = pygame.display.set_mode((WIDTH, HEIGHT))
 
-cgm = managers.ClientGameManager(screen, DEV_MAP)
 
 # The client uses the server logic to simulate live reactions
 # and uses the servers responce to fix/verify differences
@@ -68,10 +71,6 @@ if dev_constants.CLIENT_VISUAL_DEBUGGING:
 
 pygame.display.set_caption(GAME_TITLE)
 clock = pygame.time.Clock()  ## For syncing the FPS
-
-## group all the sprites together for ease of update
-# TODO REMOVE THIS AND JUST USE A SET
-cgm.all_sprites = pygame.sprite.Group()
 
 
 ## Initialize network
@@ -95,9 +94,15 @@ curr_player = ClientPlayer(
     fn,
 )
 
-cgm.all_sprites.add(curr_player)
+client_game_manager = managers.ClientGameManager(screen, font, DEV_MAP, curr_player)
 
-cgm.id_to_player[player_id] = curr_player
+## group all the sprites together for ease of update
+# TODO REMOVE THIS AND JUST USE A SET
+client_game_manager.all_sprites = pygame.sprite.Group()
+
+client_game_manager.all_sprites.add(curr_player)
+
+client_game_manager.id_to_player[player_id] = curr_player
 
 if game_engine_constants.CLIENT_GAME_SIMULATION:
     # "connecting"
@@ -138,7 +143,7 @@ def game_state_watcher():
             size = int.from_bytes(size_bytes, "little")
             data = helpers.recv_exactly(fn.client, size)
             message = pickle.loads(data)
-            cgm.client_message_parser.run_command_from_message(message)
+            client_game_manager.client_message_parser.run_command_from_message(message)
         else:
             try:
                 data = fn.client.recv(BUF_SIZE)
@@ -168,11 +173,11 @@ def game_state_watcher():
                                     )
                                 print(f"GAME STATE RECEIVED: {message}")
 
-                                cgm.client_message_parser.run_command_from_message(
+                                client_game_manager.client_message_parser.run_command_from_message(
                                     message
                                 )
                     else:
-                        cgm.client_message_parser.run_command_from_message(
+                        client_game_manager.client_message_parser.run_command_from_message(
                             pickle.loads(data)
                         )
 
@@ -183,16 +188,16 @@ def game_state_watcher():
         # for player_state in game_state:
         #    logging.info(f"player state: {player_state}")
         #    player_id, x, y, rotation_angle = str_to_player_data_no_dt(player_state)
-        #    if player_id not in cgm.id_to_player:
-        #        cgm.id_to_player[player_id] = ClientPlayer((x,y), 50, 50, (50, 255, 5),ARROW_MOVEMENT_KEYS, player_id, fn)
-        #        cgm.all_sprites.add(cgm.id_to_player[player_id])
+        #    if player_id not in client_game_manager.id_to_player:
+        #        client_game_manager.id_to_player[player_id] = ClientPlayer((x,y), 50, 50, (50, 255, 5),ARROW_MOVEMENT_KEYS, player_id, fn)
+        #        client_game_manager.all_sprites.add(client_game_manager.id_to_player[player_id])
         #    else:
-        #        #logging.info(cgm.id_to_player, player_id)
+        #        #logging.info(client_game_manager.id_to_player, player_id)
         #        # this needs to be locked because if we are doing collisions or hitscan which depends on the position of the player then we can have issues where their position is updated after translating a point with respect to it's original position and then there are no valid
         #        player_data_lock.acquire()
-        #        cgm.id_to_player[player_id].set_pos(x,y)
+        #        client_game_manager.id_to_player[player_id].set_pos(x,y)
         #        # In real life we can't change their view or they will freak - do it for now
-        #        cgm.id_to_player[player_id].rotation_angle = rotation_angle
+        #        client_game_manager.id_to_player[player_id].rotation_angle = rotation_angle
         #        player_data_lock.release()
 
 
@@ -240,16 +245,53 @@ while running:
 
     # print("update start")
 
+    if not client_game_manager.is_typing:
+        if helpers.started_typing(events):  # only check if they pressd when not typing
+            client_game_manager.is_typing = True
+            just_started = True
+    else:
+        if helpers.ended_typing_and_do_action(
+            events
+        ):  # they are typing and then press return
+            client_game_manager.is_typing = False
+            # DO ACTION
+            message = client_game_manager.user_text_box.text
+            if commands.is_command(message):
+                full_command = message
+                successful = (
+                    client_game_manager.client_command_runner.attempt_run_command(
+                        full_command
+                    )
+                )
+                if successful:
+                    print("command went through!")
+                else:
+                    print("command failed")
+
+            # print(f"sending {client_game_manager.user_text_box.text}")
+            client_game_manager.user_text_box.text = ""
+        elif helpers.ended_typing_and_do_nothing(events):
+            client_game_manager.is_typing = False
+            client_game_manager.user_text_box.text = ""
+
+    if client_game_manager.is_typing and not just_started:
+        client_game_manager.user_text_box.update(
+            events
+        )  # update the textbox if they're typing
+
+    just_started = False
+
     # Note: This sends the users inputs to the server
-    cgm.all_sprites.update(events, delta_time)
-    curr_player.send_inputs(events, delta_time)
+    client_game_manager.all_sprites.update(events, delta_time)
+
+    curr_player.send_inputs(events, delta_time, client_game_manager.is_typing)
 
     # print("update end")
 
     # 3 Draw/render
     screen.fill(pygame.color.THECOLORS["black"])
 
-    cgm.player_data_lock.acquire()
+    client_game_manager.player_data_lock.acquire()
     for row in partitioned_map_grid.partitioned_map:
         for partition in row:
             pygame.draw.rect(
@@ -268,7 +310,7 @@ while running:
                 pygame.draw.rect(
                     screen, b_wall.color, b_wall.rect.move(curr_player.camera_v)
                 )
-    cgm.player_data_lock.release()
+    client_game_manager.player_data_lock.release()
 
     # if dev_constants.CLIENT_VISUAL_DEBUGGING:
     #    for explosion in dev_constants.EXPLOSIONS_FOR_DEBUGGING:
@@ -316,15 +358,15 @@ while running:
                 beam.end_point + curr_player.camera_v,
             )
 
-    cgm.draw_projectiles(curr_player.camera_v)
-    cgm.draw_beams(curr_player.camera_v)
+    client_game_manager.draw_projectiles(curr_player.camera_v)
+    client_game_manager.draw_beams(curr_player.camera_v)
 
     firing = int(pygame.mouse.get_pressed()[0])
 
     # A drawing is based on a single network message from the server.
     # The reason why it looks like we have shifted tiles is that we received a message in the middle, so this needs to be locked.
     # instead fo actually simulating its movement that way it seems more solid
-    for sprite in cgm.all_sprites:
+    for sprite in client_game_manager.all_sprites:
         # Add the player's camera offset to the coords of all sprites.
         screen.blit(sprite.image, sprite.rect.topleft + curr_player.camera_v)
 
@@ -332,20 +374,34 @@ while running:
 
     font_color = pygame.color.THECOLORS["brown3"]
 
-    # speed = myfont.render(
+    # speed = font.render(
     #    str(round(curr_player.velocity.magnitude())),
     #    False,
     #    font_color,  # TODO this needs to be done client side
     # )
-    pos = myfont.render(str(curr_player.pos), False, font_color)
+    pos = font.render(str(curr_player.pos), False, font_color)
     aim_angle_str = (
         str(9 - math.floor(curr_player.rotation_angle / math.tau * 10)) + "/" + str(10)
     )
-    angle = myfont.render(aim_angle_str + "τ", False, font_color)
+    angle = font.render(aim_angle_str + "τ", False, font_color)
 
     # screen.blit(speed, (0, 0))
     screen.blit(pos, (0, 25))
     screen.blit(angle, (0, 50))
+
+    client_game_manager.user_text_box.render_text()
+
+    utb_width, utb_height = client_game_manager.user_text_box.image.get_size()
+
+    screen.blit(
+        client_game_manager.user_text_box.image,
+        (
+            game_engine_constants.WIDTH
+            - (utb_width + 2 * client_game_manager.user_text_box.border_thickness),
+            game_engine_constants.HEIGHT
+            - (utb_height + 2 * client_game_manager.user_text_box.border_thickness),
+        ),
+    )
 
     ########################
 

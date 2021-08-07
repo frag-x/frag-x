@@ -60,7 +60,8 @@ LOCAL_IP = "localhost"
 
 # REMOTE_IP = "cuppajoeman.com"
 REMOTE_IP = "168.100.233.209"
-LAN_IP = "192.168.2.24"
+# LAN_IP = "192.168.2.24"
+LAN_IP = "192.168.0.26" # gollins house
 # LAN_IP = "192.168.2.21"
 # REMOTE_IP = socket.gethostname()
 

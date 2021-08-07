@@ -68,6 +68,7 @@ def end_typing_and_do_nothing(event_list):
 typing = False
 just_started = False
 run = True
+
 while run:
     clock.tick(60)
     event_list = pygame.event.get()

@@ -84,7 +84,6 @@ class ClientPlayer(
 
         # Create an image of the block, and fill it with a color.
         # This could also be an image loaded from the disk.
-        print(self.width, self.height)
         self.image = pygame.Surface([self.width, self.height], pygame.SRCALPHA, 32)
 
         self.camera_v = game_engine_constants.SCREEN_CENTER_POINT - self.pos

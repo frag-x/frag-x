@@ -612,7 +612,7 @@ class TimedDMServerGameManager(WinnableServerGameManager):
 
 class FirstToNFragsDMServerGameManager(WinnableServerGameManager):
     def __init__(self, map_name):
-        super().__init__(map_name, game_modes.FirstToNFrags())
+        super().__init__(map_name, game_modes.FirstToNFrags(10))
 
     def is_game_over(self):
         """Figures out if the game is over and if it is then return who the winner is"""

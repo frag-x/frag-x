@@ -127,7 +127,7 @@ def mock_server():
             weapon_request,
         ) = game_engine_constants.MOCK_SERVER_QUEUE.get()
 
-        input_message = client_server_communication.InputMessage(
+        input_message = client_server_communication.InputNetworkMessage(
             player_id, dx, dy, dm, delta_time, firing, weapon_request
         )
 
@@ -139,14 +139,14 @@ def game_state_watcher():
     recv_buffer = b""
     while True:
         if True:
-            size_bytes = helpers.recv_exactly(fn.client, 4)
+            size_bytes = helpers.recv_exactly(fn.socket, 4)
             size = int.from_bytes(size_bytes, "little")
-            data = helpers.recv_exactly(fn.client, size)
+            data = helpers.recv_exactly(fn.socket, size)
             message = pickle.loads(data)
             client_game_manager.client_message_parser.run_command_from_message(message)
         else:
             try:
-                data = fn.client.recv(BUF_SIZE)
+                data = fn.socket.recv(BUF_SIZE)
 
                 if not data:
                     # Likely means we've disconnected
@@ -370,7 +370,7 @@ while running:
         # Add the player's camera offset to the coords of all sprites.
         screen.blit(sprite.image, sprite.rect.topleft + curr_player.camera_v)
 
-    # FONTS
+    # PLAYER PROPERTIES START
 
     font_color = pygame.color.THECOLORS["brown3"]
 
@@ -389,6 +389,10 @@ while running:
     screen.blit(pos, (0, 25))
     screen.blit(angle, (0, 50))
 
+    # PLAYER PROPERTIES END
+
+    # TEXT BOX START
+
     client_game_manager.user_text_box.render_text()
 
     utb_width, utb_height = client_game_manager.user_text_box.image.get_size()
@@ -403,13 +407,7 @@ while running:
         ),
     )
 
-    ########################
-
-    ### Put code here
-
-    # check if there are any updates
-
-    ########################
+    # TEXT BOX END
 
     ## Done after drawing everything to the screen
     pygame.display.flip()

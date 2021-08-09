@@ -1,4 +1,5 @@
-import pygame
+import pygame, pickle
+
 import math
 import weapons, converters, game_engine_constants, client_server_communication, dev_constants, body
 
@@ -11,7 +12,7 @@ def magnitude(v):
 
 
 class BasePlayer(body.ConstantAccelerationBody):
-    def __init__(self, start_pos, width, height, player_id, socket):
+    def __init__(self, start_pos, width, height, player_id, network):
         pygame.sprite.Sprite.__init__(self)
         self.pos = pygame.math.Vector2(start_pos)
 
@@ -29,7 +30,7 @@ class BasePlayer(body.ConstantAccelerationBody):
 
         self.player_id = player_id
 
-        self.socket = socket
+        self.network = network
 
         # Aiming
 
@@ -68,7 +69,7 @@ class ClientPlayer(
         movement_keys,
         weapon_keys,
         player_id,
-        server,
+        network,
     ):
         """
         Initialize a player
@@ -77,7 +78,7 @@ class ClientPlayer(
 
         Left Up Right Down (clockwise order)
         """
-        super().__init__(start_pos, width, height, player_id, server)
+        super().__init__(start_pos, width, height, player_id, network)
         pygame.sprite.Sprite.__init__(self)
 
         self.color = color
@@ -103,7 +104,7 @@ class ClientPlayer(
         self.rect.center = self.pos  # update the image to be at the correct location
         # self.camera_v = game_engine_constants.SCREEN_CENTER_POINT - self.pos
 
-    def send_inputs(self, events, delta_time, typing):
+    def send_inputs(self, events, delta_time, typing, text_message=""):
 
         # we only look at the x component of mouse input
         dm, _ = pygame.mouse.get_rel()
@@ -141,10 +142,16 @@ class ClientPlayer(
         )
 
         # instead of a string use a custom class designed for this...
+
+        # TODO use class
         message = (
             str(client_server_communication.ServerMessageType.PLAYER_INPUTS.value)
             + "|"
             + converters.player_data_to_str(inputs)
+        )
+
+        input_message = client_server_communication.InputNetworkMessage(
+            *inputs, text_message  # TODO once working add text_message to the inputs
         )
 
         if dev_constants.DEBUGGING_NETWORK_MESSAGES:
@@ -156,7 +163,13 @@ class ClientPlayer(
                 converters.str_to_player_data(player_data)
             )
 
-        self.socket.send(message)
+        # self.network.send(message)
+
+        # byte_message = pickle.dumps(input_message)
+        byte_message = pickle.dumps(message)
+        self.network.socket.sendall(
+            len(byte_message).to_bytes(4, "little") + byte_message
+        )
 
     def update(self, events=None, delta_time=0):
 

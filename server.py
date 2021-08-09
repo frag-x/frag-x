@@ -88,14 +88,14 @@ def game_state_sender(game_state_queue):
                 # if dev_constants.DEBUGGING_NETWORK_MESSAGES:
                 byte_message = pickle.dumps(game_state_message)
                 if True:
-                    p.socket.sendall(
+                    p.network.sendall(
                         len(byte_message).to_bytes(4, "little") + byte_message
                     )
                 else:
-                    p.socket.sendall(byte_message)
+                    p.network.sendall(byte_message)
 
 
-def client_state_producer(conn, state_queue):
+def client_state_producer(socket, state_queue):
     """
     This function gets run as a thread, it is associated with a single player and retreives their inputs
     """
@@ -105,38 +105,50 @@ def client_state_producer(conn, state_queue):
     iterations = 0
     recv_buffer = ""
     while True:
-        try:
-            data = conn.recv(BUF_SIZE)
+        if True:
 
-            if not data:
-                # Likely means we've disconnected
+            size_bytes = helpers.recv_exactly(socket, 4)
+            size = int.from_bytes(size_bytes, "little")
+            data = helpers.recv_exactly(socket, size)
+            message = pickle.loads(data)
+
+            player_data = "|".join(message.split("|")[1:])
+
+            state_queue.put(str_to_player_data(player_data))
+        else:
+            try:
+                data = socket.recv(BUF_SIZE)
+
+                if not data:
+                    # Likely means we've disconnected
+                    break
+                else:
+                    # print(f'Received: {data.decode("utf-8")}')
+
+                    recv_buffer += data.decode("utf-8")
+
+                    # Our network manager delimits all messages this way
+                    messages = recv_buffer.split("~")
+
+                    recv_buffer = messages[-1]
+
+                    for player_data in messages[:-1]:
+
+                        if dev_constants.DEBUGGING_NETWORK_MESSAGES:
+                            print(f"RECEIVED: {player_data}")
+
+                        # TODO use class
+                        player_data = "|".join(player_data.split("|")[1:])
+
+                        state_queue.put(str_to_player_data(player_data))
+
+            except Exception as e:
+                print(f"wasn't able to get data because {e}")
                 break
-            else:
-                # print(f'Received: {data.decode("utf-8")}')
-
-                recv_buffer += data.decode("utf-8")
-
-                # Our network manager delimits all messages this way
-                messages = recv_buffer.split("~")
-
-                recv_buffer = messages[-1]
-
-                for player_data in messages[:-1]:
-
-                    if dev_constants.DEBUGGING_NETWORK_MESSAGES:
-                        print(f"RECEIVED: {player_data}")
-
-                    player_data = "|".join(player_data.split("|")[1:])
-
-                    state_queue.put(str_to_player_data(player_data))
-
-        except Exception as e:
-            print(f"wasn't able to get data because {e}")
-            break
-        iterations += 1
+            iterations += 1
 
     print("Lost connection")
-    conn.close()
+    socket.close()
 
 
 def threaded_server_acceptor(state_queue):
@@ -210,11 +222,12 @@ while True:
 
     while not state_queue.empty():  # TODO why does removing this cause immense lag?
         # print("q is drainable")
+        # TODO use class
         player_id, dx, dy, dm, delta_time, firing, weapon_request = state_queue.get()
 
         # TODO store input messages directly in the queue or something like that.
 
-        input_message = client_server_communication.InputMessage(
+        input_message = client_server_communication.InputNetworkMessage(
             player_id, dx, dy, dm, delta_time, firing, weapon_request
         )
 

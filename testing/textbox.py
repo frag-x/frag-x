@@ -1,9 +1,10 @@
 import pygame
+import chatbox
 
 
 class TextInputBox:
-    def __init__(self, x, y, w, font):
-        super().__init__()
+    def __init__(self, screen, x, y, w, font):
+        self.screen = screen
         self.color = (255, 255, 255)
         self.backcolor = None
         self.pos = (x, y)
@@ -24,7 +25,10 @@ class TextInputBox:
         pygame.draw.rect(
             self.image, self.color, self.image.get_rect().inflate(-2, -2), 2
         )
-        self.rect = self.image.get_rect(topleft=self.pos)
+        self.rect = self.image.get_rect()
+
+    def draw(self):
+        self.screen.blit(self.image, self.pos)
 
     def update(self, event_list):
         for event in event_list:
@@ -36,13 +40,15 @@ class TextInputBox:
 
 
 pygame.init()
-width, height = 500, 200
+width, height = 750, 750
 center_point = (width / 2, height / 2)
 window = pygame.display.set_mode((width, height))
 clock = pygame.time.Clock()
-font = pygame.font.SysFont(None, 100)
+font = pygame.font.SysFont(None, 50)
 
-text_input_box = TextInputBox(50, 50, 400, font)
+length = 200
+text_input_box = TextInputBox(window, width - length, 600, length, font)
+chat_box = chatbox.ChatBox(window, width - length, 0, length, 600, font)
 
 
 def button_pressed(event_list, key):
@@ -69,6 +75,8 @@ typing = False
 just_started = False
 run = True
 
+ticks_from_previous_iteration = 0
+
 while run:
     clock.tick(60)
     event_list = pygame.event.get()
@@ -85,7 +93,9 @@ while run:
             ):  # they are typing and then press return
                 typing = False
                 # DO ACTION
-                print(f"sending {text_input_box.text}")
+                message = text_input_box.text
+                print(f"sending {message}")
+                chat_box.add_message(message)
                 text_input_box.text = ""
             elif end_typing_and_do_nothing(event_list):
                 typing = False
@@ -96,11 +106,20 @@ while run:
 
     text_input_box.render_text()
 
+    t = pygame.time.get_ticks()
+    # deltaTime in seconds.
+    delta_time = (t - ticks_from_previous_iteration) / 1000.0
+    ticks_from_previous_iteration = t
+
+    chat_box.update_message_times(delta_time)
+
     just_started = False
 
     window.fill(0)
 
-    window.blit(text_input_box.image, (0, 0))
+    text_input_box.draw()
+
+    chat_box.draw_messages()
 
     pygame.display.flip()
 

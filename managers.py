@@ -140,7 +140,7 @@ def parse_player_position_message(message_list, client_game_manager):
 
 
 def parse_game_state_message(
-    game_state_message: client_server_communication.GameStateMessage,
+    game_state_message: client_server_communication.GameStateNetworkMessage,
     client_game_manager: ClientGameManager,
 ):
     parse_player_position_message(
@@ -180,7 +180,7 @@ class ServerGameManager(GameManager):
     # TODO: Delete this and use the one from the manager class
     def construct_game_state_message(
         self,
-    ) -> client_server_communication.GameStateMessage:
+    ) -> client_server_communication.GameStateNetworkMessage:
         """Collects and returns all the information about the current game state"""
 
         projectile_position_messages = []
@@ -203,7 +203,7 @@ class ServerGameManager(GameManager):
                 client_server_communication.PlayerPositionMessage(p)
             )
 
-        game_state_message = client_server_communication.GameStateMessage(
+        game_state_message = client_server_communication.GameStateNetworkMessage(
             player_position_messages, projectile_position_messages, self.beam_messages
         )
 
@@ -247,7 +247,7 @@ class ServerGameManager(GameManager):
             game_state_queue.put(self.construct_game_state_message())
 
     def consume_player_inputs(
-        self, input_message: client_server_communication.InputMessage
+        self, input_message: client_server_communication.InputNetworkMessage
     ):
         """Update the players attributes based on their input and operate their weapon if required"""
         player = self.id_to_player[input_message.player_id]

@@ -245,6 +245,8 @@ while running:
 
     # print("update start")
 
+    message_to_send = ""
+
     if not client_game_manager.is_typing:
         if helpers.started_typing(events):  # only check if they pressd when not typing
             client_game_manager.is_typing = True
@@ -267,6 +269,9 @@ while running:
                     print("command went through!")
                 else:
                     print("command failed")
+            else:
+                # then we're dealing with a normal chat message
+                message_to_send = message
 
             # print(f"sending {client_game_manager.user_text_box.text}")
             client_game_manager.user_text_box.text = ""
@@ -284,7 +289,9 @@ while running:
     # Note: This sends the users inputs to the server
     client_game_manager.all_sprites.update(events, delta_time)
 
-    curr_player.send_inputs(events, delta_time, client_game_manager.is_typing)
+    curr_player.send_inputs(
+        events, delta_time, client_game_manager.is_typing, message_to_send
+    )
 
     # print("update end")
 
@@ -393,6 +400,9 @@ while running:
 
     # TEXT BOX START
 
+    client_game_manager.user_chat_box.update_message_times(delta_time)
+
+    client_game_manager.user_chat_box.draw_messages()
     client_game_manager.user_text_box.render_text()
 
     utb_width, utb_height = client_game_manager.user_text_box.image.get_size()

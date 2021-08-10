@@ -63,13 +63,16 @@ class PositionNetworkMessage(NetworkMessage):
         self.y = y
 
 
-class PlayerPositionMessage(PositionNetworkMessage):
+class PlayerNetworkMessage(PositionNetworkMessage):
+    """Represents the minimal amount of information needed for a client to draw"""
+
     def __init__(self, player):
         super().__init__(
             ClientMessageType.PLAYER_POSITIONS.value, player.pos.x, player.pos.y
         )
         self.player_id = player.player_id
         self.rotation_angle = player.rotation_angle
+        self.text_message = player.text_message
 
 
 class ProjectilePositionMessage(PositionNetworkMessage):
@@ -86,7 +89,7 @@ class BeamMessage:
 class GameStateNetworkMessage(NetworkMessage):
     def __init__(
         self,
-        player_position_messages: typing.List[PlayerPositionMessage],
+        player_position_messages: typing.List[PlayerNetworkMessage],
         projectile_position_messages: typing.List[ProjectilePositionMessage],
         beam_messages: typing.List[BeamMessage],
     ):

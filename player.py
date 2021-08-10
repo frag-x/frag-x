@@ -52,6 +52,8 @@ class BasePlayer(body.ConstantAccelerationBody):
         # A movement vector drives the player
         self.movement_vector = pygame.math.Vector2(0, 0)
 
+        self.text_message = ""
+
 
 class ClientPlayer(
     BasePlayer, pygame.sprite.Sprite
@@ -165,8 +167,8 @@ class ClientPlayer(
 
         # self.network.send(message)
 
-        # byte_message = pickle.dumps(input_message)
-        byte_message = pickle.dumps(message)
+        byte_message = pickle.dumps(input_message)
+        # byte_message = pickle.dumps(message)
         self.network.socket.sendall(
             len(byte_message).to_bytes(4, "little") + byte_message
         )

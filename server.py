@@ -110,11 +110,11 @@ def client_state_producer(socket, state_queue):
             size_bytes = helpers.recv_exactly(socket, 4)
             size = int.from_bytes(size_bytes, "little")
             data = helpers.recv_exactly(socket, size)
-            message = pickle.loads(data)
+            player_input_message = pickle.loads(data)
 
-            player_data = "|".join(message.split("|")[1:])
+            # player_data = "|".join(message.split("|")[1:])
 
-            state_queue.put(str_to_player_data(player_data))
+            state_queue.put(player_input_message)
         else:
             try:
                 data = socket.recv(BUF_SIZE)
@@ -223,13 +223,14 @@ while True:
     while not state_queue.empty():  # TODO why does removing this cause immense lag?
         # print("q is drainable")
         # TODO use class
-        player_id, dx, dy, dm, delta_time, firing, weapon_request = state_queue.get()
+        # player_id, dx, dy, dm, delta_time, firing, weapon_request = state_queue.get()
+        input_message = state_queue.get()
 
         # TODO store input messages directly in the queue or something like that.
 
-        input_message = client_server_communication.InputNetworkMessage(
-            player_id, dx, dy, dm, delta_time, firing, weapon_request
-        )
+        # input_message = client_server_communication.InputNetworkMessage(
+        #     player_id, dx, dy, dm, delta_time, firing, weapon_request
+        # )
 
         SGM.perform_all_server_operations(
             time_since_last_iteration, input_message, game_state_queue

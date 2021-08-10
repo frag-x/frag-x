@@ -1,4 +1,6 @@
 import pygame, threading, uuid, math, random
+
+import chatbox
 import client_server_communication, network, game_engine_constants, dev_constants, player, intersections, map_loading, collisions, helpers, weapons, game_modes, textbox
 import commands
 from player import ServerPlayer, KillableServerPlayer
@@ -40,6 +42,15 @@ class ClientGameManager(GameManager):
 
         self.user_text_box = textbox.TextInputBox(
             0, 0, game_engine_constants.WIDTH / 3, self.font
+        )
+
+        self.user_chat_box = chatbox.ChatBox(
+            self.screen,
+            game_engine_constants.WIDTH * 0.8,
+            0,
+            game_engine_constants.WIDTH * 0.2,
+            600,
+            font,
         )
 
         self.client_command_runner = commands.ClientCommandRunner(self.curr_player)
@@ -101,7 +112,7 @@ class ClientMessageParser(MessageParser):
         super().__init__(message_type_to_command_client, client_game_manager)
 
 
-def parse_player_position_message(message_list, client_game_manager):
+def parse_player_network_message(message_list, client_game_manager):
     """The message in this case is a list of elements of the form
 
     player_data.player_id|player_data.x|y|player_data.rotation_angle
@@ -136,6 +147,10 @@ def parse_player_position_message(message_list, client_game_manager):
                 game_engine_constants.SCREEN_CENTER_POINT - curr_player.pos
             )
             curr_player.update()
+            if player_data.text_message != "":
+                print(player_data.text_message)
+                client_game_manager.user_chat_box.add_message(player_data.text_message)
+
             client_game_manager.player_data_lock.release()
 
 
@@ -143,7 +158,7 @@ def parse_game_state_message(
     game_state_message: client_server_communication.GameStateNetworkMessage,
     client_game_manager: ClientGameManager,
 ):
-    parse_player_position_message(
+    parse_player_network_message(
         game_state_message.player_position_messages, client_game_manager
     )
     parse_projectile_position_message(
@@ -200,7 +215,7 @@ class ServerGameManager(GameManager):
                 )
 
             player_position_messages.append(
-                client_server_communication.PlayerPositionMessage(p)
+                client_server_communication.PlayerNetworkMessage(p)
             )
 
         game_state_message = client_server_communication.GameStateNetworkMessage(
@@ -257,6 +272,7 @@ class ServerGameManager(GameManager):
         mouse_movement = input_message.mouse_movement
         firing = input_message.firing
         weapon_request = input_message.weapon_request
+        text_message = input_message.text_message
 
         if type(self.game_mode) is game_modes.FirstToNFrags:
             if player.dead:
@@ -277,6 +293,7 @@ class ServerGameManager(GameManager):
             net_y_movement,
             time_since_last_client_frame,
             mouse_movement,
+            text_message,
         )
         if (
             weapon_request != -1
@@ -293,12 +310,15 @@ class ServerGameManager(GameManager):
         net_y_movement,
         time_since_last_client_frame,
         mouse_movement,
+        text_message,
     ):
         player.update_position(
             net_x_movement, net_y_movement, time_since_last_client_frame
         )
         player.update_aim(mouse_movement)
         player.weapon.time_since_last_shot += time_since_last_client_frame
+
+        player.text_message = text_message
 
         # TODO Does using the players delta time make sense?
         # We should rather update this based on the server timestep?

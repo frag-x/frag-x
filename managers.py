@@ -253,7 +253,7 @@ class ServerGameManager(GameManager):
         self, time_since_last_iteration, input_message, game_state_queue=None
     ):  # None for if client is running this
         self.beam_messages = []  # reset beam messages
-        players = list(self.id_to_player.values())
+        players = [p for p in self.id_to_player.values() if not p.dead]
         self.consume_player_inputs(input_message)
         self.simulate_collisions(players)
         self.time_running += time_since_last_iteration  # measured in seconds

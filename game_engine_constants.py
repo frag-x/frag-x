@@ -65,6 +65,7 @@ LAN_IP = "192.168.0.26"  # gollins house
 # LAN_IP = "192.168.2.21"
 # REMOTE_IP = socket.gethostname()
 
-PORT = 50001
+PORT = 50002
+# PORT = 50001
 # PORT = 50000
 # PORT = 49999

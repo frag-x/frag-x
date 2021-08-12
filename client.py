@@ -1,9 +1,4 @@
-import pygame, queue
-import commands
-import game_engine_constants
-import map_loading
-import game_modes
-import helpers
+import pygame
 import pickle
 import random
 import math
@@ -13,13 +8,16 @@ from converters import str_to_player_data_no_dt
 from threading import Thread, Lock
 from fractions import Fraction
 
+import dev_constants
+import client_server_communication
+import game_engine_constants
+import commands
+import map_loading
+import helpers
+
 from network import Network
 from player import ClientPlayer
 from managers.client_manager import ClientGameManager
-import dev_constants
-import player
-import managers
-import client_server_communication
 
 def mock_server(server_game_manager):
     """This function gets run as a thread and simulates what the server does so we can update the players view without waiting for the server responce, when the server responce comes then we can check positions and fix them if required"""

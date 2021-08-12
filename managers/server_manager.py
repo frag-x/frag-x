@@ -27,9 +27,7 @@ class ServerGameManager(GameManager):
 
         # Note: I was considering having a player lock here in case a player joined midway through and is added to the id_to_player list
         # but it's not an issue because if that's the case then their position won't be sent out to everyone until the next server tick which is fine
-        players = self.id_to_player.values()
-
-        for p in players:
+        for p in self.get_players():
             # TODO check if their position has changed since last time otherwise don't append it
             for projectile in p.weapons[0].fired_projectiles:
                 projectile_position_messages.append(
@@ -68,7 +66,7 @@ class ServerGameManager(GameManager):
                 player_id,
                 client_socket,
             )
-        print(f"added player {self.id_to_player}")
+        print(f"Player {self.id_to_player[player_id]} joined")
 
         # TODO this will probably be removed
         return player_id
@@ -203,14 +201,9 @@ class ServerGameManager(GameManager):
         # remove players from parition - we will update the positions in the loop
         self.partitioned_map_grid.reset_players_in_partitions()
 
-        n = len(players)
-
-        # START UPDATE PARTITIONS
-        for i in range(n):
-            p1 = players[i]
-
+        for player in players:
             partition_idx_x, partition_idx_y = helpers.get_partition_index(
-                self.partitioned_map_grid, p1.pos
+                self.partitioned_map_grid, player.pos
             )
 
             # TODO the below fix stops the server from crashing,
@@ -218,11 +211,11 @@ class ServerGameManager(GameManager):
             if not helpers.valid_2d_index_for_partitioned_map_grid(
                 (partition_idx_x, partition_idx_y), self.partitioned_map_grid
             ):
-                p1.pos = (
-                    p1.previous_pos
+                player.pos = (
+                    player.previous_pos
                 )  # TODO making a large assumption here, what hey don't have a prev pos?
                 partition_idx_x, partition_idx_y = helpers.get_partition_index(
-                    self.partitioned_map_grid, p1.pos
+                    self.partitioned_map_grid, player.pos
                 )
 
             curr_partition = self.partitioned_map_grid.partitioned_map[partition_idx_y][
@@ -234,15 +227,14 @@ class ServerGameManager(GameManager):
                 ]
             )
             # Put the player in the corresponding partition
-            curr_partition.players.append(p1)
+            curr_partition.players.append(player)
 
         # END UPDATE PARTITIONS
 
-        for i in range(n):
-            p1 = players[i]
+        for i, p1 in enumerate(players):
             # Checks for collisions with other bodies
             for j in range(
-                i + 1, n
+                i + 1, len(players)
             ):  # Note that in combination with the outer for loop this iterates through each pair of players only once
                 # TODO only have to check within the collision partitions
                 # TODO need a way to generate collision partitions given a point
@@ -430,7 +422,7 @@ class WinnableServerGameManager(ServerGameManager):  # TODO abstract class
         self, time_since_last_iteration, input_message, game_state_queue=None
     ):  # None for if client is running this
         self.beam_messages = []  # reset beam messages
-        players = list(self.id_to_player.values())
+        players = self.get_players()
         self.consume_player_inputs(input_message)
         self.simulate_collisions(players)
         game_over, winner = self.is_game_over()
@@ -460,7 +452,7 @@ class FirstToNFragsDMServerGameManager(WinnableServerGameManager):
 
     def is_game_over(self):
         """Figures out if the game is over and if it is then return who the winner is"""
-        player_to_frag_count = {p: p.num_frags for p in self.id_to_player.values()}
+        player_to_frag_count = {p: p.num_frags for p in self.get_players()}
         for player, frag_count in player_to_frag_count.items():
             if (
                 frag_count >= self.game_mode.frags_to_win

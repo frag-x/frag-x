@@ -1,6 +1,7 @@
 import pygame, queue
 
 import commands
+from managers.client_manager import ClientGameManager
 from network import FragNetwork
 import game_engine_constants
 from player import ClientPlayer
@@ -61,9 +62,9 @@ else:
 
 # The client uses the server logic to simulate live reactions
 # and uses the servers responce to fix/verify differences
-if game_engine_constants.CLIENT_GAME_SIMULATION:
-    SGM = managers.ServerGameManager(DEV_MAP, game_modes.FirstToNFrags(1))
-    game_engine_constants.MOCK_SERVER_QUEUE = queue.Queue()
+# if game_engine_constants.CLIENT_GAME_SIMULATION:
+# SGM = managers.ServerGameManager(DEV_MAP, game_modes.FirstToNFrags(1))
+# game_engine_constants.MOCK_SERVER_QUEUE = queue.Queue()
 
 dev_constants.CLIENT_VISUAL_DEBUGGING = True
 if dev_constants.CLIENT_VISUAL_DEBUGGING:
@@ -93,8 +94,8 @@ curr_player = ClientPlayer(
     player_id,
     fn,
 )
-
-client_game_manager = managers.ClientGameManager(screen, font, DEV_MAP, curr_player)
+# client_game_manager = managers.ClientGameManager(screen, font, DEV_MAP, curr_player)
+client_game_manager = ClientGameManager(screen, font, DEV_MAP, curr_player)
 
 ## group all the sprites together for ease of update
 # TODO REMOVE THIS AND JUST USE A SET

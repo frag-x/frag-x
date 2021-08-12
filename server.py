@@ -14,6 +14,7 @@ from game_engine_constants import (
     DEV_MAP,
 )
 import game_engine_constants
+from managers.server_manager import FirstToNFragsDMServerGameManager
 from network import FragNetwork
 from converters import str_to_player_data
 from threading import Lock, Thread
@@ -31,7 +32,6 @@ if dev_constants.PROFILING_PROGRAM:
 
     yappi.start()
 
-
 # START MAP LOAD
 
 # chosen_map = "dm_m1.png"
@@ -39,10 +39,11 @@ chosen_map = DEV_MAP
 
 print(chosen_map, game_engine_constants.DM_MAPS)
 if chosen_map in game_engine_constants.DM_MAPS:
-    print("we have a DM map")
-    SGM = managers.FirstToNFragsDMServerGameManager(chosen_map)
+    SGM = FirstToNFragsDMServerGameManager(chosen_map)
 else:
-    SGM = managers.ServerGameManager(DEV_MAP, game_modes.FirstToNFrags(2))
+    SGM = managers.server_manager.ServerGameManager(
+        DEV_MAP, game_modes.FirstToNFrags(2)
+    )
 
 # END MAP LOAD
 
@@ -88,6 +89,11 @@ def game_state_sender(game_state_queue):
                 # if dev_constants.DEBUGGING_NETWORK_MESSAGES:
                 byte_message = pickle.dumps(game_state_message)
                 if True:
+                    print(game_state_message)
+                    print("=== start | SENDING MESSAGES === ")
+                    for player_message in game_state_message.player_network_messages:
+                        print(player_message.text_message)
+                    print("=== end | SENDING MESSAGES === ")
                     p.network.sendall(
                         len(byte_message).to_bytes(4, "little") + byte_message
                     )

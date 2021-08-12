@@ -3,7 +3,7 @@ import pygame, threading, uuid, math, random
 import chatbox
 import client_server_communication, network, game_engine_constants, dev_constants, player, intersections, map_loading, collisions, helpers, weapons, game_modes, textbox
 import commands
-from player import ServerPlayer, KillableServerPlayer
+from player import KillableServerPlayer
 
 
 class GameManager:
@@ -159,7 +159,7 @@ def parse_game_state_message(
     client_game_manager: ClientGameManager,
 ):
     parse_player_network_message(
-        game_state_message.player_position_messages, client_game_manager
+        game_state_message.player_network_messages, client_game_manager
     )
     parse_projectile_position_message(
         game_state_message.projectile_position_messages, client_game_manager
@@ -209,7 +209,7 @@ class ServerGameManager(GameManager):
             # TODO check if their position has changed since last time otherwise don't append it
             for projectile in p.weapons[0].fired_projectiles:
                 projectile_position_messages.append(
-                    client_server_communication.ProjectilePositionMessage(
+                    client_server_communication.ProjectileNetworkMessage(
                         projectile.pos.x, projectile.pos.y
                     )
                 )

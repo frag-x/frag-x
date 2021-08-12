@@ -75,7 +75,7 @@ class PlayerNetworkMessage(PositionNetworkMessage):
         self.text_message = player.text_message
 
 
-class ProjectilePositionMessage(PositionNetworkMessage):
+class ProjectileNetworkMessage(PositionNetworkMessage):
     def __init__(self, x, y):
         super().__init__(ClientMessageType.PROJECTILE_POSITIONS.value, x, y)
 
@@ -89,11 +89,11 @@ class BeamMessage:
 class GameStateNetworkMessage(NetworkMessage):
     def __init__(
         self,
-        player_position_messages: typing.List[PlayerNetworkMessage],
-        projectile_position_messages: typing.List[ProjectilePositionMessage],
+        player_network_messages: typing.List[PlayerNetworkMessage],
+        projectile_position_messages: typing.List[ProjectileNetworkMessage],
         beam_messages: typing.List[BeamMessage],
     ):
         super().__init__(ClientMessageType.GAME_STATE_MESSAGE.value)
-        self.player_position_messages = player_position_messages
+        self.player_network_messages = player_network_messages
         self.projectile_position_messages = projectile_position_messages
         self.beam_messages = beam_messages

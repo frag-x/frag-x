@@ -4,8 +4,8 @@ import pygame
 
 DEFAULT_PORT = 50000
 
-MAP_PREFIX = 'maps/'
-DEFAULT_MAP = 'dm_s2.png'
+MAP_PREFIX = "maps/"
+DEFAULT_MAP = "dm_s2.png"
 
 WIDTH = 600
 HEIGHT = 400
@@ -20,7 +20,7 @@ DEFAULT_SENSITIVITY = 2
 SCREEN_CENTER_POINT = (WIDTH / 2, HEIGHT / 2)
 ORIGIN = (0, 0)
 
-GAME_TITLE = 'frag-x'
+GAME_TITLE = "frag-x"
 
 ARROW_MOVEMENT_KEYS = [pygame.K_LEFT, pygame.K_UP, pygame.K_RIGHT, pygame.K_DOWN]
 WASD_MOVEMENT_KEYS = [pygame.K_a, pygame.K_w, pygame.K_d, pygame.K_s]
@@ -45,4 +45,4 @@ DEBUG_RADIUS = 10
 MAP_DIM_X = MAP_BASE_DIM_X * TILE_SIZE
 MAP_DIM_Y = MAP_BASE_DIM_Y * TILE_SIZE
 
-VELOCITY_REDUCTION_MODIFIER = 0.9
+VELOCITY_REDUCTION_MODIFIER = 0.25

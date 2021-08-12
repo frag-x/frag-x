@@ -124,13 +124,12 @@ def parse_player_network_message(message_list, client_game_manager):
                 game_engine_constants.WEAPON_KEYS,
                 player_data.player_id,
                 client_game_manager.network,
-                -1, # TODO this is really bad
             )
             client_game_manager.all_sprites.add(
                 client_game_manager.id_to_player[player_data.player_id]
             )
         else:
-            # this needs to be locked because if we are doing collisions or hitscan which depends on the position of the player then we can have issues where their position is updated after translating a point with respect to it's original position and then there are no valid
+            # this needs to be locked because if we are doing collisions or hitscan which depends on the position of the curr_player then we can have issues where their position is updated after translating a point with respect to it's original position and then there are no valid
             client_game_manager.player_data_lock.acquire()
             curr_player = client_game_manager.id_to_player[player_data.player_id]
             curr_player.set_pos(player_data.x, player_data.y)
@@ -144,28 +143,42 @@ def parse_player_network_message(message_list, client_game_manager):
                 print(player_data.text_message)
                 client_game_manager.user_chat_box.add_message(player_data.text_message)
 
-            client_game_manager.player_data_lock.release()
+                client_game_manager.player_data_lock.release()
+
+    def parse_game_state_message(
+        self,
+        game_state_message: client_server_communication.GameStateNetworkMessage,
+    ):
+        self.parse_player_network_messages(game_state_message.player_network_messages)
+        self.parse_projectile_position_message(
+            game_state_message.projectile_position_messages
+        )
+        self.parse_beam_messages(game_state_message.beam_messages)
+
+    def parse_projectile_position_message(self, message_list):
+        self.projectiles = message_list
+
+    def parse_beam_messages(self, message_list):
+        self.beam_messages.extend(message_list)
 
 
-def parse_game_state_message(
-    game_state_message: client_server_communication.GameStateNetworkMessage,
-    client_game_manager: ClientGameManager,
-):
-    parse_player_network_message(
-        game_state_message.player_network_messages, client_game_manager
-    )
-    parse_projectile_position_message(
-        game_state_message.projectile_position_messages, client_game_manager
-    )
-    parse_beam_messages(game_state_message.beam_messages, client_game_manager)
+class MessageParser:
+    def __init__(self, message_type_to_command, client_game_manager):
+        self.message_type_to_command = message_type_to_command
+        self.client_game_manager = client_game_manager
+
+    def run_command_from_message(self, message):
+        # This is the command pattern
+        # print(f"got {message_list} and about to run {self.message_type_to_command[message_list[0].message_type]}")
+
+        self.message_type_to_command[message.message_type](
+            message, self.client_game_manager
+        )
 
 
-def parse_projectile_position_message(message_list, client_game_manager):
-    client_game_manager.projectiles = message_list
-
-
-def parse_beam_messages(message_list, client_game_manager):
-    client_game_manager.beam_messages.extend(message_list)
+class ClientMessageParser(MessageParser):
+    def __init__(self, client_game_manager):
+        super().__init__(message_type_to_command_client, client_game_manager)
 
 
 message_type_to_command_client = {

@@ -818,3 +818,41 @@ class Explosion:
             shard_vec = relative_shard_vec + self.pos
 
             self.beams.append(HitscanBeam(self.pos, shard_vec))
+
+
+class ShotgunBlast:
+    """
+    Given the direction that a player is aiming, generate beams that would come out of the shotgun
+    """
+
+    def __init__(
+        self,
+        pos,
+        shot_direction,
+        shot_angle=math.tau / 4,
+        radius=100,
+        power=750,
+        num_shards=32,
+    ):
+        self.pos = pos
+        self.shot_direction = shot_direction
+        self.shot_angle = shot_angle
+        self.radius = radius
+        self.power = power
+        self.num_shards = num_shards
+        self.beams = []
+        self.generate_beams()
+
+    def generate_beams(self):
+        angle_start = self.shot_direction - self.shot_angle / 2
+        angle_fraction = self.shot_angle / self.num_shards
+        for i in range(self.num_shards):
+            angle = angle_fraction * i
+            x = math.cos(angle) * self.radius
+            y = math.sin(angle) * self.radius
+
+            relative_shard_vec = pygame.math.Vector2(x, y)
+
+            shard_vec = relative_shard_vec + self.pos
+
+            self.beams.append(HitscanBeam(self.pos, shard_vec))

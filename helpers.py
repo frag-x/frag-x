@@ -108,6 +108,5 @@ def recv_exactly(socket, size):
         data += chunk
     return data
 
-
-# def get_quadrant_info(point_1, point_2):
-#    """Considering point_1 as the origin, this function returns which quadrant point_2 is in"""
+def magnitude(v):
+    return math.sqrt(v.x ** 2 + v.y ** 2)

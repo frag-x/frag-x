@@ -2,14 +2,7 @@ import pygame, pickle
 
 import math
 import weapons, converters, game_engine_constants, client_server_communication, dev_constants, body
-
-
-def magnitude(v):
-    return math.sqrt(v.x ** 2 + v.y ** 2)
-
-
-# class Body: position, velocity, mass, etc...
-
+from helpers import magnitude
 
 class BasePlayer(body.ConstantAccelerationBody):
     def __init__(self, start_pos, width, height, player_id, network):
@@ -160,13 +153,11 @@ class ClientPlayer(
             print(f"SENDING: {message}")
 
         byte_message = pickle.dumps(input_message)
-        # byte_message = pickle.dumps(message)
         self.network.socket.sendall(
             len(byte_message).to_bytes(4, "little") + byte_message
         )
 
     def update(self, events=None, delta_time=0):
-
         self.image.fill((255, 255, 255, 0))
 
         center_point = (self.width / 2, self.height / 2)

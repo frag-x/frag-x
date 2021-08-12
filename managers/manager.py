@@ -13,7 +13,7 @@ class GameManager:
         )
 
     def get_ids(self):
-        return self.id_to_player.keys()
+        return list(self.id_to_player.keys())
 
     def get_players(self):
-        return self.id_to_player.values()
+        return list(self.id_to_player.values())

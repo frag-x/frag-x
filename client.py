@@ -113,14 +113,6 @@ def initialize_player(network, player_id):
         network,
     )
 
-def initialize_client_game_manager(network, screen, font, player, player_id):
-    # TODO: this should probably just be a simple call to ClientGameManager.__init__
-    client_game_manager = ClientGameManager(screen, font, f'{game_engine_constants.MAP_PREFIX}{args.map}', player, network)
-    client_game_manager.all_sprites = pygame.sprite.Group()
-    client_game_manager.all_sprites.add(player)
-    client_game_manager.id_to_player[player_id] = player
-    return client_game_manager
-
 def update(client_game_manager, delta_time, player, events):
     just_started = False
     message_to_send = ""
@@ -276,20 +268,19 @@ def render(client_game_manager, delta_time, player, screen, font):
 
 def run_client(args):
     screen, font, clock = initialize_pygame()
-
     network, player_id = initialize_network(args.ip_address, args.port)
-
     player = initialize_player(network, player_id)
 
-    client_game_manager = initialize_client_game_manager(network, screen, font, player, player_id)
+    map_fullname = f'{game_engine_constants.MAP_PREFIX}{args.map}'
+    client_game_manager = ClientGameManager(screen, font, map_fullname, player_id, player, network)
 
     t = Thread(target=game_state_watcher, args=(client_game_manager, network))
     t.start()
 
     running = True
     while running:
-        # 1 Process input/events
-        delta_time = clock.tick(game_engine_constants.FPS) ## will make the loop run at the same speed all the time
+        # Run at constant rate
+        delta_time = clock.tick(game_engine_constants.FPS)
         delta_time /= 1000
 
         events = pygame.event.get()

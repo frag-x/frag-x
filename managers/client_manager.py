@@ -9,11 +9,11 @@ from managers.manager import GameManager
 class ClientGameManager(GameManager):
     """A game manager which may be instantiated for the server or the client"""
 
-    def __init__(self, screen, font, map_name, curr_player, network):
+    def __init__(self, screen, font, map_name, player_id, player, network):
         super().__init__(map_name)
         self.screen = screen
         self.font = font
-        self.curr_player = curr_player  # the player controlling this client
+        self.player = player  # the player controlling this client
         # This takes the messages from the server and changes the clients information,
         # for example it updates all the players positions when a new game state comes in
         # it may be depcricated because i thought I would be sending multiple message types but so far
@@ -41,7 +41,11 @@ class ClientGameManager(GameManager):
             font,
         )
 
-        self.client_command_runner = commands.ClientCommandRunner(self.curr_player)
+        self.client_command_runner = commands.ClientCommandRunner(self.player)
+
+        self.all_sprites = pygame.sprite.Group()
+        self.all_sprites.add(player)
+        self.id_to_player[player_id] = player
 
         # TODO make a perform all client_operations
 
@@ -125,7 +129,7 @@ def parse_player_network_message(message_list, client_game_manager):
                 client_game_manager.id_to_player[player_data.player_id]
             )
         else:
-            # this needs to be locked because if we are doing collisions or hitscan which depends on the position of the curr_player then we can have issues where their position is updated after translating a point with respect to it's original position and then there are no valid
+            # this needs to be locked because if we are doing collisions or hitscan which depends on the position of the player then we can have issues where their position is updated after translating a point with respect to it's original position and then there are no valid
             client_game_manager.player_data_lock.acquire()
             curr_player = client_game_manager.id_to_player[player_data.player_id]
             curr_player.set_pos(player_data.x, player_data.y)

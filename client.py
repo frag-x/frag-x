@@ -57,9 +57,12 @@ def parse_args():
     parser.add_argument('--map', '-m', type=str, 
                         default=game_engine_constants.DEFAULT_MAP,
                         help='game map')
+    parser.add_argument('--windowed', '-w', type=bool, 
+                        default=False,
+                        help='run in windowed mode')
     return parser.parse_args()
 
-def initialize_pygame():
+def initialize_pygame(windowed):
     ## initialize pygame and create window
     pygame.init()
     pygame.mixer.init()  ## For sound
@@ -67,7 +70,7 @@ def initialize_pygame():
 
     font = pygame.font.SysFont(pygame.font.get_default_font(), 30)
 
-    if game_engine_constants.FULL_SCREEN:
+    if not windowed:
         screen = pygame.display.set_mode((0, 0), pygame.FULLSCREEN)
         (
             game_engine_constants.WIDTH,
@@ -267,7 +270,7 @@ def render(client_game_manager, delta_time, player, screen, font):
     )
 
 def run_client(args):
-    screen, font, clock = initialize_pygame()
+    screen, font, clock = initialize_pygame(args.windowed)
     network, player_id = initialize_network(args.ip_address, args.port)
     player = initialize_player(network, player_id)
 

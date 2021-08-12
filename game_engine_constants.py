@@ -7,7 +7,6 @@ DEFAULT_PORT = 50000
 MAP_PREFIX = 'maps/'
 DEFAULT_MAP = 'dm_s2.png'
 
-FULL_SCREEN = False
 WIDTH = 600
 HEIGHT = 400
 

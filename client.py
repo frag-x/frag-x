@@ -49,7 +49,7 @@ def game_state_watcher(client_game_manager, network):
 def parse_args():
     parser = argparse.ArgumentParser()
     parser.add_argument('--ip_address', '-i', type=str, 
-                        default=game_engine_constants.DEFAULT_IP,
+                        default='localhost',
                         help='ip to connect to server on')
     parser.add_argument('--port', '-p', type=int, 
                         default=game_engine_constants.DEFAULT_PORT,

@@ -66,15 +66,14 @@ def threaded_server_acceptor(server_game_manager, server_socket, state_queue):
 
 def parse_args():
     parser = argparse.ArgumentParser()
-    parser.add_argument('--ip_address', '-i', type=str, 
-                        default=game_engine_constants.DEFAULT_IP,
-                        help='ip to host server on')
+    parser.add_argument('--local', '-l', dest='local', action='store_true')
     parser.add_argument('--port', '-p', type=int, 
                         default=game_engine_constants.DEFAULT_PORT,
                         help='port to host server on')
     parser.add_argument('--map', '-m', type=str, 
                         default=game_engine_constants.DEFAULT_MAP,
                         help='game map')
+    parser.set_defaults(local=False)
     return parser.parse_args()
 
 def initialize_server(map):
@@ -87,16 +86,16 @@ def initialize_server(map):
 
 def initialize_socket():
     server_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    ip_address = 'localhost' if args.local else ''
 
     try:
-        server_socket.bind((args.ip_address, args.port))
+        server_socket.bind((ip_address, args.port))
 
     except socket.error as e:
-        str(e)
         raise
 
     server_socket.listen(2)
-    print(f"Server started on {(args.ip_address, args.port)}")
+    print(f"Server started on {(ip_address, args.port)}")
     
     return server_socket
 

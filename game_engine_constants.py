@@ -2,7 +2,6 @@ import pygame
 
 # Primary config variables
 
-DEFAULT_IP = 'localhost'
 DEFAULT_PORT = 50000
 
 MAP_PREFIX = 'maps/'

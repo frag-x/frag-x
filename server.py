@@ -36,20 +36,15 @@ def game_state_sender(server_game_manager, game_state_queue):
                     pass
 
 
-def client_state_producer(socket, state_queue):
+def client_listener(socket, state_queue):
     """
     This function gets run as a thread, it is associated with a single player and retreives their inputs
     """
-    # This sends the initial position of the player
-    # conn.send(str.encode(convert_pos_int_repr_to_str_repr(player_start_positions[player_id])))
-
     while True:
         size_bytes = helpers.recv_exactly(socket, 4)
         size = int.from_bytes(size_bytes, "little")
         data = helpers.recv_exactly(socket, size)
         player_input_message = pickle.loads(data)
-
-        # player_data = "|".join(message.split("|")[1:])
 
         state_queue.put(player_input_message)
 
@@ -66,7 +61,7 @@ def threaded_server_acceptor(server_game_manager, server_socket, state_queue):
 
         # If a player connects they get their own thread
         # TODO START a thread that sends them data too
-        t = Thread(target=client_state_producer, args=(client_socket, state_queue))
+        t = Thread(target=client_listener, args=(client_socket, state_queue))
         t.start()
 
 def parse_args():

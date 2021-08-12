@@ -122,6 +122,7 @@ def initialize_client_game_manager(network, screen, font, player, player_id):
     return client_game_manager
 
 def update(client_game_manager, delta_time, player, events):
+    just_started = False
     message_to_send = ""
 
     if not client_game_manager.is_typing:
@@ -160,8 +161,6 @@ def update(client_game_manager, delta_time, player, events):
         client_game_manager.user_text_box.update(
             events
         )  # update the textbox if they're typing
-
-    just_started = False
 
     # Note: This sends the users inputs to the server
     client_game_manager.all_sprites.update(events, delta_time)
@@ -258,10 +257,6 @@ def render(client_game_manager, delta_time, player, screen, font):
     screen.blit(pos, (0, 25))
     screen.blit(angle, (0, 50))
 
-    # PLAYER PROPERTIES END
-
-    # TEXT BOX START
-
     client_game_manager.user_chat_box.update_message_times(delta_time)
 
     client_game_manager.user_chat_box.draw_messages()
@@ -305,7 +300,7 @@ def run_client(args):
         update(client_game_manager, delta_time, player, events)
 
         render(client_game_manager, delta_time, player, screen, font)
-        
+
         pygame.display.flip()
 
     pygame.quit()

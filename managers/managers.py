@@ -17,11 +17,17 @@ class GameManager:
             map_loading.get_pixels(map_name), 10, 10
         )
 
+    def get_ids(self):
+        return self.id_to_player.keys()
+
+    def get_players(self):
+        return self.id_to_player.values()
+
 
 class ClientGameManager(GameManager):
     """A game manager which may be instatiated for the server or the client"""
 
-    def __init__(self, screen, font, map_name, curr_player):
+    def __init__(self, screen, font, map_name, curr_player, network):
         super().__init__(map_name)
         self.screen = screen
         self.font = font
@@ -34,11 +40,12 @@ class ClientGameManager(GameManager):
             self
         )  # TODO maybe change naming to not confuse?
         self.player_data_lock = threading.Lock()
-        self.network = network.FragNetwork()
         # TODO REMOVE THIS, just for support now
         self.all_sprites = pygame.sprite.Group()
 
         self.is_typing = False
+
+        self.network = network
 
         self.user_text_box = textbox.TextInputBox(
             0, 0, game_engine_constants.WIDTH / 3, self.font
@@ -119,7 +126,7 @@ def parse_player_network_message(message_list, client_game_manager):
 
     """
     for player_data in message_list:
-        if player_data.player_id not in client_game_manager.id_to_player:
+        if player_data.player_id not in client_game_manager.get_ids():
             # TODO remove the network from a curr_player the game manager will do that
             client_game_manager.id_to_player[
                 player_data.player_id
@@ -137,8 +144,9 @@ def parse_player_network_message(message_list, client_game_manager):
                 client_game_manager.id_to_player[player_data.player_id]
             )
         else:
-            # this needs to be locked because if we are doing collisions or hitscan which depends on the position of the curr_player then we can have issues where their position is updated after translating a point with respect to it's original position and then there are no valid
-            client_game_manager.player_data_lock.acquire()
+            # this needs to be locked because if we are doing collisions or hitscan which depends 
+            # on the position of the curr_player then we can have issues where their position is updated 
+            # after translating a point with respect to it's original position and then there are no valid
             curr_player = client_game_manager.id_to_player[player_data.player_id]
             curr_player.set_pos(player_data.x, player_data.y)
             # In real life we can't change their view or they will freak - do it for now
@@ -150,8 +158,6 @@ def parse_player_network_message(message_list, client_game_manager):
             if player_data.text_message != "":
                 print(player_data.text_message)
                 client_game_manager.user_chat_box.add_message(player_data.text_message)
-
-            client_game_manager.player_data_lock.release()
 
 
 def parse_game_state_message(
@@ -203,7 +209,7 @@ class ServerGameManager(GameManager):
 
         # Note: I was considering having a player lock here in case a player joined midway through and is added to the id_to_player list
         # but it's not an issue because if that's the case then their position won't be sent out to everyone until the next server tick which is fine
-        players = self.id_to_player.values()
+        players = self.get_players()
 
         for p in players:
             # TODO check if their position has changed since last time otherwise don't append it
@@ -225,7 +231,7 @@ class ServerGameManager(GameManager):
         return game_state_message
 
     def add_player(self, client_socket):
-        # Could this not being locked cause a problem?
+        # Could this not being locked cause a problem? yes
         player_id = str(uuid.uuid1())
         spawn = random.choice(self.partitioned_map_grid.spawns)
         if type(self.game_mode) is game_modes.FirstToNFrags:
@@ -638,8 +644,7 @@ class FirstToNFragsDMServerGameManager(WinnableServerGameManager):
         """Figures out if the game is over and if it is then return who the winner is"""
         player_to_frag_count = {p: p.num_frags for p in self.id_to_player.values()}
         for player, frag_count in player_to_frag_count.items():
-            if (
-                frag_count >= self.game_mode.frags_to_win
-            ):  # TODO what if multiple people die in the same tick making many winners - this only returns the first winner based on the list ordering
-                return (True, player)
-        return (False, None)
+            if frag_count >= self.game_mode.frags_to_win:  
+                # TODO what if multiple people die in the same tick making many winners - this only returns the first winner based on the list ordering
+                return True, player
+        return False, None

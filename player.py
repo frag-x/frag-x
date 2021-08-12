@@ -106,7 +106,7 @@ class ClientPlayer(
         self.rect.center = self.pos  # update the image to be at the correct location
         # self.camera_v = game_engine_constants.SCREEN_CENTER_POINT - self.pos
 
-    def send_inputs(self, events, delta_time, typing, text_message=""):
+    def send_inputs(self, delta_time, typing, text_message=""):
 
         # we only look at the x component of mouse input
         dm, _ = pygame.mouse.get_rel()
@@ -164,8 +164,6 @@ class ClientPlayer(
             game_engine_constants.MOCK_SERVER_QUEUE.put(
                 converters.str_to_player_data(player_data)
             )
-
-        # self.network.send(message)
 
         byte_message = pickle.dumps(input_message)
         # byte_message = pickle.dumps(message)
@@ -260,3 +258,6 @@ class KillableServerPlayer(ServerPlayer):
         self.num_frags = 0  # A killable player can also kill others (TODO what about weird game modes)
         self.dead = False
         self.time_dead = 0
+
+    def __repr__(self):
+        return f'{self.player_id}'

@@ -74,6 +74,9 @@ class PlayerNetworkMessage(PositionNetworkMessage):
         self.rotation_angle = player.rotation_angle
         self.text_message = player.text_message
 
+    def __repr__(self):
+        return f'{self.player_id} ({self.x}, {self.y})'
+
 
 class ProjectileNetworkMessage(PositionNetworkMessage):
     def __init__(self, x, y):
@@ -97,3 +100,8 @@ class GameStateNetworkMessage(NetworkMessage):
         self.player_network_messages = player_network_messages
         self.projectile_position_messages = projectile_position_messages
         self.beam_messages = beam_messages
+
+    def __repr__(self):
+        return f'Player position: {self.player_position_messages}\n' \
+               f'Projectile position: {self.projectile_position_messages}\n' \
+               f'Beam messages: {self.beam_messages}'

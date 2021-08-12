@@ -1,104 +1,36 @@
 import socket
 import pickle
 import pygame
-from typing import List
-from game_engine_constants import (
-    SCREEN_CENTER_POINT,
-    ORIGIN,
-    BUF_SIZE,
-    PORT,
-    LOCAL_IP,
-    SERVER_TICK_RATE_HZ,
-    REMOTE_IP,
-    RUNNING_LOCALLY,
-    DEV_MAP,
-)
 import game_engine_constants
-from managers.server_manager import FirstToNFragsDMServerGameManager
-from network import FragNetwork
+import helpers, managers, game_modes
+import argparse
+
+from typing import List
+from queue import Queue
 from converters import str_to_player_data
 from threading import Lock, Thread
-import collisions, dev_constants
-import logging
 
-# logging.basicConfig(level=logging.INFO)
-import map_loading, client_server_communication, helpers, intersections, weapons, managers, game_modes
-from queue import Queue
-import time
-import math
-
-if dev_constants.PROFILING_PROGRAM:
-    import yappi
-
-    yappi.start()
-
-# START MAP LOAD
-
-# chosen_map = "dm_m1.png"
-chosen_map = DEV_MAP
-
-print(chosen_map, game_engine_constants.DM_MAPS)
-if chosen_map in game_engine_constants.DM_MAPS:
-    SGM = FirstToNFragsDMServerGameManager(chosen_map)
-else:
-    SGM = managers.server_manager.ServerGameManager(
-        DEV_MAP, game_modes.FirstToNFrags(2)
-    )
-
-# END MAP LOAD
-
-# START SOCKET SETUP
-
-if RUNNING_LOCALLY:
-    SERVER_ADDRESS = LOCAL_IP
-else:
-    SERVER_ADDRESS = ""
-
-s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-
-try:
-    s.bind((SERVER_ADDRESS, PORT))
-
-except socket.error as e:
-    str(e)
-
-s.listen(2)
-
-print(f"Server started on {(SERVER_ADDRESS, PORT)}")
-
-# END SOCKET SETUP
-
-
-player_start_positions = [ORIGIN, SCREEN_CENTER_POINT]
-
-
-def game_state_sender(game_state_queue):
+def game_state_sender(server_game_manager, game_state_queue):
     while True:
-
         # Incase someone joins in the middle - would that be so bad??? - TODO maybe remove these locks
 
         # consume the message
         if (
             not game_state_queue.empty()
-        ):  # TODO why does removing this cause immense lag?
+        ):
             game_state_message = game_state_queue.get()
 
             # Send the game state to each of the players
             # TODO instead of doing this use the socket they are connected on
-            for p in list(SGM.id_to_player.values()):
-                # if dev_constants.DEBUGGING_NETWORK_MESSAGES:
+            for player in server_game_manager.get_players():
                 byte_message = pickle.dumps(game_state_message)
-                if True:
-                    print(game_state_message)
-                    print("=== start | SENDING MESSAGES === ")
-                    for player_message in game_state_message.player_network_messages:
-                        print(player_message.text_message)
-                    print("=== end | SENDING MESSAGES === ")
-                    p.network.sendall(
+                try:
+                    player.network.sendall(
                         len(byte_message).to_bytes(4, "little") + byte_message
                     )
-                else:
-                    p.network.sendall(byte_message)
+                except BrokenPipeError:
+                    # TODO remove player
+                    pass
 
 
 def client_state_producer(socket, state_queue):
@@ -108,60 +40,22 @@ def client_state_producer(socket, state_queue):
     # This sends the initial position of the player
     # conn.send(str.encode(convert_pos_int_repr_to_str_repr(player_start_positions[player_id])))
 
-    iterations = 0
-    recv_buffer = ""
     while True:
-        if True:
+        size_bytes = helpers.recv_exactly(socket, 4)
+        size = int.from_bytes(size_bytes, "little")
+        data = helpers.recv_exactly(socket, size)
+        player_input_message = pickle.loads(data)
 
-            size_bytes = helpers.recv_exactly(socket, 4)
-            size = int.from_bytes(size_bytes, "little")
-            data = helpers.recv_exactly(socket, size)
-            player_input_message = pickle.loads(data)
+        # player_data = "|".join(message.split("|")[1:])
 
-            # player_data = "|".join(message.split("|")[1:])
-
-            state_queue.put(player_input_message)
-        else:
-            try:
-                data = socket.recv(BUF_SIZE)
-
-                if not data:
-                    # Likely means we've disconnected
-                    break
-                else:
-                    # print(f'Received: {data.decode("utf-8")}')
-
-                    recv_buffer += data.decode("utf-8")
-
-                    # Our network manager delimits all messages this way
-                    messages = recv_buffer.split("~")
-
-                    recv_buffer = messages[-1]
-
-                    for player_data in messages[:-1]:
-
-                        if dev_constants.DEBUGGING_NETWORK_MESSAGES:
-                            print(f"RECEIVED: {player_data}")
-
-                        # TODO use class
-                        player_data = "|".join(player_data.split("|")[1:])
-
-                        state_queue.put(str_to_player_data(player_data))
-
-            except Exception as e:
-                print(f"wasn't able to get data because {e}")
-                break
-            iterations += 1
-
-    print("Lost connection")
-    socket.close()
+        state_queue.put(player_input_message)
 
 
-def threaded_server_acceptor(state_queue):
+def threaded_server_acceptor(server_game_manager, server_socket, state_queue):
     while True:
-        client_socket, addr = s.accept()
+        client_socket, addr = server_socket.accept()
 
-        player_id = SGM.add_player(client_socket)
+        player_id = server_game_manager.add_player(client_socket)
 
         # TODO do I need to send this?
         client_socket.send(str.encode(str(player_id)))
@@ -172,84 +66,91 @@ def threaded_server_acceptor(state_queue):
         t = Thread(target=client_state_producer, args=(client_socket, state_queue))
         t.start()
 
+def parse_args():
+    parser = argparse.ArgumentParser()
+    parser.add_argument('--ip_address', '-i', type=str, 
+                        default=game_engine_constants.DEFAULT_IP,
+                        help='ip to host server on')
+    parser.add_argument('--port', '-p', type=int, 
+                        default=game_engine_constants.DEFAULT_PORT,
+                        help='port to host server on')
+    parser.add_argument('--map', '-m', type=str, 
+                        default=game_engine_constants.DEFAULT_MAP,
+                        help='game map')
+    return parser.parse_args()
 
-# for batching the inputs and running physics simulation
+def initialize_server(map):
+    map_fullpath = f'{game_engine_constants.MAP_PREFIX}{map}'
+    try:
+        return managers.FirstToNFragsDMServerGameManager(map_fullpath)
+    except Exception:
+        # TODO catch bad maps
+        pass
 
+def initialize_socket():
+    server_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 
-player_lock = Lock()
+    try:
+        server_socket.bind((args.ip_address, args.port))
 
-socket_send_lock = Lock()
+    except socket.error as e:
+        str(e)
+        raise
 
-clock = pygame.time.Clock()  ## For syncing the FPS
+    server_socket.listen(2)
+    print(f"Server started on {(args.ip_address, args.port)}")
+    
+    return server_socket
 
-# TODO Rename this
-state_queue = Queue()
-# TODO add threads for this
-game_state_queue = Queue()
+def run_server(args):
+    server_game_manager = initialize_server(args.map)
 
-positional_player_data_queue = Queue()
-positional_player_data_lock = Lock()
-projectile_data_queue = Queue()
-projectile_data_lock = Lock()
+    server_socket = initialize_socket()
 
-server_updates = []
+    # FPS synchronization
+    clock = pygame.time.Clock()
 
-# START THREAD SETUP
+    # TODO Rename this
+    state_queue = Queue()
+    # TODO add threads for this
+    game_state_queue = Queue()
 
-tsa_t = Thread(target=threaded_server_acceptor, args=(state_queue,))
-tsa_t.start()
+    tsa_t = Thread(target=threaded_server_acceptor, args=(server_game_manager, server_socket, state_queue,))
+    tsa_t.start()
 
-gss_t = Thread(target=game_state_sender, args=(game_state_queue,))
-gss_t.start()
+    gss_t = Thread(target=game_state_sender, args=(server_game_manager, game_state_queue,))
+    gss_t.start()
 
-# END THREAD SETUP
+    ticks_from_previous_iteration = 0
+    num_frames = 0
+    while True:
+        num_frames += 1
 
-ticks_from_previous_iteration = 0
+        clock.tick(
+            game_engine_constants.SERVER_TICK_RATE_HZ
+        )  ## will make the loop run at the same speed all the time
 
-count_down = game_engine_constants.SERVER_TICK_RATE_HZ * 10
+        t = pygame.time.get_ticks()
+        # deltaTime in seconds.
+        time_since_last_iteration = (t - ticks_from_previous_iteration) / 1000.0
+        ticks_from_previous_iteration = t
 
-num_frames = 0
+        while not state_queue.empty():  # TODO why does removing this cause immense lag?
+            # print("q is drainable")
+            # TODO use class
+            # player_id, dx, dy, dm, delta_time, firing, weapon_request = state_queue.get()
+            input_message = state_queue.get()
 
-while True:
-    # while count_down == num_frames: if you're profiling the program
+            # TODO store input messages directly in the queue or something like that.
 
-    num_frames += 1
+            # input_message = client_server_communication.InputNetworkMessage(
+            #     player_id, dx, dy, dm, delta_time, firing, weapon_request
+            # )
 
-    clock.tick(
-        SERVER_TICK_RATE_HZ
-    )  ## will make the loop run at the same speed all the time
+            server_game_manager.perform_all_server_operations(
+                time_since_last_iteration, input_message, game_state_queue
+            )
 
-    t = pygame.time.get_ticks()
-    # deltaTime in seconds.
-    time_since_last_iteration = (t - ticks_from_previous_iteration) / 1000.0
-    ticks_from_previous_iteration = t
-
-    start_player_computation_time = time.time()
-
-    while not state_queue.empty():  # TODO why does removing this cause immense lag?
-        # print("q is drainable")
-        # TODO use class
-        # player_id, dx, dy, dm, delta_time, firing, weapon_request = state_queue.get()
-        input_message = state_queue.get()
-
-        # TODO store input messages directly in the queue or something like that.
-
-        # input_message = client_server_communication.InputNetworkMessage(
-        #     player_id, dx, dy, dm, delta_time, firing, weapon_request
-        # )
-
-        SGM.perform_all_server_operations(
-            time_since_last_iteration, input_message, game_state_queue
-        )
-
-
-if dev_constants.PROFILING_PROGRAM:
-    yappi.stop()
-
-    # retrieve thread stats by their thread id (given by yappi)
-    threads = yappi.get_thread_stats()
-    for thread in threads:
-        print(
-            "Function stats for (%s) (%d)" % (thread.name, thread.id)
-        )  # it is the Thread.__class__.__name__
-        yappi.get_func_stats(ctx_id=thread.id).print_all()
+if __name__ == '__main__':
+    args = parse_args()
+    run_server(args)

@@ -50,24 +50,8 @@ DEBUG_RADIUS = 10
 MAP_DIM_X = MAP_BASE_DIM_X * TILE_SIZE
 MAP_DIM_Y = MAP_BASE_DIM_Y * TILE_SIZE
 
+DEFAULT_IP = 'localhost'
+DEFAULT_PORT = 50000
 
-# import socket
-# s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-# s.connect(("8.8.8.8", 80))
-# LOCAL_IP = s.getsockname()[0]
-LOCAL_IP = "localhost"
-# s.close()
-
-# REMOTE_IP = "cuppajoeman.com"
-REMOTE_IP = "168.100.233.209"
-# LAN_IP = "192.168.2.24"
-# LAN_IP = "192.168.0.26"  # gollins house
-LAN_IP = "192.168.2.29"
-# LAN_IP = "192.168.2.21"
-# REMOTE_IP = socket.gethostname()
-
-PORT = 50003
-# PORT = 50002
-# PORT = 50001
-# PORT = 50000
-# PORT = 49999
+MAP_PREFIX = 'maps/'
+DEFAULT_MAP = 'dm_s2.png'

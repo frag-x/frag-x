@@ -9,7 +9,7 @@ from managers.manager import GameManager
 class ClientGameManager(GameManager):
     """A game manager which may be instantiated for the server or the client"""
 
-    def __init__(self, screen, font, map_name, curr_player):
+    def __init__(self, screen, font, map_name, curr_player, network):
         super().__init__(map_name)
         self.screen = screen
         self.font = font
@@ -22,7 +22,7 @@ class ClientGameManager(GameManager):
             self
         )  # TODO maybe change naming to not confuse?
         self.player_data_lock = threading.Lock()
-        self.network = network.FragNetwork()
+        self.network = network
         # TODO REMOVE THIS, just for support now
         self.all_sprites = pygame.sprite.Group()
 
@@ -107,7 +107,7 @@ def parse_player_network_message(message_list, client_game_manager):
 
     """
     for player_data in message_list:
-        if player_data.player_id not in client_game_manager.id_to_player:
+        if player_data.player_id not in client_game_manager.get_ids():
             # TODO remove the network from a curr_player the game manager will do that
             client_game_manager.id_to_player[
                 player_data.player_id

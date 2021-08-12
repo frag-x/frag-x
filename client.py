@@ -2,10 +2,6 @@ import pygame, queue
 import commands
 import game_engine_constants
 import map_loading
-import dev_constants
-import managers
-import client_server_communication
-import player
 import game_modes
 import helpers
 import pickle
@@ -13,11 +9,17 @@ import random
 import math
 import argparse
 
-from player import ClientPlayer
 from converters import str_to_player_data_no_dt
 from threading import Thread, Lock
 from fractions import Fraction
+
 from network import Network
+from player import ClientPlayer
+from managers.client_manager import ClientGameManager
+import dev_constants
+import player
+import managers
+import client_server_communication
 
 def mock_server(server_game_manager):
     """This function gets run as a thread and simulates what the server does so we can update the players view without waiting for the server responce, when the server responce comes then we can check positions and fix them if required"""
@@ -88,13 +90,6 @@ def run_client(args):
     else:
         screen = pygame.display.set_mode((game_engine_constants.WIDTH, game_engine_constants.HEIGHT))
 
-
-    # The client uses the server logic to simulate live reactions
-    # and uses the servers responce to fix/verify differences
-    if game_engine_constants.CLIENT_GAME_SIMULATION:
-        server_game_manager = managers.ServerGameManager(game_engine_constants.DEV_MAP, game_modes.FirstToNFrags(1))
-        game_engine_constants.MOCK_SERVER_QUEUE = queue.Queue()
-
     dev_constants.CLIENT_VISUAL_DEBUGGING = True
     if dev_constants.CLIENT_VISUAL_DEBUGGING:
         dev_constants.SCREEN_FOR_DEBUGGING = screen
@@ -123,7 +118,7 @@ def run_client(args):
         network,
     )
 
-    client_game_manager = managers.ClientGameManager(screen, font, game_engine_constants.DEV_MAP, curr_player, network)
+    client_game_manager = ClientGameManager(screen, font, game_engine_constants.DEV_MAP, curr_player, network)
 
     ## group all the sprites together for ease of update
     # TODO REMOVE THIS AND JUST USE A SET
@@ -133,21 +128,8 @@ def run_client(args):
 
     client_game_manager.id_to_player[player_id] = curr_player
 
-    if game_engine_constants.CLIENT_GAME_SIMULATION:
-        # "connecting"
-        mock_socket = None
-        # not using .add_player because that would generate a different id
-        server_game_manager.id_to_player[player_id] = player.KillableServerPlayer(
-            game_engine_constants.SCREEN_CENTER_POINT, 50, 50, player_id, mock_socket
-        )  # for testing out first to n frags
-        # SGM.id_to_player[player_id] = player.ServerPlayer(game_engine_constants.SCREEN_CENTER_POINT, 50, 50, player_id, mock_socket)
-
     t = Thread(target=game_state_watcher, args=(client_game_manager, network))
     t.start()
-
-    if game_engine_constants.CLIENT_GAME_SIMULATION:
-        mock_server_thread = Thread(target=mock_server, args=(server_game_manager))
-        mock_server_thread.start()
 
     # Game loop
     running = True

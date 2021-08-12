@@ -159,12 +159,6 @@ class ClientPlayer(
         if dev_constants.DEBUGGING_NETWORK_MESSAGES:
             print(f"SENDING: {message}")
 
-        if game_engine_constants.CLIENT_GAME_SIMULATION:
-            player_data = "|".join(message.split("|")[1:])
-            game_engine_constants.MOCK_SERVER_QUEUE.put(
-                converters.str_to_player_data(player_data)
-            )
-
         byte_message = pickle.dumps(input_message)
         # byte_message = pickle.dumps(message)
         self.network.socket.sendall(

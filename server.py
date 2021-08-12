@@ -1,7 +1,6 @@
 import socket
 import pickle
 import pygame
-import game_engine_constants
 import helpers, managers, game_modes
 import argparse
 
@@ -9,6 +8,10 @@ from typing import List
 from queue import Queue
 from converters import str_to_player_data
 from threading import Lock, Thread
+
+import game_engine_constants
+
+from managers.server_manager import FirstToNFragsDMServerGameManager
 
 def game_state_sender(server_game_manager, game_state_queue):
     while True:
@@ -82,7 +85,7 @@ def parse_args():
 def initialize_server(map):
     map_fullpath = f'{game_engine_constants.MAP_PREFIX}{map}'
     try:
-        return managers.FirstToNFragsDMServerGameManager(map_fullpath)
+        return FirstToNFragsDMServerGameManager(map_fullpath)
     except Exception:
         # TODO catch bad maps
         pass

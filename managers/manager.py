@@ -11,3 +11,9 @@ class GameManager:
         self.partitioned_map_grid = map_loading.PartitionedMapGrid(
             map_loading.get_pixels(map_name), 10, 10
         )
+
+    def get_ids(self):
+        return self.id_to_player.keys()
+
+    def get_players(self):
+        return self.id_to_player.values()

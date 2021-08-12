@@ -60,6 +60,9 @@ def parse_args():
     parser.add_argument('--windowed', '-w', dest='fullscreen', 
                         action='store_false',
                         help='run in windowed mode')
+    parser.add_argument('--sensitivity', '-s', type=float, 
+                        default=game_engine_constants.DEFAULT_SENSITIVITY,
+                        help='mouse sensitivity')
     parser.set_defaults(fullscreen=True)
     return parser.parse_args()
 
@@ -104,7 +107,7 @@ def initialize_network(ip_address, port):
 
     return network, player_id
 
-def initialize_player(network, player_id):
+def initialize_player(network, player_id, sensitivity):
     rand_color = random.choices(range(256), k=3)
     return ClientPlayer(
         game_engine_constants.ORIGIN,
@@ -115,6 +118,7 @@ def initialize_player(network, player_id):
         game_engine_constants.WEAPON_KEYS,
         player_id,
         network,
+        sensitivity,
     )
 
 def update(client_game_manager, delta_time, player, events):
@@ -273,7 +277,7 @@ def render(client_game_manager, delta_time, player, screen, font):
 def run_client(args):
     screen, font, clock = initialize_pygame(args.fullscreen)
     network, player_id = initialize_network(args.ip_address, args.port)
-    player = initialize_player(network, player_id)
+    player = initialize_player(network, player_id, args.sensitivity)
 
     map_fullname = f'{game_engine_constants.MAP_PREFIX}{args.map}'
     client_game_manager = ClientGameManager(screen, font, map_fullname, player_id, player, network)

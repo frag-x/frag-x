@@ -65,6 +65,7 @@ class ClientPlayer(
         weapon_keys,
         player_id,
         network,
+        sensitivity,
     ):
         """
         Initialize a player
@@ -89,6 +90,8 @@ class ClientPlayer(
 
         self.movement_keys = movement_keys
         self.weapon_keys = weapon_keys
+
+        self.sensitivity = sensitivity * self.sensitivity_scale
 
     def set_sens(self, new_sens):
         self.sensitivity = new_sens * self.sensitivity_scale

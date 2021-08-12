@@ -124,6 +124,7 @@ def parse_player_network_message(message_list, client_game_manager):
                 game_engine_constants.WEAPON_KEYS,
                 player_data.player_id,
                 client_game_manager.network,
+                -1,
             )
             client_game_manager.all_sprites.add(
                 client_game_manager.id_to_player[player_data.player_id]

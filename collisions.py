@@ -1,6 +1,7 @@
 import pygame, math, time
 import logging
 
+import game_engine_constants
 
 def elastic_collision_update(b1, b2):
     """if two bodies are not at the exact same position then perform an elastic collision"""
@@ -84,8 +85,6 @@ def simulate_collision_v2(body, b_wall, closest_v):
     extra_buffer = 3
     # TODO ABOUT TO SET THIS TO AN EXACT POSITION SOMETHING LIKE
     unstick_amount = body.radius + extra_buffer
-
-    velocity_reduction_multiplier = 0.5
 
     # Note that the previous position should not be colliding - you collide once and out
     logging.info(
@@ -214,7 +213,7 @@ def simulate_collision_v2(body, b_wall, closest_v):
         if A1:
             logging.info("top right")
             rotated_vel = pygame.math.Vector2.rotate_rad(body.velocity, -math.tau / 8)
-            rotated_vel.y *= -velocity_reduction_multiplier
+            rotated_vel.y *= -game_engine_constants.VELOCITY_REDUCTION_MODIFIER
             vel = pygame.math.Vector2.rotate_rad(rotated_vel, math.tau / 8)
             body.velocity = vel
 
@@ -226,7 +225,7 @@ def simulate_collision_v2(body, b_wall, closest_v):
         elif B1:
             logging.info("bottom right")
             rotated_vel = pygame.math.Vector2.rotate_rad(body.velocity, math.tau / 8)
-            rotated_vel.y *= -velocity_reduction_multiplier
+            rotated_vel.y *= -game_engine_constants.VELOCITY_REDUCTION_MODIFIER
             vel = pygame.math.Vector2.rotate_rad(rotated_vel, -math.tau / 8)
             body.velocity = vel
 
@@ -237,7 +236,7 @@ def simulate_collision_v2(body, b_wall, closest_v):
         elif C1:
             logging.info("bottom left")
             rotated_vel = pygame.math.Vector2.rotate_rad(body.velocity, -math.tau / 8)
-            rotated_vel.y *= -velocity_reduction_multiplier
+            rotated_vel.y *= -game_engine_constants.VELOCITY_REDUCTION_MODIFIER
             vel = pygame.math.Vector2.rotate_rad(rotated_vel, math.tau / 8)
             body.velocity = vel
 
@@ -250,7 +249,7 @@ def simulate_collision_v2(body, b_wall, closest_v):
             logging.info("top left")
             rotated_vel = pygame.math.Vector2.rotate_rad(body.velocity, math.tau / 8)
 
-            rotated_vel.y *= -velocity_reduction_multiplier
+            rotated_vel.y *= -game_engine_constants.VELOCITY_REDUCTION_MODIFIER
             vel = pygame.math.Vector2.rotate_rad(rotated_vel, -math.tau / 8)
             body.velocity = vel
 
@@ -262,28 +261,28 @@ def simulate_collision_v2(body, b_wall, closest_v):
     elif any(case_2):
         if A2:
             right_reflect(
-                body, unstick_amount, closest_v, velocity_reduction_multiplier
+                body, unstick_amount, closest_v, game_engine_constants.VELOCITY_REDUCTION_MODIFIER
             )
         elif B2:
-            left_reflect(body, unstick_amount, closest_v, velocity_reduction_multiplier)
+            left_reflect(body, unstick_amount, closest_v, game_engine_constants.VELOCITY_REDUCTION_MODIFIER)
         elif C2:
             bottom_reflect(
-                body, unstick_amount, closest_v, velocity_reduction_multiplier
+                body, unstick_amount, closest_v, game_engine_constants.VELOCITY_REDUCTION_MODIFIER
             )
         elif D2:
-            top_reflect(body, unstick_amount, closest_v, velocity_reduction_multiplier)
+            top_reflect(body, unstick_amount, closest_v, game_engine_constants.VELOCITY_REDUCTION_MODIFIER)
     elif any(case_3):
         if A3:
             right_reflect(
-                body, unstick_amount, closest_v, velocity_reduction_multiplier
+                body, unstick_amount, closest_v, game_engine_constants.VELOCITY_REDUCTION_MODIFIER
             )
         elif B3:
-            left_reflect(body, unstick_amount, closest_v, velocity_reduction_multiplier)
+            left_reflect(body, unstick_amount, closest_v, game_engine_constants.VELOCITY_REDUCTION_MODIFIER)
         elif C3:
-            top_reflect(body, unstick_amount, closest_v, velocity_reduction_multiplier)
+            top_reflect(body, unstick_amount, closest_v, game_engine_constants.VELOCITY_REDUCTION_MODIFIER)
         elif D3:
             bottom_reflect(
-                body, unstick_amount, closest_v, velocity_reduction_multiplier
+                body, unstick_amount, closest_v, game_engine_constants.VELOCITY_REDUCTION_MODIFIER
             )
     else:
         logging.info(

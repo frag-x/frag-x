@@ -54,19 +54,13 @@ def parse_args():
     parser.add_argument('--port', '-p', type=int, 
                         default=game_engine_constants.DEFAULT_PORT,
                         help='port to connect to server on')
+    parser.add_argument('--map', '-m', type=str, 
+                        default=game_engine_constants.DEFAULT_MAP,
+                        help='game map')
     return parser.parse_args()
 
 def run_client(args):
     # logging.basicConfig(level=logging.INFO)
-
-    # START MAP LOAD TODO server should only send the name of the map and then we load it in
-
-    map_grid = map_loading.MapGrid(map_loading.get_pixels(game_engine_constants.DEV_MAP))
-    partitioned_map_grid = map_loading.PartitionedMapGrid(
-        map_loading.get_pixels(game_engine_constants.DEV_MAP), 10, 10
-    )
-
-    # END MAP LOAD
 
     ## initialize pygame and create window
     pygame.init()
@@ -103,10 +97,9 @@ def run_client(args):
 
     # initially we don't know what our id is we only get it back from the server so we need to do
     # a type of responce thing..
-    spawn = random.choice(partitioned_map_grid.spawns)
     rand_color = random.choices(range(256), k=3)
     curr_player = ClientPlayer(
-        spawn.pos,
+        game_engine_constants.ORIGIN,
         game_engine_constants.TILE_SIZE,
         game_engine_constants.TILE_SIZE,
         rand_color,
@@ -116,7 +109,7 @@ def run_client(args):
         network,
     )
 
-    client_game_manager = ClientGameManager(screen, font, game_engine_constants.DEV_MAP, curr_player, network)
+    client_game_manager = ClientGameManager(screen, font, f'{game_engine_constants.MAP_PREFIX}{args.map}', curr_player, network)
 
     ## group all the sprites together for ease of update
     # TODO REMOVE THIS AND JUST USE A SET
@@ -205,7 +198,7 @@ def run_client(args):
         screen.fill(pygame.color.THECOLORS["black"])
 
         client_game_manager.player_data_lock.acquire()
-        for row in partitioned_map_grid.partitioned_map:
+        for row in client_game_manager.partitioned_map_grid.partitioned_map:
             for partition in row:
                 pygame.draw.rect(
                     screen,

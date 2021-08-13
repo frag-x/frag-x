@@ -40,6 +40,16 @@ class ServerGameManager(GameManager):
                         projectile.pos.x, projectile.pos.y
                     )
                 )
+            
+            for beam in player.beams:
+                server_state_message.beams.append(
+                    comms.message.BeamState(
+                        start_x = beam.start_point.x, 
+                        start_y = beam.start_point.y,
+                        end_x = beam.end_point.x, 
+                        end_y = beam.end_point.y,
+                    )
+                )
 
             server_state_message.player_states.append(
                 comms.message.PlayerState(
@@ -85,7 +95,7 @@ class ServerGameManager(GameManager):
         self.simulate_collisions(players)
         self.time_running += delta_time
 
-        output_messages.put(self.construct_game_state_message())
+        output_messages.put(self.construct_output_message())
 
     def consume_player_input(
         self, input_message: comms.message.ClientMessage
@@ -155,7 +165,7 @@ class ServerGameManager(GameManager):
             weapon.time_since_last_shot = 0
             # TODO have an enum with the types of weapons associated with the firing action, then use that here
             if type(weapon) is weapons.Hitscan:
-                self.analyze_hitscan_shot(player)
+                player.beams.append(self.analyze_hitscan_shot(player))
             elif (
                 type(weapon) is weapons.RocketLauncher
             ):  # allowed because the only other weapon implemented is the rocket launcher
@@ -195,7 +205,9 @@ class ServerGameManager(GameManager):
                     closest_entity.dead = True
                     firing_player.num_frags += 1
 
-        return beam.start_point, closest_hit
+        beam.end_point = closest_hit
+
+        return beam
 
     def simulate_collisions(self, players):
         # remove players from parition - we will update the positions in the loop
@@ -311,14 +323,7 @@ class ServerGameManager(GameManager):
                                 player.weapon, self.partitioned_map_grid, beam
                             )
 
-                            player.beams.append(
-                                comms.message.BeamState(
-                                    start_x = beam.start_point[0],
-                                    start_y = beam.start_point[1],
-                                    end_x = closest_hit[0] if closest_hit else beam.end_point[0],
-                                    end_y = closest_hit[1] if closest_hit else beam.end_point[1],
-                                )
-                            )
+                            player.beams.append(beam)
                                 
                             if closest_hit is not None:
                                 if dev_constants.DEBUGGING_INTERSECTIONS:
@@ -377,14 +382,7 @@ class ServerGameManager(GameManager):
                                 player.weapons[player.weapon_selection], self.partitioned_map_grid, beam
                             )
 
-                            player.beams.append(
-                                comms.message.BeamState(
-                                    start_x = beam.start_point[0],
-                                    start_y = beam.start_point[1],
-                                    end_x = closest_hit[0] if closest_hit else beam.end_point[0],
-                                    end_y = closest_hit[1] if closest_hit else beam.end_point[1],
-                                )
-                            )
+                            player.beams.append(beam)
                             
                             if closest_hit is not None:
                                 if dev_constants.DEBUGGING_INTERSECTIONS:

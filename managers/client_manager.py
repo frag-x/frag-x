@@ -66,8 +66,8 @@ class ClientGameManager(GameManager):
             pygame.draw.line(
                 self.screen,
                 pygame.color.THECOLORS["chartreuse4"],
-                beam_message.start_point + camera_v,
-                beam_message.end_point + camera_v,
+                (beam_message.start_x, beam_message.start_y) + camera_v,
+                (beam_message.end_x, beam_message.end_y) + camera_v,
             )
 
     def parse_input_message(self, 

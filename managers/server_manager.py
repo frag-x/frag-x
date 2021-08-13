@@ -1,6 +1,14 @@
 import pygame, uuid, math, random
 
-import client_server_communication, game_engine_constants, dev_constants, player, intersections, collisions, helpers, weapons, game_modes, textbox
+import game_engine_constants
+import dev_constants
+import collisions
+import intersections
+import game_modes
+import weapons
+import player
+import helpers
+import comms.message
 from managers.manager import GameManager
 from player import KillableServerPlayer
 
@@ -16,35 +24,42 @@ class ServerGameManager(GameManager):
         super().__init__(map_name)
         self.game_mode = game_mode
 
-    # TODO: Delete this and use the one from the manager class
-    def construct_game_state_message(
+    def construct_output_message(
         self,
-    ) -> client_server_communication.GameStateNetworkMessage:
+    ) -> comms.message.ServerStateMessage:
         """Collects and returns all the information about the current game state"""
 
-        projectile_position_messages = []
-        player_position_messages = []
+        server_state_message = comms.message.ServerStateMessage()
 
-        # Note: I was considering having a player lock here in case a player joined midway through and is added to the id_to_player list
-        # but it's not an issue because if that's the case then their position won't be sent out to everyone until the next server tick which is fine
-        for p in self.get_players():
-            # TODO check if their position has changed since last time otherwise don't append it
-            for projectile in p.weapons[0].fired_projectiles:
-                projectile_position_messages.append(
-                    client_server_communication.ProjectileNetworkMessage(
-                        projectile.pos.x, projectile.pos.y
+        # TODO: should probably lock here
+        for player in self.get_players():
+            # TODO: only send changed positions?
+            for projectile in player.weapons[0].fired_projectiles:
+                server_state_message.projectile_states.append(
+                    comms.message.ProjectileState(projectile.pos.x, projectile.pos.y)
+                )
+
+            for beam in player.beam_states:
+                server_state_message.beam_states.append(
+                    comms.message.BeamState(
+                        start_x=beam.start_point.x,
+                        start_y=beam.start_point.y,
+                        end_x=beam.end_point.x,
+                        end_y=beam.end_point.y,
                     )
                 )
 
-            player_position_messages.append(
-                client_server_communication.PlayerNetworkMessage(p)
+            server_state_message.player_states.append(
+                comms.message.PlayerState(
+                    player_id=player.player_id,
+                    x=player.pos.x,
+                    y=player.pos.y,
+                    rotation=player.rotation_angle,
+                    weapon_selection=player.weapon_selection,
+                )
             )
 
-        game_state_message = client_server_communication.GameStateNetworkMessage(
-            player_position_messages, projectile_position_messages, self.beam_messages
-        )
-
-        return game_state_message
+        return server_state_message
 
     def add_player(self, client_socket):
         # Could this not being locked cause a problem?
@@ -68,100 +83,90 @@ class ServerGameManager(GameManager):
             )
         print(f"Player {self.id_to_player[player_id]} joined")
 
-        # TODO this will probably be removed
         return player_id
 
-    def perform_all_server_operations(
-        self, time_since_last_iteration, input_message, game_state_queue=None
-    ):  # None for if client is running this
-        self.beam_messages = []  # reset beam messages
-        players = [p for p in self.id_to_player.values() if not p.dead]
-        self.consume_player_inputs(input_message)
+    def perform_all_server_operations(self, delta_time, input_message, output_messages):
+        players = [p for p in self.get_players() if not p.dead]
+        self.consume_player_input(input_message)
         self.simulate_collisions(players)
-        self.time_running += time_since_last_iteration  # measured in seconds
+        self.time_running += delta_time
 
-        if game_state_queue is not None:
-            game_state_queue.put(self.construct_game_state_message())
+        output_messages.put(self.construct_output_message())
 
-    def consume_player_inputs(
-        self, input_message: client_server_communication.InputNetworkMessage
-    ):
-        """Update the players attributes based on their input and operate their weapon if required"""
-        player = self.id_to_player[input_message.player_id]
-        net_x_movement = input_message.net_x_movement
-        net_y_movement = input_message.net_y_movement
-        time_since_last_client_frame = input_message.time_since_last_client_frame
-        mouse_movement = input_message.mouse_movement
-        firing = input_message.firing
-        weapon_request = input_message.weapon_request
-        text_message = input_message.text_message
+    def consume_player_input(self, input_message: comms.message.ClientMessage):
+        if type(input_message) is comms.message.PlayerStateMessage:
+            """Update the players attributes based on their input and operate their weapon if required"""
+            player = self.id_to_player[input_message.player_id]
+            delta_x = input_message.delta_x
+            delta_y = input_message.delta_y
+            delta_time = input_message.delta_time
+            delta_mouse = input_message.delta_mouse
+            firing = input_message.firing
+            weapon_selection = input_message.weapon_selection
 
-        if type(self.game_mode) is game_modes.FirstToNFrags:
-            if player.dead:
-                player.time_dead += time_since_last_client_frame  # TODO don't do this the first time we find that they're dead?
-                if player.time_dead >= self.game_mode.respawn_time:
-                    # TODO turn this into a reset player method or something
-                    player.dead = False
-                    player.time_dead = 0
-                    player.health = 100
-                    spawn = random.choice(self.partitioned_map_grid.spawns)
-                    player.pos = spawn.pos
-                    player.velocity = pygame.math.Vector2(0, 0)
-                return  # We don't deal with their inputs if they're dead
+            if type(self.game_mode) is game_modes.FirstToNFrags:
+                if player.dead:
+                    player.time_dead += delta_time  # TODO: don't do this the first time we find that they're dead?
+                    if player.time_dead >= self.game_mode.respawn_time:
+                        # TODO: turn this into a reset player method or something
+                        player.dead = False
+                        player.time_dead = 0
+                        player.health = 100
+                        spawn = random.choice(self.partitioned_map_grid.spawns)
+                        player.pos = spawn.pos
+                        player.velocity = pygame.math.Vector2(0, 0)
+                    return  # We don't deal with their inputs if they're dead
 
-        self.update_player_attributes(
-            player,
-            net_x_movement,
-            net_y_movement,
-            time_since_last_client_frame,
-            mouse_movement,
-            text_message,
-        )
-        if (
-            weapon_request != -1
-        ):  # this means they haven't done a request # TODO add this to u_p_a above
-            player.weapon = player.weapons[weapon_request]
+            self.update_player_attributes(
+                player,
+                delta_x,
+                delta_y,
+                delta_time,
+                delta_mouse,
+            )
 
-        if firing:
-            self.operate_player_weapon(player)
+            player.weapon_selection = weapon_selection
+
+            if firing:
+                self.operate_player_weapon(player)
+
+        else:
+            raise "unknown message type"
 
     def update_player_attributes(
         self,
         player,
-        net_x_movement,
-        net_y_movement,
-        time_since_last_client_frame,
-        mouse_movement,
-        text_message,
+        delta_x,
+        delta_y,
+        delta_time,
+        delta_mouse,
     ):
-        player.update_position(
-            net_x_movement, net_y_movement, time_since_last_client_frame
-        )
-        player.update_aim(mouse_movement)
-        player.weapon.time_since_last_shot += time_since_last_client_frame
+        player.update_position(delta_x, delta_y, delta_time)
+        player.update_aim(delta_mouse)
+        player.weapons[player.weapon_selection].time_since_last_shot += delta_time
 
-        player.text_message = text_message
-
-        # TODO Does using the players delta time make sense?
+        # TODO Does using the players delta time make sense? NO.
         # We should rather update this based on the server timestep?
-        player.weapons[0].update_projectile_positions(time_since_last_client_frame)
+        player.weapons[0].update_projectile_positions(delta_time)
 
     def operate_player_weapon(self, player):
         """Given a player, verify if the player is allowed to fire the weapon again, and if they are fire the weapon"""
         # TODO remove this once weapon switching is enabled
-        if player.weapon.time_since_last_shot >= player.weapon.seconds_per_shot:
-            player.weapon.time_since_last_shot = 0
+        weapon = player.weapons[player.weapon_selection]
+        if weapon.time_since_last_shot >= weapon.seconds_per_shot:
+            weapon.time_since_last_shot = 0
             # TODO have an enum with the types of weapons associated with the firing action, then use that here
-            if type(player.weapon) is weapons.Hitscan:
-                self.analyze_hitscan_shot(player)
+            if type(weapon) is weapons.Hitscan:
+                player.beam_states.append(self.analyze_hitscan_shot(player))
             elif (
-                type(player.weapon) is weapons.RocketLauncher
+                type(weapon) is weapons.RocketLauncher
             ):  # allowed because the only other weapon implemented is the rocket launcher
-                player.weapon.fire_projectile()
+                weapon.fire_projectile()
 
     def analyze_hitscan_shot(self, firing_player):
         """Given the fact that a player is firing a hitscan weapon and has waited long enough (the shot is valid), check to see if the shot hits another player, if it does then apply a force to that player"""
-        beam = firing_player.weapon.get_beam()
+        weapon = firing_player.weapons[firing_player.weapon_selection]
+        beam = weapon.get_beam()
 
         if dev_constants.DEBUGGING_HITSCAN_WEAPON:
             dev_constants.BEAMS_FOR_DEBUGGING.append(beam)
@@ -171,12 +176,7 @@ class ServerGameManager(GameManager):
             closest_hit,
             closest_entity,
         ) = intersections.get_closest_intersecting_object_in_pmg(
-            firing_player.weapon, self.partitioned_map_grid, beam
-        )
-
-        # if closest_hit is not None: # this is guranteed because it's bounded by the map extents
-        self.beam_messages.append(
-            client_server_communication.BeamMessage(beam.start_point, closest_hit)
+            weapon, self.partitioned_map_grid, beam
         )
 
         # if type(closest_entity) is player.ServerPlayer:
@@ -186,7 +186,7 @@ class ServerGameManager(GameManager):
             # Because from polar is in deg apparently ...
             # TODO add a polar version to pygame
             deg = firing_player.rotation_angle * 360 / math.tau
-            hit_v.from_polar((firing_player.weapon.power, deg))
+            hit_v.from_polar((weapon.power, deg))
             closest_entity.velocity += hit_v
             if (
                 type(self.game_mode) is game_modes.FirstToNFrags
@@ -196,6 +196,10 @@ class ServerGameManager(GameManager):
                 if closest_entity.health <= 0:
                     closest_entity.dead = True
                     firing_player.num_frags += 1
+
+        beam.end_point = closest_hit
+
+        return beam
 
     def simulate_collisions(self, players):
         # remove players from parition - we will update the positions in the loop
@@ -310,18 +314,9 @@ class ServerGameManager(GameManager):
                             ) = intersections.get_closest_intersecting_object_in_pmg(
                                 player.weapon, self.partitioned_map_grid, beam
                             )
-                            if closest_hit is not None:
-                                self.beam_messages.append(
-                                    client_server_communication.BeamMessage(
-                                        beam.start_point, closest_hit
-                                    )
-                                )
-                            else:
-                                self.beam_messages.append(
-                                    client_server_communication.BeamMessage(
-                                        beam.start_point, beam.end_point
-                                    )
-                                )
+
+                            player.beam_states.append(beam)
+
                             if closest_hit is not None:
                                 if dev_constants.DEBUGGING_INTERSECTIONS:
                                     dev_constants.INTERSECTIONS_FOR_DEBUGGING.append(
@@ -350,7 +345,6 @@ class ServerGameManager(GameManager):
                         rocket, p_wall
                     )
                     if colliding:
-
                         # TODO don't change the position of the rocket
                         # Means we have to change all isntances of the call to colliding_and_closest
                         if rocket.previous_pos is not None:
@@ -377,20 +371,13 @@ class ServerGameManager(GameManager):
                                 closest_hit,
                                 closest_entity,
                             ) = intersections.get_closest_intersecting_object_in_pmg(
-                                player.weapon, self.partitioned_map_grid, beam
+                                player.weapons[player.weapon_selection],
+                                self.partitioned_map_grid,
+                                beam,
                             )
-                            if closest_hit is not None:
-                                self.beam_messages.append(
-                                    client_server_communication.BeamMessage(
-                                        beam.start_point, closest_hit
-                                    )
-                                )
-                            else:
-                                self.beam_messages.append(
-                                    client_server_communication.BeamMessage(
-                                        beam.start_point, beam.end_point
-                                    )
-                                )
+
+                            player.beam_states.append(beam)
+
                             if closest_hit is not None:
                                 if dev_constants.DEBUGGING_INTERSECTIONS:
                                     dev_constants.INTERSECTIONS_FOR_DEBUGGING.append(
@@ -419,11 +406,13 @@ class ServerGameManager(GameManager):
 
 class WinnableServerGameManager(ServerGameManager):  # TODO abstract class
     def perform_all_server_operations(
-        self, time_since_last_iteration, input_message, game_state_queue=None
+        self, time_since_last_iteration, input_message, output_messages=None
     ):  # None for if client is running this
-        self.beam_messages = []  # reset beam messages
         players = self.get_players()
-        self.consume_player_inputs(input_message)
+        for player in players:
+            player.beam_states = []
+
+        self.consume_player_input(input_message)
         self.simulate_collisions(players)
         game_over, winner = self.is_game_over()
         if game_over:  # TODO figure this out with a type of switch or something
@@ -432,8 +421,7 @@ class WinnableServerGameManager(ServerGameManager):  # TODO abstract class
             )  # and stop everything. kill this thread?
             quit()
 
-        if game_state_queue is not None:
-            game_state_queue.put(self.construct_game_state_message())
+        output_messages.put(self.construct_output_message())
 
         self.time_running += time_since_last_iteration  # measured in seconds
 

@@ -1,7 +1,5 @@
 import socket
-import pickle
 import pygame
-import helpers, managers, game_modes
 import argparse
 
 from typing import List
@@ -12,57 +10,29 @@ from threading import Lock, Thread
 import game_engine_constants
 
 from managers.server_manager import FirstToNFragsDMServerGameManager
+from comms import network, message
 
-def game_state_sender(server_game_manager, game_state_queue):
-    while True:
-        # Incase someone joins in the middle - would that be so bad??? - TODO maybe remove these locks
-
-        # consume the message
-        if (
-            not game_state_queue.empty()
-        ):
-            game_state_message = game_state_queue.get()
-
-            # Send the game state to each of the players
-            # TODO instead of doing this use the socket they are connected on
-            for player in server_game_manager.get_players():
-                byte_message = pickle.dumps(game_state_message)
-                try:
-                    player.network.sendall(
-                        len(byte_message).to_bytes(4, "little") + byte_message
-                    )
-                except BrokenPipeError:
-                    # TODO remove player
-                    pass
-
-
-def client_listener(socket, state_queue):
-    """
-    This function gets run as a thread, it is associated with a single player and retreives their inputs
-    """
-    while True:
-        size_bytes = helpers.recv_exactly(socket, 4)
-        size = int.from_bytes(size_bytes, "little")
-        data = helpers.recv_exactly(socket, size)
-        player_input_message = pickle.loads(data)
-
-        state_queue.put(player_input_message)
-
-
-def threaded_server_acceptor(server_game_manager, server_socket, state_queue):
+def listener(server_game_manager, server_socket, state_queue):
     while True:
         client_socket, addr = server_socket.accept()
-
         player_id = server_game_manager.add_player(client_socket)
+        network.send(client_socket, message.ServerJoinMessage(player_id=player_id))
+        print(f"Accepted connection from {addr}")
 
-        # TODO do I need to send this?
-        client_socket.send(str.encode(str(player_id)))
-        print(f"Accept connection from {addr}")
-
-        # If a player connects they get their own thread
-        # TODO START a thread that sends them data too
         t = Thread(target=client_listener, args=(client_socket, state_queue))
         t.start()
+
+def client_listener(socket, input_messages):
+    while True:
+        input_messages.put(network.recv(socket))
+
+def server_messager(server_game_manager, output_messages):
+    while True:
+        # TODO: what if someone joins in the middle?
+        if not output_messages.empty():
+            message = output_messages.get()
+            for player in server_game_manager.get_players():
+                network.send(player.socket, message)
 
 def parse_args():
     parser = argparse.ArgumentParser()
@@ -81,44 +51,34 @@ def initialize_server(map):
     try:
         return FirstToNFragsDMServerGameManager(map_fullpath)
     except Exception:
-        # TODO catch bad maps
-        pass
+        # TODO: catch bad maps
+        raise
 
 def initialize_socket():
     server_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     ip_address = 'localhost' if args.local else ''
 
-    try:
-        server_socket.bind((ip_address, args.port))
-
-    except socket.error as e:
-        raise
-
-    server_socket.listen(2)
+    server_socket.bind((ip_address, args.port))
+    server_socket.listen()
     print(f"Server started on {(ip_address, args.port)}")
     
     return server_socket
 
 def run_server(args):
     server_game_manager = initialize_server(args.map)
-
     server_socket = initialize_socket()
 
-    # FPS synchronization
-    clock = pygame.time.Clock()
+    clock = pygame.time.Clock() # FPS synchronization
 
-    # TODO Rename this
-    state_queue = Queue()
-    # TODO add threads for this
-    game_state_queue = Queue()
+    input_messages = Queue() # client to server
+    output_messages = Queue() # server to client
 
-    tsa_t = Thread(target=threaded_server_acceptor, args=(server_game_manager, server_socket, state_queue,))
+    tsa_t = Thread(target=listener, args=(server_game_manager, server_socket, input_messages,))
     tsa_t.start()
 
-    gss_t = Thread(target=game_state_sender, args=(server_game_manager, game_state_queue,))
+    gss_t = Thread(target=server_messager, args=(server_game_manager, output_messages,))
     gss_t.start()
 
-    ticks_from_previous_iteration = 0
     num_frames = 0
     while True:
         num_frames += 1
@@ -127,25 +87,13 @@ def run_server(args):
             game_engine_constants.SERVER_TICK_RATE_HZ
         )  ## will make the loop run at the same speed all the time
 
-        t = pygame.time.get_ticks()
-        # deltaTime in seconds.
-        time_since_last_iteration = (t - ticks_from_previous_iteration) / 1000.0
-        ticks_from_previous_iteration = t
+        delta_time = clock.tick()
+        delta_time /= 1000
 
-        while not state_queue.empty():  # TODO why does removing this cause immense lag?
-            # print("q is drainable")
-            # TODO use class
-            # player_id, dx, dy, dm, delta_time, firing, weapon_request = state_queue.get()
-            input_message = state_queue.get()
-
-            # TODO store input messages directly in the queue or something like that.
-
-            # input_message = client_server_communication.InputNetworkMessage(
-            #     player_id, dx, dy, dm, delta_time, firing, weapon_request
-            # )
-
+        while not input_messages.empty():  # TODO why does removing this cause immense lag?
+            input_message = input_messages.get()
             server_game_manager.perform_all_server_operations(
-                time_since_last_iteration, input_message, game_state_queue
+                delta_time, input_message, output_messages
             )
 
 if __name__ == '__main__':

@@ -3,48 +3,25 @@ import pickle
 import random
 import math
 import argparse
+import socket
 
 from converters import str_to_player_data_no_dt
 from threading import Thread, Lock
 from fractions import Fraction
 
 import dev_constants
-import client_server_communication
 import game_engine_constants
 import commands
 import map_loading
 import helpers
+from comms import network, message
 
-from network import Network
 from player import ClientPlayer
 from managers.client_manager import ClientGameManager
 
-def mock_server(server_game_manager):
-    """This function gets run as a thread and simulates what the server does so we can update the players view without waiting for the server responce, when the server responce comes then we can check positions and fix them if required"""
+def server_listener(client_game_manager, socket):
     while True:
-        (
-            player_id,
-            dx,
-            dy,
-            dm,
-            delta_time,
-            firing,
-            weapon_request,
-        ) = game_engine_constants.MOCK_SERVER_QUEUE.get()
-
-        input_message = client_server_communication.InputNetworkMessage(
-            player_id, dx, dy, dm, delta_time, firing, weapon_request
-        )
-
-        server_game_manager.perform_all_server_operations(delta_time, input_message)
-
-def game_state_watcher(client_game_manager, network):
-    # CONNECT LOOP
-    while True:
-        size_bytes = helpers.recv_exactly(network.socket, 4)
-        size = int.from_bytes(size_bytes, "little")
-        message = pickle.loads(helpers.recv_exactly(network.socket, size))
-        client_game_manager.client_message_parser.run_command_from_message(message)
+        client_game_manager.parse_input_message(network.recv(socket))
 
 def parse_args():
     parser = argparse.ArgumentParser()
@@ -100,12 +77,17 @@ def initialize_pygame(fullscreen):
     return screen, font, clock
 
 def initialize_network(ip_address, port):
-    network = Network(ip_address, port, game_engine_constants.BUF_SIZE)
-    player_id = network.connect()
+    server_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    server_socket.connect((ip_address, port))
+
+    join_message = network.recv(server_socket)
+    if type(join_message) == message.ServerJoinMessage:
+        player_id = join_message.player_id
+    else:
+        raise 'unknown message'
 
     print(f"You are player {player_id}")
-
-    return network, player_id
+    return server_socket, player_id
 
 def initialize_player(network, player_id, sensitivity):
     rand_color = random.choices(range(256), k=3)
@@ -123,7 +105,6 @@ def initialize_player(network, player_id, sensitivity):
 
 def update(client_game_manager, delta_time, player, events):
     just_started = False
-    message_to_send = ""
 
     if not client_game_manager.is_typing:
         if helpers.started_typing(events):  # only check if they pressd when not typing
@@ -166,7 +147,7 @@ def update(client_game_manager, delta_time, player, events):
     client_game_manager.all_sprites.update(events, delta_time)
 
     player.send_inputs(
-        delta_time, client_game_manager.is_typing, message_to_send
+        delta_time, client_game_manager.is_typing
     )
 
 def render(client_game_manager, delta_time, player, screen, font):
@@ -282,7 +263,7 @@ def run_client(args):
     map_fullname = f'{game_engine_constants.MAP_PREFIX}{args.map}'
     client_game_manager = ClientGameManager(screen, font, map_fullname, player_id, player, network)
 
-    t = Thread(target=game_state_watcher, args=(client_game_manager, network))
+    t = Thread(target=server_listener, args=(client_game_manager, network))
     t.start()
 
     running = True

@@ -1,11 +1,12 @@
 import pygame, pickle
+from comms import network, message
 
 import math
-import weapons, converters, game_engine_constants, client_server_communication, dev_constants, body
+import weapons, converters, game_engine_constants, dev_constants, body
 from helpers import magnitude
 
 class BasePlayer(body.ConstantAccelerationBody):
-    def __init__(self, start_pos, width, height, player_id, network):
+    def __init__(self, start_pos, width, height, player_id, socket):
         pygame.sprite.Sprite.__init__(self)
         self.pos = pygame.math.Vector2(start_pos)
 
@@ -19,11 +20,10 @@ class BasePlayer(body.ConstantAccelerationBody):
 
         self.width = width + 2 * self.aim_length
         self.height = height + 2 * self.aim_length
-        self.player_id = player_id
 
         self.player_id = player_id
 
-        self.network = network
+        self.socket = socket
 
         # Aiming
 
@@ -33,12 +33,11 @@ class BasePlayer(body.ConstantAccelerationBody):
 
         # Guns
 
-        # self.weapon = weapons.Hitscan(1, self, 1000)
         self.weapons = [
             weapons.RocketLauncher(2, self, 1000),
             weapons.Hitscan(1, self, 1000),
         ]
-        self.weapon = self.weapons[0]  # TODO rename to active weapon
+        self.weapon_selection = 0
 
         # Physics/Movement
 
@@ -46,6 +45,8 @@ class BasePlayer(body.ConstantAccelerationBody):
         self.movement_vector = pygame.math.Vector2(0, 0)
 
         self.text_message = ""
+
+        self.beams = []
 
 
 class ClientPlayer(
@@ -102,7 +103,7 @@ class ClientPlayer(
         self.rect.center = self.pos  # update the image to be at the correct location
         # self.camera_v = game_engine_constants.SCREEN_CENTER_POINT - self.pos
 
-    def send_inputs(self, delta_time, typing, text_message=""):
+    def send_inputs(self, delta_time, typing):
 
         # we only look at the x component of mouse input
         dm, _ = pygame.mouse.get_rel()
@@ -119,46 +120,29 @@ class ClientPlayer(
             x_movement = int(keys[r]) - int(keys[l])
             y_movement = -(int(keys[u]) - int(keys[d]))
 
-        weapon_choice = -1
         for key in self.weapon_keys:
             if keys[key]:
                 if key == pygame.K_c:
-                    weapon_choice = 0
+                    self.weapon_selection = 0
                 elif key == pygame.K_x:
-                    weapon_choice = 1
+                    self.weapon_selection = 1
 
         firing = int(pygame.mouse.get_pressed()[0])
 
-        inputs = (
-            self.player_id,
-            x_movement,
-            y_movement,
-            dm,
-            delta_time,
-            firing,
-            weapon_choice,
-        )
-
-        # instead of a string use a custom class designed for this...
-
-        # TODO use class
-        message = (
-            str(client_server_communication.ServerMessageType.PLAYER_INPUTS.value)
-            + "|"
-            + converters.player_data_to_str(inputs)
-        )
-
-        input_message = client_server_communication.InputNetworkMessage(
-            *inputs, text_message  # TODO once working add text_message to the inputs
+        output_message = message.PlayerStateMessage(
+            player_id = self.player_id,
+            delta_x = x_movement,
+            delta_y = y_movement,
+            delta_mouse = dm,
+            delta_time = delta_time,
+            firing = firing,
+            weapon_selection = self.weapon_selection,
         )
 
         if dev_constants.DEBUGGING_NETWORK_MESSAGES:
-            print(f"SENDING: {message}")
+            print(f"SENDING: {output_message}")
 
-        byte_message = pickle.dumps(input_message)
-        self.network.socket.sendall(
-            len(byte_message).to_bytes(4, "little") + byte_message
-        )
+        network.send(self.socket, output_message)
 
     def update(self, events=None, delta_time=0):
         self.image.fill((255, 255, 255, 0))

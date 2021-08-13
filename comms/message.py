@@ -65,4 +65,3 @@ class ServerStateMessage(ServerMessage):
     player_states: list[PlayerStateMessage] = field(default_factory=list)
     projectiles: list[ProjectileState] = field(default_factory=list)
     beams: list[BeamState] = field(default_factory=list)
-

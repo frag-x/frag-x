@@ -8,9 +8,10 @@ import game_modes
 import weapons
 import player
 import helpers
-import comms.message
+
 from managers.manager import GameManager
 from player import KillableServerPlayer
+from comms import message
 
 
 class ServerGameManager(GameManager):
@@ -26,22 +27,22 @@ class ServerGameManager(GameManager):
 
     def construct_output_message(
         self,
-    ) -> comms.message.ServerStateMessage:
+    ) -> message.ServerStateMessage:
         """Collects and returns all the information about the current game state"""
 
-        server_state_message = comms.message.ServerStateMessage()
+        server_state_message = message.ServerStateMessage()
 
         # TODO: should probably lock here
         for player in self.get_players():
             # TODO: only send changed positions?
             for projectile in player.weapons[0].fired_projectiles:
                 server_state_message.projectile_states.append(
-                    comms.message.ProjectileState(projectile.pos.x, projectile.pos.y)
+                    message.ProjectileState(projectile.pos.x, projectile.pos.y)
                 )
 
             for beam in player.beam_states:
                 server_state_message.beam_states.append(
-                    comms.message.BeamState(
+                    message.BeamState(
                         start_x=beam.start_point.x,
                         start_y=beam.start_point.y,
                         end_x=beam.end_point.x,
@@ -50,7 +51,7 @@ class ServerGameManager(GameManager):
                 )
 
             server_state_message.player_states.append(
-                comms.message.PlayerState(
+                message.PlayerState(
                     player_id=player.player_id,
                     x=player.pos.x,
                     y=player.pos.y,
@@ -87,51 +88,55 @@ class ServerGameManager(GameManager):
 
     def perform_all_server_operations(self, delta_time, input_message, output_messages):
         players = [p for p in self.get_players() if not p.dead]
-        self.consume_player_input(input_message)
+
+        if type(input_message) == message.PlayerStateMessage:
+            self.consume_player_input(input_message)
+        elif type(input_message) == message.PlayerTextMessage:
+            output_messages.put(input_message)
+        else:
+            raise message.UnknownMessageTypeError
+
         self.simulate_collisions(players)
         self.time_running += delta_time
 
         output_messages.put(self.construct_output_message())
 
-    def consume_player_input(self, input_message: comms.message.ClientMessage):
-        if type(input_message) is comms.message.PlayerStateMessage:
-            """Update the players attributes based on their input and operate their weapon if required"""
-            player = self.id_to_player[input_message.player_id]
-            delta_x = input_message.delta_x
-            delta_y = input_message.delta_y
-            delta_time = input_message.delta_time
-            delta_mouse = input_message.delta_mouse
-            firing = input_message.firing
-            weapon_selection = input_message.weapon_selection
+    def consume_player_input(self, input_message: message.ClientMessage):
+        """Update the players attributes based on their input and operate their weapon if required"""
+        player = self.id_to_player[input_message.player_id]
+        delta_x = input_message.delta_x
+        delta_y = input_message.delta_y
+        delta_time = input_message.delta_time
+        delta_mouse = input_message.delta_mouse
+        firing = input_message.firing
+        weapon_selection = input_message.weapon_selection
 
-            if type(self.game_mode) is game_modes.FirstToNFrags:
-                if player.dead:
-                    player.time_dead += delta_time  # TODO: don't do this the first time we find that they're dead?
-                    if player.time_dead >= self.game_mode.respawn_time:
-                        # TODO: turn this into a reset player method or something
-                        player.dead = False
-                        player.time_dead = 0
-                        player.health = 100
-                        spawn = random.choice(self.partitioned_map_grid.spawns)
-                        player.pos = spawn.pos
-                        player.velocity = pygame.math.Vector2(0, 0)
-                    return  # We don't deal with their inputs if they're dead
+        if type(self.game_mode) is game_modes.FirstToNFrags:
+            if player.dead:
+                player.time_dead += delta_time  # TODO: don't do this the first time we find that they're dead?
+                if player.time_dead >= self.game_mode.respawn_time:
+                    # TODO: turn this into a reset player method or something
+                    player.dead = False
+                    player.time_dead = 0
+                    player.health = 100
+                    spawn = random.choice(self.partitioned_map_grid.spawns)
+                    player.pos = spawn.pos
+                    player.velocity = pygame.math.Vector2(0, 0)
+                return  # We don't deal with their inputs if they're dead
 
-            self.update_player_attributes(
-                player,
-                delta_x,
-                delta_y,
-                delta_time,
-                delta_mouse,
-            )
+        self.update_player_attributes(
+            player,
+            delta_x,
+            delta_y,
+            delta_time,
+            delta_mouse,
+        )
 
-            player.weapon_selection = weapon_selection
+        player.weapon_selection = weapon_selection
 
-            if firing:
-                self.operate_player_weapon(player)
+        if firing:
+            self.operate_player_weapon(player)
 
-        else:
-            raise "unknown message type"
 
     def update_player_attributes(
         self,
@@ -412,7 +417,13 @@ class WinnableServerGameManager(ServerGameManager):  # TODO abstract class
         for player in players:
             player.beam_states = []
 
-        self.consume_player_input(input_message)
+        if type(input_message) == message.PlayerStateMessage:
+            self.consume_player_input(input_message)
+        elif type(input_message) == message.PlayerTextMessage:
+            output_messages.put(input_message)
+        else:
+            raise message.UnknownMessageTypeError
+
         self.simulate_collisions(players)
         game_over, winner = self.is_game_over()
         if game_over:  # TODO figure this out with a type of switch or something

@@ -84,7 +84,7 @@ def initialize_network(ip_address, port):
     if type(join_message) == message.ServerJoinMessage:
         player_id = join_message.player_id
     else:
-        raise 'unknown message'
+        raise message.UnknownMessageTypeError
 
     print(f"You are player {player_id}")
     return server_socket, player_id
@@ -116,12 +116,11 @@ def update(client_game_manager, delta_time, player, events):
         ):  # they are typing and then press return
             client_game_manager.is_typing = False
             # DO ACTION
-            message = client_game_manager.user_text_box.text
-            if commands.is_command(message):
-                full_command = message
+            text = client_game_manager.user_text_box.text
+            if commands.is_command(text):
                 successful = (
                     client_game_manager.client_command_runner.attempt_run_command(
-                        full_command
+                        text
                     )
                 )
                 if successful:
@@ -130,7 +129,11 @@ def update(client_game_manager, delta_time, player, events):
                     print("command failed")
             else:
                 # then we're dealing with a normal chat message
-                message_to_send = message
+                text_message = message.PlayerTextMessage(
+                    player_id=player.player_id, 
+                    text=text
+                )
+                network.send(player.socket, text_message)
 
             # print(f"sending {client_game_manager.user_text_box.text}")
             client_game_manager.user_text_box.text = ""

@@ -78,8 +78,12 @@ class ClientGameManager(GameManager):
             self.parse_player_network_message(input_message.player_states)
             self.projectiles = input_message.projectile_states
             self.beam_messages.extend(input_message.beam_states)
+
+        elif type(input_message) == message.PlayerTextMessage:
+            self.user_chat_box.add_message(f'{input_message.player_id[:4]}: {input_message.text}')
+        
         else:
-            raise "unknown message"
+            raise message.UnknownMessageTypeError
 
     def parse_player_network_message(self, player_states: List[message.PlayerState]):
         """The message in this case is a list of elements of the form

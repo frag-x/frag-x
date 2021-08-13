@@ -317,7 +317,7 @@ class ServerGameManager(GameManager):
                                 closest_hit,
                                 closest_entity,
                             ) = intersections.get_closest_intersecting_object_in_pmg(
-                                player.weapon, self.partitioned_map_grid, beam
+                                player.weapons[player.weapon_selection], self.partitioned_map_grid, beam
                             )
 
                             player.beam_states.append(beam)

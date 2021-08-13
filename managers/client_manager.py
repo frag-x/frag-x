@@ -70,15 +70,16 @@ class ClientGameManager(GameManager):
                 (beam_message.end_x, beam_message.end_y) + camera_v,
             )
 
-    def parse_input_message(self, 
+    def parse_input_message(
+        self,
         input_message: message.ServerMessage,
     ):
         if type(input_message) == message.ServerStateMessage:
             self.parse_player_network_message(input_message.player_states)
-            self.projectiles = input_message.projectiles
-            self.beam_messages.extend(input_message.beams)
+            self.projectiles = input_message.projectile_states
+            self.beam_messages.extend(input_message.beam_states)
         else:
-            raise 'unknown message'
+            raise "unknown message"
 
     def parse_player_network_message(self, player_states: List[message.PlayerState]):
         """The message in this case is a list of elements of the form
@@ -89,9 +90,7 @@ class ClientGameManager(GameManager):
         for player_state in player_states:
             if player_state.player_id not in self.get_ids():
                 # TODO remove the network from a curr_player the game manager will do that
-                self.id_to_player[
-                    player_state.player_id
-                ] = player.ClientPlayer(
+                self.id_to_player[player_state.player_id] = player.ClientPlayer(
                     (player_state.x, player_state.y),
                     50,
                     50,
@@ -99,12 +98,10 @@ class ClientGameManager(GameManager):
                     game_engine_constants.ARROW_MOVEMENT_KEYS,
                     game_engine_constants.WEAPON_KEYS,
                     player_state.player_id,
-                    None, # TODO this is also really bad
-                    -1, # TODO this is really bad
+                    None,  # TODO this is also really bad
+                    -1,  # TODO this is really bad
                 )
-                self.all_sprites.add(
-                    self.id_to_player[player_state.player_id]
-                )
+                self.all_sprites.add(self.id_to_player[player_state.player_id])
             else:
                 # this needs to be locked because if we are doing collisions or hitscan which depends on the position of the player then we can have issues where their position is updated after translating a point with respect to it's original position and then there are no valid
                 self.player_data_lock.acquire()

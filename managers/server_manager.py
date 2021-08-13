@@ -35,29 +35,27 @@ class ServerGameManager(GameManager):
         for player in self.get_players():
             # TODO: only send changed positions?
             for projectile in player.weapons[0].fired_projectiles:
-                server_state_message.projectiles.append(
-                    comms.message.ProjectileState(
-                        projectile.pos.x, projectile.pos.y
-                    )
+                server_state_message.projectile_states.append(
+                    comms.message.ProjectileState(projectile.pos.x, projectile.pos.y)
                 )
-            
-            for beam in player.beams:
-                server_state_message.beams.append(
+
+            for beam in player.beam_states:
+                server_state_message.beam_states.append(
                     comms.message.BeamState(
-                        start_x = beam.start_point.x, 
-                        start_y = beam.start_point.y,
-                        end_x = beam.end_point.x, 
-                        end_y = beam.end_point.y,
+                        start_x=beam.start_point.x,
+                        start_y=beam.start_point.y,
+                        end_x=beam.end_point.x,
+                        end_y=beam.end_point.y,
                     )
                 )
 
             server_state_message.player_states.append(
                 comms.message.PlayerState(
-                    player_id = player.player_id,
-                    x = player.pos.x,
-                    y = player.pos.y,
-                    rotation = player.rotation_angle,
-                    weapon_selection = player.weapon_selection,
+                    player_id=player.player_id,
+                    x=player.pos.x,
+                    y=player.pos.y,
+                    rotation=player.rotation_angle,
+                    weapon_selection=player.weapon_selection,
                 )
             )
 
@@ -87,9 +85,7 @@ class ServerGameManager(GameManager):
 
         return player_id
 
-    def perform_all_server_operations(
-        self, delta_time, input_message, output_messages
-    ):
+    def perform_all_server_operations(self, delta_time, input_message, output_messages):
         players = [p for p in self.get_players() if not p.dead]
         self.consume_player_input(input_message)
         self.simulate_collisions(players)
@@ -97,9 +93,7 @@ class ServerGameManager(GameManager):
 
         output_messages.put(self.construct_output_message())
 
-    def consume_player_input(
-        self, input_message: comms.message.ClientMessage
-    ):
+    def consume_player_input(self, input_message: comms.message.ClientMessage):
         if type(input_message) is comms.message.PlayerStateMessage:
             """Update the players attributes based on their input and operate their weapon if required"""
             player = self.id_to_player[input_message.player_id]
@@ -137,7 +131,7 @@ class ServerGameManager(GameManager):
                 self.operate_player_weapon(player)
 
         else:
-            raise 'unknown message type'
+            raise "unknown message type"
 
     def update_player_attributes(
         self,
@@ -147,9 +141,7 @@ class ServerGameManager(GameManager):
         delta_time,
         delta_mouse,
     ):
-        player.update_position(
-            delta_x, delta_y, delta_time
-        )
+        player.update_position(delta_x, delta_y, delta_time)
         player.update_aim(delta_mouse)
         player.weapons[player.weapon_selection].time_since_last_shot += delta_time
 
@@ -165,7 +157,7 @@ class ServerGameManager(GameManager):
             weapon.time_since_last_shot = 0
             # TODO have an enum with the types of weapons associated with the firing action, then use that here
             if type(weapon) is weapons.Hitscan:
-                player.beams.append(self.analyze_hitscan_shot(player))
+                player.beam_states.append(self.analyze_hitscan_shot(player))
             elif (
                 type(weapon) is weapons.RocketLauncher
             ):  # allowed because the only other weapon implemented is the rocket launcher
@@ -323,8 +315,8 @@ class ServerGameManager(GameManager):
                                 player.weapon, self.partitioned_map_grid, beam
                             )
 
-                            player.beams.append(beam)
-                                
+                            player.beam_states.append(beam)
+
                             if closest_hit is not None:
                                 if dev_constants.DEBUGGING_INTERSECTIONS:
                                     dev_constants.INTERSECTIONS_FOR_DEBUGGING.append(
@@ -379,11 +371,13 @@ class ServerGameManager(GameManager):
                                 closest_hit,
                                 closest_entity,
                             ) = intersections.get_closest_intersecting_object_in_pmg(
-                                player.weapons[player.weapon_selection], self.partitioned_map_grid, beam
+                                player.weapons[player.weapon_selection],
+                                self.partitioned_map_grid,
+                                beam,
                             )
 
-                            player.beams.append(beam)
-                            
+                            player.beam_states.append(beam)
+
                             if closest_hit is not None:
                                 if dev_constants.DEBUGGING_INTERSECTIONS:
                                     dev_constants.INTERSECTIONS_FOR_DEBUGGING.append(
@@ -416,8 +410,8 @@ class WinnableServerGameManager(ServerGameManager):  # TODO abstract class
     ):  # None for if client is running this
         players = self.get_players()
         for player in players:
-            player.beams = []
-        
+            player.beam_states = []
+
         self.consume_player_input(input_message)
         self.simulate_collisions(players)
         game_over, winner = self.is_game_over()

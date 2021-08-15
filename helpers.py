@@ -40,12 +40,6 @@ def tuple_add(t0, t1):
     return (int(t0[0] + t1[0]), int(t0[1] + t1[1]))
 
 
-def point_within_map(point) -> bool:
-    x_valid = 0 <= point[0] <= game_engine_constants.MAP_DIM_X
-    y_valid = 0 <= point[1] <= game_engine_constants.MAP_DIM_Y
-    return x_valid and y_valid
-
-
 def part_of_beam(point, beam):
     """Given a point on the line defined by the beams line segment,
     check if the point is part of the line segment"""
@@ -107,6 +101,7 @@ def recv_exactly(socket, size):
             raise IOError("...something")
         data += chunk
     return data
+
 
 def magnitude(v):
     return math.sqrt(v.x ** 2 + v.y ** 2)

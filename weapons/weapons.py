@@ -146,24 +146,6 @@ class Hitscan(Weapon):
                 return HitscanBeam(helpers.copy_vector(self.owner.pos), location)
         # assert 1 == 0
 
-    def get_firing_line(self):
-        fire_origin = self.owner.pos
-
-        delta_y = math.sin(self.owner.rotation_angle)
-
-        delta_x = math.cos(self.owner.rotation_angle)
-
-        closest_hit = None
-        closest_entity = None
-
-        quadrant_info = (helpers.get_sign(delta_x), helpers.get_sign(delta_y))
-
-        if delta_x == 0 or delta_y == 0:
-            # Then we fired along the axis
-            pass
-        else:
-            fire_slope = delta_y / delta_x
-
     def get_intersecting_partitions(
         self, partitioned_map_grid, beam: HitscanBeam, screen_for_debug=None
     ):

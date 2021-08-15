@@ -4,6 +4,9 @@ from comms import network, message
 import math
 import weapons, converters, game_engine_constants, dev_constants, body
 from helpers import magnitude
+from weapons.railgun import RailGun
+from weapons.rocket_launcher import RocketLauncher
+
 
 class BasePlayer(body.ConstantAccelerationBody):
     def __init__(self, start_pos, width, height, player_id, socket):
@@ -34,8 +37,9 @@ class BasePlayer(body.ConstantAccelerationBody):
         # Guns
 
         self.weapons = [
-            weapons.RocketLauncher(2, self, 1000),
-            weapons.Hitscan(1, self, 1000),
+            # weapons.RocketLauncher(2, self, 1000),
+            RocketLauncher(),
+            RailGun(),
         ]
         self.weapon_selection = 0
 
@@ -130,13 +134,13 @@ class ClientPlayer(
         firing = int(pygame.mouse.get_pressed()[0])
 
         output_message = message.PlayerStateMessage(
-            player_id = self.player_id,
-            delta_x = x_movement,
-            delta_y = y_movement,
-            delta_mouse = dm,
-            delta_time = delta_time,
-            firing = firing,
-            weapon_selection = self.weapon_selection,
+            player_id=self.player_id,
+            delta_x=x_movement,
+            delta_y=y_movement,
+            delta_mouse=dm,
+            delta_time=delta_time,
+            firing=bool(firing),
+            weapon_selection=self.weapon_selection,
         )
 
         if dev_constants.DEBUGGING_NETWORK_MESSAGES:
@@ -232,4 +236,4 @@ class KillableServerPlayer(ServerPlayer):
         self.time_dead = 0
 
     def __repr__(self):
-        return f'{self.player_id}'
+        return f"{self.player_id}"

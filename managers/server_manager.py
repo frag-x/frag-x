@@ -12,6 +12,9 @@ import helpers
 from managers.manager import GameManager
 from player import KillableServerPlayer
 from comms import message
+from weapons.railgun import RailGun
+from weapons.rocket_launcher import RocketLauncher
+from weapons.weapon import HitscanBeam
 
 
 class ServerGameManager(GameManager):
@@ -137,7 +140,6 @@ class ServerGameManager(GameManager):
         if firing:
             self.operate_player_weapon(player)
 
-
     def update_player_attributes(
         self,
         player,
@@ -156,55 +158,67 @@ class ServerGameManager(GameManager):
 
     def operate_player_weapon(self, player):
         """Given a player, verify if the player is allowed to fire the weapon again, and if they are fire the weapon"""
-        # TODO remove this once weapon switching is enabled
         weapon = player.weapons[player.weapon_selection]
         if weapon.time_since_last_shot >= weapon.seconds_per_shot:
             weapon.time_since_last_shot = 0
             # TODO have an enum with the types of weapons associated with the firing action, then use that here
-            if type(weapon) is weapons.Hitscan:
-                player.beam_states.append(self.analyze_hitscan_shot(player))
+            if type(weapon) is RailGun:
+                beam = weapon.fire(player.pos, player.rotation_angle)
+                player.beam_states.append(self.analyze_hitscan_shot(player, beam))
             elif (
-                type(weapon) is weapons.RocketLauncher
+                type(weapon) is RocketLauncher
             ):  # allowed because the only other weapon implemented is the rocket launcher
-                weapon.fire_projectile()
+                weapon.fire_projectile(player.pos, player.rotation_angle)
 
-    def analyze_hitscan_shot(self, firing_player):
+    def analyze_hitscan_shot(
+        self,
+        firing_player,
+        beam: HitscanBeam,
+    ):
         """Given the fact that a player is firing a hitscan weapon and has waited long enough (the shot is valid), check to see if the shot hits another player, if it does then apply a force to that player"""
-        weapon = firing_player.weapons[firing_player.weapon_selection]
-        beam = weapon.get_beam()
-
-        if dev_constants.DEBUGGING_HITSCAN_WEAPON:
-            dev_constants.BEAMS_FOR_DEBUGGING.append(beam)
-            # pygame.draw.line(dev_constants.SCREEN_FOR_DEBUGGING, pygame.color.THECOLORS['green'], helpers.translate_point_for_camera(firing_player, beam.start_point), helpers.translate_point_for_camera(firing_player, beam.end_point))
 
         (
             closest_hit,
             closest_entity,
         ) = intersections.get_closest_intersecting_object_in_pmg(
-            weapon, self.partitioned_map_grid, beam
+            self.partitioned_map_grid, beam
         )
 
         # if type(closest_entity) is player.ServerPlayer:
-        if type(closest_entity) is player.KillableServerPlayer:
+        if (
+            type(closest_entity) is player.KillableServerPlayer
+            and firing_player is not closest_entity
+        ):
             # Then also send a weapon message saying hit and draw a line shooting the other player
-            hit_v = pygame.math.Vector2(0, 0)
-            # Because from polar is in deg apparently ...
-            # TODO add a polar version to pygame
-            deg = firing_player.rotation_angle * 360 / math.tau
-            hit_v.from_polar((weapon.power, deg))
-            closest_entity.velocity += hit_v
-            if (
-                type(self.game_mode) is game_modes.FirstToNFrags
-                and firing_player is not closest_entity
-            ):  # TODO more generally if it's a game mode where players should take damage
-                closest_entity.health -= 60
-                if closest_entity.health <= 0:
-                    closest_entity.dead = True
-                    firing_player.num_frags += 1
+            killed_player = self.hit_player_with_hitscan_beam(closest_entity, beam)
+            if killed_player:
+                closest_entity.dead = True
+                firing_player.num_frags += 1
 
         beam.end_point = closest_hit
 
         return beam
+
+    def hit_player_with_hitscan_beam(
+        self, player: KillableServerPlayer, beam: HitscanBeam
+    ) -> bool:
+        """
+        Note: this function is called when beam is guarenteed to be intersecting with player
+
+        Simulates a player being hit with a hitscan weapon, returns true if the player is dead
+
+        :param beam:
+        :param power:
+        :param damage:
+        :return:
+        """
+
+        hit_vector = beam.direction_vector
+        hit_vector *= beam.collision_force
+        player.velocity += hit_vector
+
+        player.health -= beam.damage
+        return player.health <= 0
 
     def simulate_collisions(self, players):
         # remove players from parition - we will update the positions in the loop
@@ -317,7 +331,9 @@ class ServerGameManager(GameManager):
                                 closest_hit,
                                 closest_entity,
                             ) = intersections.get_closest_intersecting_object_in_pmg(
-                                player.weapons[player.weapon_selection], self.partitioned_map_grid, beam
+                                player.weapons[player.weapon_selection],
+                                self.partitioned_map_grid,
+                                beam,
                             )
 
                             player.beam_states.append(beam)
@@ -365,44 +381,44 @@ class ServerGameManager(GameManager):
 
                         projectiles_to_explode.add(rocket)
 
-                        rocket_explosion = weapons.Explosion(closest_v)
+                        # rocket_explosion = weapons.Explosion(closest_v)
 
                         if dev_constants.CLIENT_VISUAL_DEBUGGING:
                             dev_constants.EXPLOSIONS_FOR_DEBUGGING.append(
                                 rocket_explosion
                             )
-                        for beam in rocket_explosion.beams:
-                            (
-                                closest_hit,
-                                closest_entity,
-                            ) = intersections.get_closest_intersecting_object_in_pmg(
-                                player.weapons[player.weapon_selection],
-                                self.partitioned_map_grid,
-                                beam,
-                            )
+                        # for beam in rocket_explosion.beams:
+                        #    (
+                        #        closest_hit,
+                        #        closest_entity,
+                        #    ) = intersections.get_closest_intersecting_object_in_pmg(
+                        #        player.weapons[player.weapon_selection],
+                        #        self.partitioned_map_grid,
+                        #        beam,
+                        #    )
 
-                            player.beam_states.append(beam)
+                        #    player.beam_states.append(beam)
 
-                            if closest_hit is not None:
-                                if dev_constants.DEBUGGING_INTERSECTIONS:
-                                    dev_constants.INTERSECTIONS_FOR_DEBUGGING.append(
-                                        closest_hit
-                                    )
+                        #    if closest_hit is not None:
+                        #        if dev_constants.DEBUGGING_INTERSECTIONS:
+                        #            dev_constants.INTERSECTIONS_FOR_DEBUGGING.append(
+                        #                closest_hit
+                        #            )
 
-                            # Have to import this because player.ServerPlayer wouldn't work as the variable is also being used
-                            # if type(closest_entity) is ServerPlayer:
-                            if type(closest_entity) is KillableServerPlayer:
-                                closest_entity.velocity = closest_entity.velocity + (
-                                    beam.direction_vector * rocket_explosion.power
-                                )
-                                if (
-                                    type(self.game_mode) is game_modes.FirstToNFrags
-                                    and player is not closest_entity
-                                ):  # TODO more generally if it's a game mode where players should take damage
-                                    closest_entity.health -= 10
-                                    if closest_entity.health <= 0:
-                                        closest_entity.dead = True
-                                        player.num_frags += 1
+                        #    # Have to import this because player.ServerPlayer wouldn't work as the variable is also being used
+                        #    # if type(closest_entity) is ServerPlayer:
+                        #    if type(closest_entity) is KillableServerPlayer:
+                        #        closest_entity.velocity = closest_entity.velocity + (
+                        #            beam.direction_vector * rocket_explosion.power
+                        #        )
+                        #        if (
+                        #            type(self.game_mode) is game_modes.FirstToNFrags
+                        #            and player is not closest_entity
+                        #        ):  # TODO more generally if it's a game mode where players should take damage
+                        #            closest_entity.health -= 10
+                        #            if closest_entity.health <= 0:
+                        #                closest_entity.dead = True
+                        #                player.num_frags += 1
 
         # clean up exploded projectiles
         for projectile in projectiles_to_explode:

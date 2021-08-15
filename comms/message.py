@@ -1,7 +1,5 @@
 from dataclasses import dataclass, field
-from typing import List, Tuple
 
-from weapons import Weapon
 
 class UnknownMessageTypeError(NotImplementedError):
     pass

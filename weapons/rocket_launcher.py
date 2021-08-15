@@ -31,7 +31,7 @@ class Rocket(Projectile, ConstantVelocityBody):
         :param explosives: the payload for thr rocket
         """
         super().__init__(explosives)
-        super(Projectile).__init__(
+        super(Projectile, self).__init__(
             start_pos=start_pos,
             radius=radius,
             friction=0,
@@ -43,6 +43,11 @@ class RocketLauncher(Launcher):
     """
     A rocket launcher is a weapon which shoots rockets
     """
+
+    def __init__(self):
+        super().__init__(fire_rate=constants.ROCKET_LAUNCHER_FIRE_RATE_HZ)
+        # TODO: KILL
+        self.fired_projectiles = []
 
     def fire(
         self, firing_position: pygame.math.Vector2, aim_angle: float
@@ -63,3 +68,14 @@ class RocketLauncher(Launcher):
             direction=aim_vector,
             explosives=RadialExplosives(),
         )
+
+    # TODO: KILL
+    def fire_projectile(self, firing_position: pygame.math.Vector2, aim_angle: float):
+        self.fired_projectiles.append(self.fire(firing_position, aim_angle))
+
+    # TODO: KILL
+    def update_projectile_positions(self, delta_time):
+        for rocket in self.fired_projectiles:
+            # Everything is measured per second
+            rocket.previous_pos = pygame.math.Vector2(rocket.pos.x, rocket.pos.y)
+            rocket.pos += rocket.velocity * delta_time

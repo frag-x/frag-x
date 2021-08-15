@@ -28,7 +28,11 @@ class HitscanBeam:
     """A hitscan beam is a shot from a weapon"""
 
     def __init__(
-        self, start_point: pygame.math.Vector2, end_point: pygame.math.Vector2
+        self,
+        start_point: pygame.math.Vector2,
+        end_point: pygame.math.Vector2,
+        collision_force,
+        damage,
     ):
         self.delta_y = end_point[1] - start_point[1]
         self.delta_x = end_point[0] - start_point[0]
@@ -37,6 +41,10 @@ class HitscanBeam:
 
         self.start_point = start_point
         self.end_point = end_point
+
+        self.damage = damage
+
+        self.collision_force = collision_force
 
         self.slope = helpers.get_slope(start_point, end_point)
 
@@ -61,7 +69,9 @@ class HitscanWeapon(Weapon, ABC):
         self.damage = damage
 
     @abstractmethod
-    def fire(self, firing_position: pygame.math.Vector2, aim_angle: float):
+    def fire(
+        self, firing_position: pygame.math.Vector2, aim_angle: float
+    ) -> List[HitscanBeam]:
         """
         :param firing_position: the position that the weapon is fired at
         :param aim_angle: the angle that the weapon is fired at
@@ -119,6 +129,12 @@ class Projectile:
 
 class Launcher(Weapon, ABC):
     """A launcher is a weapon which fires a single projectile"""
+
+    def __init__(self, fire_rate: float):
+        """
+        Set up a launcher weapon
+        """
+        super().__init__(fire_rate_hz=fire_rate)
 
     @abstractmethod
     def fire(

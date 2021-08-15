@@ -7,7 +7,7 @@ from weapons import constants, helpers
 from weapons.weapon import HitscanWeapon, HitscanBeam
 
 
-class Railgun(HitscanWeapon):
+class RailGun(HitscanWeapon):
     def __init__(self):
         super().__init__(
             fire_rate=constants.RAILGUN_FIRE_RATE_HZ, damage=constants.RAILGUN_DAMAGE
@@ -76,7 +76,7 @@ class Railgun(HitscanWeapon):
                 (-1, 1): [left_wall, top_wall],
                 (1, -1): [right_wall, top_wall],
                 (1, 1): [right_wall, bottom_wall],
-                (-1, 1): [left_wall, bottom_wall],
+                (-1, -1): [left_wall, bottom_wall],
             }
 
             wall_x, wall_y = quadrant_info_to_walls[quadrant_info]
@@ -87,6 +87,11 @@ class Railgun(HitscanWeapon):
             # it is guarenteed that one of these points is valid.
             for point in [point_1, point_2]:
                 if helpers.point_within_map(point):
-                    return HitscanBeam(firing_position, point)
+                    return HitscanBeam(
+                        firing_position,
+                        point,
+                        constants.RAILGUN_COLLISION_FORCE,
+                        constants.RAILGUN_DAMAGE,
+                    )
 
             assert False

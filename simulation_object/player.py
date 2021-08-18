@@ -116,7 +116,7 @@ class ServerPlayer(SimulationObject, Player):
             )
 
         colliding_elements = global_simulation.SIMULATION.get_colliding_elements(
-            self, self.partition
+            self, self.collision_partition
         )
 
         for colliding_element in colliding_elements:

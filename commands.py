@@ -1,6 +1,6 @@
 import enum, re, typing
 
-import player
+from simulation_object import player
 
 
 class CommandType(enum.Enum):
@@ -27,7 +27,7 @@ class CommandRunner:
 
 class ClientCommandRunner(CommandRunner):
     def __init__(self, curr_player: player.ClientPlayer):
-        command_to_action = {"sens": curr_player.set_sens}  # (sens)
+        command_to_action = {"sens": curr_player.set_sensitivity}  # (sens)
         super().__init__(command_to_action)
 
     def parse_command(self, full_command) -> typing.Optional[typing.Tuple[str, float]]:

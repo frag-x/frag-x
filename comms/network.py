@@ -8,7 +8,7 @@ def _recv_exactly(socket: socket.socket, num_bytes: int) -> bytes:
     while len(data) < num_bytes:
         chunk = socket.recv(num_bytes - len(data))
         if not chunk:
-            return None
+            raise ConnectionResetError
         data += chunk  # TODO this is quadratic, should join instead
     return data
 

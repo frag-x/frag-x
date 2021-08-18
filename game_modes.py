@@ -1,4 +1,4 @@
-import player
+from simulation_object import player
 import typing, abc
 
 

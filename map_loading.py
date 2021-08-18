@@ -1,4 +1,4 @@
-from PIL import Image
+from PIL import Image  # type: ignore
 import random
 import pygame
 import game_engine_constants
@@ -33,7 +33,7 @@ class Tile:
         self.x = x_idx * self.size
         self.y = y_idx * self.size
 
-        self.pos = pygame.Vector2(self.x, self.y)
+        self.position = pygame.Vector2(self.x, self.y)
 
         self.rect = pygame.Rect(self.x, self.y, self.size, self.size)
         self.color = color

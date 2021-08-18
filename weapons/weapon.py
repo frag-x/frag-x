@@ -5,8 +5,8 @@ import pygame.math
 
 import math
 
-from body import ConstantVelocityBody
-from weapons import helpers, constants
+from weapons import helpers
+from simulation_object.hitscan_beam import HitscanBeam
 
 
 class Weapon(ABC):
@@ -17,41 +17,16 @@ class Weapon(ABC):
         self.fire_rate_hz = fire_rate_hz
         self.seconds_per_shot = 1 / self.fire_rate_hz
         # Initialize to a value where they can shoot immediatly
-        self.time_since_last_shot: float = self.seconds_per_shot
+        self.time_of_last_shot: float = 0
 
     @abstractmethod
     def fire(self, firing_position: pygame.math.Vector2, aim_angle: float):
         pass
 
-
-class HitscanBeam:
-    """A hitscan beam is a shot from a weapon"""
-
-    def __init__(
-        self,
-        start_point: pygame.math.Vector2,
-        end_point: pygame.math.Vector2,
-        collision_force,
-        damage,
-    ):
-        self.delta_y = end_point[1] - start_point[1]
-        self.delta_x = end_point[0] - start_point[0]
-
-        self.direction_vector = (end_point - start_point).normalize()
-
-        self.start_point = start_point
-        self.end_point = end_point
-
-        self.damage = damage
-
-        self.collision_force = collision_force
-
-        self.slope = helpers.get_slope(start_point, end_point)
-
-        self.quadrant_info = (
-            helpers.get_sign(self.delta_x),
-            helpers.get_sign(self.delta_y),
-        )
+    def try_fire(self, firing_player, aim_angle: float, current_time: float):
+        if (current_time - self.time_of_last_shot) / 1000 >= self.seconds_per_shot:
+            self.fire(firing_player, aim_angle)
+            self.time_of_last_shot = current_time
 
 
 class HitscanWeapon(Weapon, ABC):
@@ -118,30 +93,3 @@ class RadialExplosives(HitscanProjectilePayload):
             shard_vec = relative_shard_vec + pos
             explosion_beams.append(HitscanBeam(pos, shard_vec))
         return explosion_beams
-
-
-class Projectile:
-    """An object that moves in a linear path and then activates a payload"""
-
-    def __init__(self, payload: HitscanProjectilePayload):
-        self.payload = payload
-
-
-class Launcher(Weapon, ABC):
-    """A launcher is a weapon which fires a single projectile"""
-
-    def __init__(self, fire_rate: float):
-        """
-        Set up a launcher weapon
-        """
-        super().__init__(fire_rate_hz=fire_rate)
-
-    @abstractmethod
-    def fire(
-        self, firing_position: pygame.math.Vector2, aim_angle: float
-    ) -> Projectile:
-        """
-        :param aim_angle: the angle that the weapon is fired at
-        :return: Projectile
-        """
-        pass

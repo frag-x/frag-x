@@ -1,4 +1,4 @@
-import game_engine_constants, helpers, dev_constants
+import game_engine_constants, helpers
 import pygame, math
 
 from weapons.weapon import HitscanBeam
@@ -73,7 +73,7 @@ def get_intersecting_partitions(
         for vxpst in valid_x_partition_seams_translated:
             # TODO check if this is within
             if beam.slope == 0:
-                y = 0  # because it's relative to the beams start point
+                y = 0.0  # because it's relative to the beams start point
             else:
                 y = beam.slope * vxpst
             # TODO remove hardcode on tilesize?
@@ -81,9 +81,6 @@ def get_intersecting_partitions(
             untranslated_x = vxpst + beam.start_point.x
 
             point = pygame.math.Vector2(untranslated_x, untranslated_y)
-
-            if dev_constants.DEBUGGING_INTERSECTIONS:
-                dev_constants.INTERSECTED_PARTITION_SEAMS_FOR_DEBUGGING.append(point)
 
             intersecting_bottom_of_quad_patch = (
                 partitioned_map_grid.partition_height - game_engine_constants.TILE_SIZE
@@ -150,15 +147,6 @@ def get_intersecting_partitions(
                     (untranslated_y // partitioned_map_grid.partition_height)
                     * partitioned_map_grid.partition_height,
                 )
-
-                if dev_constants.DEBUGGING_INTERSECTIONS:
-                    dev_constants.INTERSECTED_PARTITION_PATCH_MARKERS.append(
-                        pygame.math.Vector2(
-                            double_patch_upper[0],
-                            double_patch_upper[1]
-                            + partitioned_map_grid.partition_height / 2,
-                        )
-                    )
 
                 double_patch_upper_partition_idx_x = (
                     double_patch_upper[0] // partitioned_map_grid.partition_width
@@ -322,8 +310,6 @@ def get_closest_intersecting_object_in_pmg(
     intersected_partitions = get_intersecting_partitions(
         partitioned_map_grid, beam, screen_for_debug
     )
-    if dev_constants.DEBUGGING_INTERSECTIONS:
-        dev_constants.INTERSECTED_PARTITIONS_FOR_DEBUGGING = intersected_partitions
 
     for partition in intersected_partitions:
         hit, entity = get_closest_intersecting_object_in_partition(
@@ -465,7 +451,7 @@ def get_closest_intersecting_object_in_partition(beam, pmg, screen_for_debug=Non
         b**2 - 4ac >= 0
 
         """
-        p, q = body.pos
+        p, q = body.position
         r = body.radius
 
         # Written with respect to fire origin

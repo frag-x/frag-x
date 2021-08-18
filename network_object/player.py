@@ -8,4 +8,5 @@ class PlayerNetworkObject(NetworkObject):
 
     position: pygame.math.Vector2
     rotation: float
-    weapon_selection: int  # TODO: should just be weapon
+    weapon_selection: int
+    num_frags: int

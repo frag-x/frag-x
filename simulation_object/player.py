@@ -58,6 +58,8 @@ class Player(body.ConstantAccelerationBody):
         self.ready = False
         self.map_vote = None
 
+        self.num_frags = 0
+
 
 class ServerPlayer(SimulationObject, Player):
     def __init__(self, start_pos, width, height, socket):
@@ -71,7 +73,6 @@ class ServerPlayer(SimulationObject, Player):
         super().__init__()
         super(SimulationObject, self).__init__(start_pos, width, height, socket)
         self.health = 100
-        self.num_frags = 0  # A killable player can also kill others (TODO what about weird game modes)
         self.time_of_death = None
 
         self.movement_request = pygame.math.Vector2(0, 0)
@@ -84,6 +85,7 @@ class ServerPlayer(SimulationObject, Player):
             position=self.position,
             rotation=self.rotation_angle,
             weapon_selection=self.weapon_selection,
+            num_frags=self.num_frags,
         )
 
     def update(self, input_message: PlayerStateMessage):

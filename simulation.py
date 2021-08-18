@@ -34,8 +34,7 @@ class Simulation:
 
         self.players: Dict[str, ServerPlayer] = players
         for player in players.values():
-            pos = random.choice(self.map.spawns).position
-            player.position = pos
+            player.position = random.choice(self.map.spawns).position
 
         self.rockets: Dict[str, Rocket] = {}
         self.hitscan_beams: Dict[str, HitscanBeam] = {}
@@ -162,20 +161,7 @@ class Simulation:
 
         return colliding_objects
 
-    def step(self) -> Tuple[bool, str]:
-        delta_time = self.clock.tick(game_engine_constants.SERVER_TICK_RATE_HZ)
-        current_time = pygame.time.get_ticks()
-        self.hitscan_beams.clear()
-
-        self.clear_partitions()
-
-        while not self.input_messages.empty():
-            self._process_input_message(self.input_messages.get())
-
-        # it's possible for an object to deregister itself during step,
-        # so these could change size during iteration
-        players = list(self.players.values())
-
+    def _enact_player_requests(self, players):
         if players:
             if not self.active and all(player.ready for player in players):
                 self.active = True
@@ -190,6 +176,21 @@ class Simulation:
             ):
 
                 return False, cast(str, top_map_vote)
+
+    def step(self) -> Tuple[bool, str]:
+        delta_time = self.clock.tick(game_engine_constants.SERVER_TICK_RATE_HZ)
+        current_time = pygame.time.get_ticks()
+        self.hitscan_beams.clear()
+
+        self.clear_partitions()
+
+        while not self.input_messages.empty():
+            self._process_input_message(self.input_messages.get())
+
+        # it's possible for an object to deregister itself during step,
+        # so these could change size during iteration
+        players = list(self.players.values())
+        self._enact_player_requests(players)
 
         if self.active:
             for player in players:

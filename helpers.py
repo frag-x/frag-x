@@ -46,26 +46,6 @@ def clamp(val, min_val, max_val):
     return min(max(val, min_val), max_val)
 
 
-def button_pressed(event_list, key):
-    for event in event_list:
-        if event.type == pygame.KEYDOWN:
-            if event.key == key:
-                return True
-    return False
-
-
-def started_typing(event_list):
-    return button_pressed(event_list, pygame.K_t)
-
-
-def ended_typing_and_do_action(event_list):
-    return button_pressed(event_list, pygame.K_RETURN)
-
-
-def ended_typing_and_do_nothing(event_list):
-    return button_pressed(event_list, pygame.K_ESCAPE)
-
-
 def tuple_add(t0, t1):
     return (int(t0[0] + t1[0]), int(t0[1] + t1[1]))
 

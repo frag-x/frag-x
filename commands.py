@@ -16,7 +16,7 @@ class Command:
 
 
 class CommandRunner:
-    def __init__(self, player: player.ClientPlayer):
+    def __init__(self):
         self.player = player
         self.command_to_action = {
             "sens": Command(callable=self.set_sensitivity, arg_types=[float]),

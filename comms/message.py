@@ -35,7 +35,7 @@ class ServerMessage(Message):
 class PlayerStateMessage(ClientMessage):
     """Represents client state sent to server."""
 
-    player_id: str
+    uuid: str
     delta_position: pygame.math.Vector2
     delta_mouse: float
     firing: bool

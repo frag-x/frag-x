@@ -14,6 +14,7 @@ FPS = 60
 SERVER_TICK_RATE_HZ = 60
 
 DEFAULT_SENSITIVITY = 2
+SENSITIVITY_SCALE = 1 / 1000
 
 # Secondary config variables
 

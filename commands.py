@@ -1,6 +1,7 @@
 import enum, re
 from typing import Callable, List, Any, Tuple
 from dataclasses import dataclass
+import game_engine_constants
 
 from simulation_object import player
 
@@ -22,13 +23,14 @@ class CommandRunner:
             "ready": Command(callable=self.ready, arg_types=[]),
         }
 
-    def parse_command(self, command) -> Tuple[str, List[Any]]:
+    def parse_command(self, command: str) -> Tuple[str, List[Any]]:
         """
         Attempt to parse the full_command
         """
         command = command[1:] # strip /
         try:
-            command_name, args = command.split(' ')
+            command_name, arg_str = command.split(' ', 1)
+            args = arg_str.split(' ')
         except ValueError:
             command_name = command
             args = [] # okay if the command takes no args
@@ -57,7 +59,7 @@ class CommandRunner:
 
     def set_sensitivity(self, player, args):
         sensitivity = args[0]
-        player.sensitivity = sensitivity * self.sensitivity_scale
+        player.sensitivity = sensitivity * game_engine_constants.SENSITIVITY_SCALE
         print(f'Sensitivity set to {sensitivity}')
 
     def ready(self, player, _):

@@ -35,8 +35,7 @@ class Player(body.ConstantAccelerationBody):
         # Aiming
 
         self.rotation_angle = 0
-        self.sensitivity_scale = 1 / 1000
-        self.sensitivity = 0.5 * self.sensitivity_scale
+        self.sensitivity = 0.5 * game_engine_constants.SENSITIVITY_SCALE
 
         # Guns
 
@@ -170,7 +169,7 @@ class ClientPlayer(Player, pygame.sprite.Sprite):  # TODO remove dependency on s
         self.movement_keys = movement_keys
         self.weapon_keys = weapon_keys
 
-        self.sensitivity = sensitivity * self.sensitivity_scale
+        self.sensitivity = sensitivity * game_engine_constants.SENSITIVITY_SCALE
 
         self.player_id = player_id
 

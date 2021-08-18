@@ -63,6 +63,11 @@ class ServerStatusMessage(ServerMessage):
 
 
 @dataclass
+class ServerMapChangeMessage(ServerMessage):
+    map_name: str
+
+
+@dataclass
 class SimulationStateMessage(ServerMessage):
     """Represents simulation state sent to a client."""
 

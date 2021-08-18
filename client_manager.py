@@ -16,14 +16,12 @@ from comms import message
 class ClientGameManager:
     """A game manager for the client"""
 
-    def __init__(self, screen, font, map_fullname, player_id, player):
+    def __init__(self, screen, font, map_name, player_id, player):
         self.id_to_player = {}
         # TODO make this a set eventually
         self.projectiles = []
         self.beam_messages = []
-        self.partitioned_map_grid = map_loading.PartitionedMapGrid(
-            map_loading.get_pixels(map_fullname), 10, 10
-        )
+        self.partitioned_map_grid = map_loading.load_map(map_name)
 
         self.screen = screen
         self.font = font
@@ -95,6 +93,10 @@ class ClientGameManager:
             self.user_chat_box.add_message(
                 f"Server status: {input_message.status}"
             )
+
+        elif type(input_message) == message.ServerMapChangeMessage:
+            self.partitioned_map_grid = map_loading.load_map(input_message.map_name)
+            self.beam_messages.clear()
 
         else:
             raise message.UnknownMessageTypeError

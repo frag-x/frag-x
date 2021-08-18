@@ -83,14 +83,15 @@ def load_requested_map(map_name, invalid_map_names, input_messages, output_messa
     if map_name in invalid_map_names:
         return False
 
+    players = global_simulation.SIMULATION.players
     try:
-        global_simulation.SIMULATION = Simulation(map_name, input_messages, output_messages)
+        global_simulation.SIMULATION = Simulation(map_name, input_messages, output_messages, players=players)
     except FileNotFoundError:
         print(f'Could not load requested map {map_name}')
         invalid_map_names.add(map_name)
         return False
     else:
-        output_messages.put(message.ServerStatusMessage(status=f'changing map to {map_name}'))
+        output_messages.put(message.ServerMapChangeMessage(map_name=map_name))
         return True
 
 def run_server(args):

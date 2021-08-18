@@ -245,9 +245,8 @@ def run_client(args):
     socket, player_id = initialize_network(args.ip_address, args.port)
     player = initialize_player(socket, player_id, args.sensitivity)
 
-    map_fullname = f"{game_engine_constants.MAP_PREFIX}{args.map}"
     client_game_manager = ClientGameManager(
-        screen, font, map_fullname, player_id, player
+        screen, font, args.map, player_id, player
     )
 
     t = Thread(target=server_listener, args=(client_game_manager, socket))

@@ -1,6 +1,8 @@
 from collections import defaultdict, Counter
-from typing import List, cast, Tuple
+from queue import Queue
+from typing import List, cast, Tuple, Dict
 from map_loading import BoundingWall
+from uuid import UUID
 
 import pygame
 
@@ -16,32 +18,27 @@ from simulation_object.simulation_object import SimulationObject
 from simulation_object.player import ServerPlayer
 from simulation_object.rocket import Rocket
 from simulation_object.hitscan_beam import HitscanBeam
+from network_object.hitscan_beam import HitscanBeamNetworkObject
 
 
 class Simulation:
-    def __init__(self, map_name, input_messages, output_messages):
+    def __init__(self, map_name: str, input_messages: Queue, output_messages: Queue, players = {}):
         self.map_name = map_name
-        self.map = self._load_map(map_name)
+        self.map = map_loading.load_map(map_name)
         self.input_messages = input_messages
         self.output_messages = output_messages
         self.clock = pygame.time.Clock()
         self.active = False
 
-        self.players = {}
-        self.rockets = {}
-        self.hitscan_beams = {}
+        self.players: Dict[str, ServerPlayer] = players
+        self.rockets: Dict[str, Rocket] = {}
+        self.hitscan_beams: Dict[str, HitscanBeam] = {}
 
         self.type_to_dict = {
             ServerPlayer: self.players,
             Rocket: self.rockets,
             HitscanBeam: self.hitscan_beams,
         }
-
-    def _load_map(self, map_name):
-        map_fullpath = f"{game_engine_constants.MAP_PREFIX}{map_name}"
-        return map_loading.PartitionedMapGrid(
-            map_loading.get_pixels(map_fullpath), 10, 10
-        )
 
     def _process_input_message(self, input_message: message.ServerMessage) -> None:
         if type(input_message) == message.PlayerStateMessage:
@@ -57,22 +54,22 @@ class Simulation:
             players=[player.to_network_object() for player in self.players.values()],
             rockets=[rocket.to_network_object() for rocket in self.rockets.values()],
             hitscan_beams=[
-                hitscan_beam.to_network_object()
+                cast(HitscanBeamNetworkObject, hitscan_beam.to_network_object())
                 for hitscan_beam in self.hitscan_beams.values()
             ],
         )
 
     def register_object(self, object: SimulationObject) -> None:
         target_dict = self.type_to_dict[type(object)]
-        if object.uuid in target_dict:
+        if object.uuid in target_dict: # type: ignore
             raise Exception("Object {object} registered twice!")
-        target_dict[object.uuid] = object
+        target_dict[object.uuid] = object # type: ignore
 
     def deregister_object(self, object: SimulationObject) -> None:
         target_dict = self.type_to_dict[type(object)]
-        if object.uuid not in target_dict:
+        if object.uuid not in target_dict: # type: ignore
             raise Exception("Object {object} not found while deregistering!")
-        del target_dict[object.uuid]
+        del target_dict[object.uuid] # type: ignore
 
     def add_player(self, client_socket):
         spawn = random.choice(self.map.spawns)

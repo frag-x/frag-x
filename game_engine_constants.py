@@ -5,7 +5,7 @@ import pygame
 DEFAULT_PORT = 50000
 
 MAP_PREFIX = "maps/"
-DEFAULT_MAP = "dm_s2.png"
+DEFAULT_MAP = "dm_s2"
 
 WIDTH = 600
 HEIGHT = 400

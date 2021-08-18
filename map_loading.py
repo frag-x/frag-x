@@ -6,7 +6,7 @@ import helpers
 from typing import List, Optional, Tuple
 
 def load_map(map_name):
-    map_fullpath = f"{game_engine_constants.MAP_PREFIX}{map_name}"
+    map_fullpath = f"{game_engine_constants.MAP_PREFIX}{map_name}.png"
     return PartitionedMapGrid(
         get_pixels(map_fullpath), 10, 10
     )

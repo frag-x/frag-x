@@ -89,6 +89,9 @@ class Rocket(SimulationObject, ConstantVelocityBody):
         for colliding_element in colliding_elements:
             if type(colliding_element) is BoundingWall:
                 bounding_wall = colliding_element
+                self.position = (
+                    self.previous_position
+                )  # move to the point where it wasn't colliding
                 collision_point = collisions.get_closest_point_on_wall(
                     self, bounding_wall
                 )

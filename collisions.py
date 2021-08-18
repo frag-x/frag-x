@@ -3,13 +3,14 @@ import logging
 
 import game_engine_constants
 
+
 def elastic_collision_update(b1, b2):
     """if two bodies are not at the exact same position then perform an elastic collision"""
-    if b1.pos != b2.pos:
+    if b1.position != b2.position:
         m1, m2 = b1.mass, b2.mass
         M = m1 + m2
 
-        p1, p2 = b1.pos, b2.pos
+        p1, p2 = b1.position, b2.position
 
         len_squared = (p1 - p2).length_squared()
 
@@ -39,27 +40,33 @@ def clamp(val, min_val, max_val):
     return min(max(val, min_val), max_val)
 
 
-def colliding_and_closest(body, b_wall):
-    """Return if the body is colliding with a wall,
-    also return the closest point to the body on this wall"""
+def is_colliding_with_wall(body, b_wall):
+    """Return if the body is colliding with a wall"""
+    closest_v = get_closest_point_on_wall(body, b_wall)
+    return (closest_v - body.position).magnitude() <= body.radius
+
+
+def get_closest_point_on_wall(body, b_wall) -> pygame.math.Vector2:
+    """Return the closest point to the body on this wall"""
     top, left, bottom, right = (
         b_wall.rect.top,
         b_wall.rect.left,
         b_wall.rect.bottom,
         b_wall.rect.right,
     )
-    closest_x = clamp(body.pos.x, left, right)
-    closest_y = clamp(body.pos.y, top, bottom)
+    closest_x = clamp(body.position.x, left, right)
+    closest_y = clamp(body.position.y, top, bottom)
     closest_v = pygame.math.Vector2(closest_x, closest_y)
 
-    return (closest_v - body.pos).magnitude() <= body.radius, closest_v
+    return closest_v
 
 
-def simulate_collision_v2(body, b_wall, closest_v):
-    logging.info("==== WALL COLLISION SIMULATION START ====")
+def simulate_collision_v2(body, b_wall):
 
     start_collision_simulation_time = time.time()
 
+    closest_v = get_closest_point_on_wall(body, b_wall)
+
     top, left, bottom, right = (
         b_wall.rect.top,
         b_wall.rect.left,
@@ -67,30 +74,13 @@ def simulate_collision_v2(body, b_wall, closest_v):
         b_wall.rect.right,
     )
 
-    logging.info(f"top: {top}, left: {left}, bottom: {bottom}, right: {right}")
-    logging.info(f"closest: {closest_v.x} {closest_v.y}")
-
     top_visible, right_visible, bottom_visible, left_visible = b_wall.visible_sides
-
-    side_to_visibility = {
-        top: top_visible,
-        left: left_visible,
-        bottom: bottom_visible,
-        right: right_visible,
-    }
 
     # Unstick amount should be relative to the amount of velocity we have
     # unstick_amount = 1 + body.velocity.magnitude()/1000
-    collision_depth = body.radius - (closest_v - body.pos).magnitude()
     extra_buffer = 3
     # TODO ABOUT TO SET THIS TO AN EXACT POSITION SOMETHING LIKE
     unstick_amount = body.radius + extra_buffer
-
-    # Note that the previous position should not be colliding - you collide once and out
-    logging.info(
-        f"Body at {body.previous_pos.x} {body.previous_pos.y} before collision"
-    )
-    logging.info(f"Body at {body.pos.x} {body.pos.y} during collision")
 
     """
      _____
@@ -125,18 +115,19 @@ def simulate_collision_v2(body, b_wall, closest_v):
 
     if fully_in or half_in:
         logging.info("body is inside")
-        prev_pos = body.previous_pos
-        curr_pos = body.pos
-        # Then we use the previous position, and get it's closest pos
+        prev_pos = body.previous_position
+        curr_pos = body.position
+        # Then we use the previous position, and get it's closest position
         # Which is guarenteed to be neither half nor fully in
         # And use that to figure out what kind of it hit it is
-        body.pos = prev_pos
+        body.position = prev_pos
         logging.info(closest_v.x, closest_v.y)
-        colliding, closest_v = colliding_and_closest(body, b_wall)
+        colliding = is_colliding_with_wall(body, b_wall)
+        closest_v = get_closest_point_on_wall(body, b_wall)
         assert colliding == False
         logging.info("corrected: ", closest_v.x, closest_v.y)
         # reset position and then continue
-        body.pos = curr_pos
+        body.position = curr_pos
 
     """
        A1...      B1            C1       ... D1   
@@ -220,7 +211,7 @@ def simulate_collision_v2(body, b_wall, closest_v):
             r_v = pygame.math.Vector2(unstick_amount, 0)
             r_v.rotate_ip_rad(-math.tau / 8)
 
-            body.pos = closest_v + r_v
+            body.position = closest_v + r_v
 
         elif B1:
             logging.info("bottom right")
@@ -232,7 +223,7 @@ def simulate_collision_v2(body, b_wall, closest_v):
             r_v = pygame.math.Vector2(unstick_amount, 0)
             r_v.rotate_ip_rad(math.tau / 8)
 
-            body.pos = closest_v + r_v
+            body.position = closest_v + r_v
         elif C1:
             logging.info("bottom left")
             rotated_vel = pygame.math.Vector2.rotate_rad(body.velocity, -math.tau / 8)
@@ -243,7 +234,7 @@ def simulate_collision_v2(body, b_wall, closest_v):
             r_v = pygame.math.Vector2(-unstick_amount, 0)
             r_v.rotate_ip_rad(-math.tau / 8)
 
-            body.pos = closest_v + r_v
+            body.position = closest_v + r_v
 
         elif D1:
             logging.info("top left")
@@ -256,33 +247,65 @@ def simulate_collision_v2(body, b_wall, closest_v):
             r_v = pygame.math.Vector2(-unstick_amount, 0)
             r_v.rotate_ip_rad(math.tau / 8)
 
-            body.pos = closest_v + r_v
+            body.position = closest_v + r_v
 
     elif any(case_2):
         if A2:
             right_reflect(
-                body, unstick_amount, closest_v, game_engine_constants.VELOCITY_REDUCTION_MODIFIER
+                body,
+                unstick_amount,
+                closest_v,
+                game_engine_constants.VELOCITY_REDUCTION_MODIFIER,
             )
         elif B2:
-            left_reflect(body, unstick_amount, closest_v, game_engine_constants.VELOCITY_REDUCTION_MODIFIER)
+            left_reflect(
+                body,
+                unstick_amount,
+                closest_v,
+                game_engine_constants.VELOCITY_REDUCTION_MODIFIER,
+            )
         elif C2:
             bottom_reflect(
-                body, unstick_amount, closest_v, game_engine_constants.VELOCITY_REDUCTION_MODIFIER
+                body,
+                unstick_amount,
+                closest_v,
+                game_engine_constants.VELOCITY_REDUCTION_MODIFIER,
             )
         elif D2:
-            top_reflect(body, unstick_amount, closest_v, game_engine_constants.VELOCITY_REDUCTION_MODIFIER)
+            top_reflect(
+                body,
+                unstick_amount,
+                closest_v,
+                game_engine_constants.VELOCITY_REDUCTION_MODIFIER,
+            )
     elif any(case_3):
         if A3:
             right_reflect(
-                body, unstick_amount, closest_v, game_engine_constants.VELOCITY_REDUCTION_MODIFIER
+                body,
+                unstick_amount,
+                closest_v,
+                game_engine_constants.VELOCITY_REDUCTION_MODIFIER,
             )
         elif B3:
-            left_reflect(body, unstick_amount, closest_v, game_engine_constants.VELOCITY_REDUCTION_MODIFIER)
+            left_reflect(
+                body,
+                unstick_amount,
+                closest_v,
+                game_engine_constants.VELOCITY_REDUCTION_MODIFIER,
+            )
         elif C3:
-            top_reflect(body, unstick_amount, closest_v, game_engine_constants.VELOCITY_REDUCTION_MODIFIER)
+            top_reflect(
+                body,
+                unstick_amount,
+                closest_v,
+                game_engine_constants.VELOCITY_REDUCTION_MODIFIER,
+            )
         elif D3:
             bottom_reflect(
-                body, unstick_amount, closest_v, game_engine_constants.VELOCITY_REDUCTION_MODIFIER
+                body,
+                unstick_amount,
+                closest_v,
+                game_engine_constants.VELOCITY_REDUCTION_MODIFIER,
             )
     else:
         logging.info(
@@ -290,7 +313,7 @@ def simulate_collision_v2(body, b_wall, closest_v):
         )
         pass
 
-    logging.info(f"Body at {body.pos.x} {body.pos.y} after collision")
+    logging.info(f"Body at {body.position.x} {body.position.y} after collision")
 
     end_collision_simulation_time = time.time()
     logging.info(
@@ -303,25 +326,25 @@ def right_reflect(body, unstick_amount, closest_v, velocity_reduction_multiplier
     logging.info("right")
     body.velocity.x *= -1 * velocity_reduction_multiplier
     # Unstick player
-    body.pos = closest_v + pygame.math.Vector2(unstick_amount, 0)
+    body.position = closest_v + pygame.math.Vector2(unstick_amount, 0)
 
 
 def left_reflect(body, unstick_amount, closest_v, velocity_reduction_multiplier):
     logging.info("left")
     body.velocity.x *= -1 * velocity_reduction_multiplier
     # Unstick player
-    body.pos = closest_v + pygame.math.Vector2(-unstick_amount, 0)
+    body.position = closest_v + pygame.math.Vector2(-unstick_amount, 0)
 
 
 def top_reflect(body, unstick_amount, closest_v, velocity_reduction_multiplier):
     logging.info("top")
     body.velocity.y *= -1 * velocity_reduction_multiplier
     # Unstick player
-    body.pos = closest_v + pygame.math.Vector2(0, -unstick_amount)
+    body.position = closest_v + pygame.math.Vector2(0, -unstick_amount)
 
 
 def bottom_reflect(body, unstick_amount, closest_v, velocity_reduction_multiplier):
     logging.info("bottom")
     body.velocity.y *= -1 * velocity_reduction_multiplier
     # Unstick player
-    body.pos = closest_v + pygame.math.Vector2(0, unstick_amount)
+    body.position = closest_v + pygame.math.Vector2(0, unstick_amount)

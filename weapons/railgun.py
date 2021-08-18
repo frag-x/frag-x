@@ -13,16 +13,14 @@ class RailGun(HitscanWeapon):
             fire_rate=constants.RAILGUN_FIRE_RATE_HZ, damage=constants.RAILGUN_DAMAGE
         )
 
-    def fire(self, firing_position: pygame.math.Vector2, aim_angle: float):
+    def fire(self, firing_player, aim_angle: float):
         """
         Return the fired HitscanBeam from the railgun
-        :param firing_position: the position that the weapon is fired at
+        :param firing_player: the player that shot this weapon
         :param aim_angle: the angle that the weapon is fired at
         :return: List[HitscanBeam]
         """
-
         delta_y = math.sin(aim_angle)
-
         delta_x = math.cos(aim_angle)
 
         # TODO y is flipped here
@@ -44,12 +42,14 @@ class RailGun(HitscanWeapon):
         def get_y_from_point_slope_form(
             x: float,
         ) -> float:
-            return slope * x + (-1 * firing_position.x * slope + firing_position.y)
+            return slope * x + (
+                -1 * firing_player.position.x * slope + firing_player.position.y
+            )
 
         def get_x_from_point_slope_form(
             y: float,
         ) -> float:
-            return (y - firing_position.y) / slope + firing_position.x
+            return (y - firing_player.position.y) / slope + firing_player.position.x
 
         slope = helpers.get_slope_from_deltas(delta_x, delta_y)
 
@@ -73,10 +73,10 @@ class RailGun(HitscanWeapon):
             bottom_wall = game_engine_constants.MAP_DIM_Y
 
             quadrant_info_to_walls = {
-                (-1, 1): [left_wall, top_wall],
+                (-1, 1): [left_wall, bottom_wall],
                 (1, -1): [right_wall, top_wall],
                 (1, 1): [right_wall, bottom_wall],
-                (-1, -1): [left_wall, bottom_wall],
+                (-1, -1): [left_wall, top_wall],
             }
 
             wall_x, wall_y = quadrant_info_to_walls[quadrant_info]
@@ -88,7 +88,8 @@ class RailGun(HitscanWeapon):
             for point in [point_1, point_2]:
                 if helpers.point_within_map(point):
                     return HitscanBeam(
-                        firing_position,
+                        firing_player,
+                        firing_player.position,
                         point,
                         constants.RAILGUN_COLLISION_FORCE,
                         constants.RAILGUN_DAMAGE,

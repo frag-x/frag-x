@@ -1,19 +1,49 @@
+from typing import Tuple
+
 import game_engine_constants
 import math
 import pygame
 
 
+import math
+
+import pygame.math
+
+import game_engine_constants
+
+
+def polar_to_cartesian(radius, angle):
+    return math.cos(angle) * radius, math.sin(angle) * radius
+
+
+def get_sign(num) -> int:
+    return 1 if num >= 0 else -1
+
+
+def point_within_map(point) -> bool:
+    x_valid = 0 <= point[0] <= game_engine_constants.MAP_DIM_X
+    y_valid = 0 <= point[1] <= game_engine_constants.MAP_DIM_Y
+    return x_valid and y_valid
+
+
+def get_slope(point_1: pygame.math.Vector2, point_2: pygame.math.Vector2) -> float:
+    delta_y = point_2[1] - point_1[1]
+    delta_x = point_2[0] - point_1[0]
+
+    return get_slope_from_deltas(delta_x, delta_y)
+
+
+def get_slope_from_deltas(delta_x: float, delta_y: float) -> float:
+    try:
+        slope = delta_y / delta_x
+    except ZeroDivisionError:
+        slope = math.inf
+
+    return slope
+
+
 def clamp(val, min_val, max_val):
     return min(max(val, min_val), max_val)
-
-
-def get_sign(num):
-    if num >= 0:
-        return 1
-    elif num < 0:
-        return -1
-    # else:
-    #    return 0
 
 
 def button_pressed(event_list, key):
@@ -63,34 +93,17 @@ def copy_vector(v):
 def valid_2d_index_for_partitioned_map_grid(idx, pmg):
     x, y = idx
     return 0 <= x <= pmg.num_x_partitions - 1 and 0 <= y <= pmg.num_y_partitions - 1
-
-
-def get_slope(point_1, point_2):
-    delta_y = point_2[1] - point_1[1]
-    delta_x = point_2[0] - point_1[0]
-
-    return get_slope_from_deltas(delta_x, delta_y)
-
-
-def get_slope_from_deltas(delta_x, delta_y):
-    try:
-        slope = delta_y / delta_x
-    except ZeroDivisionError:
-        slope = math.inf
-
-    return slope
-
+    
 
 def translate_point_for_camera(player, point: pygame.math.Vector2):
-    offset = game_engine_constants.SCREEN_CENTER_POINT - player.pos
+    offset = game_engine_constants.SCREEN_CENTER_POINT - player.position
     return point + offset
 
 
-def get_partition_index(partitioned_map_grid, position):
-    partition_idx_x = int(position[0] // partitioned_map_grid.partition_width)
-    partition_idx_y = int(position[1] // partitioned_map_grid.partition_height)
-
-    return (partition_idx_x, partition_idx_y)
+def get_partition_index(partition_width, partition_height, position) -> Tuple[int, int]:
+    partition_idx_x = int(position[0] // partition_width)
+    partition_idx_y = int(position[1] // partition_height)
+    return partition_idx_x, partition_idx_y
 
 
 def recv_exactly(socket, size):

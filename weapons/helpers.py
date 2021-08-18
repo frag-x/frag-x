@@ -10,12 +10,7 @@ def polar_to_cartesian(radius, angle):
 
 
 def get_sign(num) -> int:
-    if num >= 0:
-        return 1
-    elif num < 0:
-        return -1
-    # else:
-    #    return 0
+    return 1 if num >= 0 else -1
 
 
 def point_within_map(point) -> bool:

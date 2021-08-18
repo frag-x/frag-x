@@ -41,6 +41,7 @@ class PlayerStateMessage(ClientMessage):
     firing: bool
     weapon_selection: int  # TODO: should just be weapon
     ready: bool
+    map_vote: str
 
 
 @dataclass

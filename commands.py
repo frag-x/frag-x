@@ -21,6 +21,7 @@ class CommandRunner:
         self.command_to_action = {
             "sens": Command(callable=self.set_sensitivity, arg_types=[float]),
             "ready": Command(callable=self.ready, arg_types=[]),
+            "map_vote": Command(callable=self.map_vote, arg_types=[str]),
         }
 
     def parse_command(self, command: str) -> Tuple[str, List[Any]]:
@@ -65,3 +66,8 @@ class CommandRunner:
     def ready(self, player, _):
         player.ready = not player.ready
         print(f'Player ready state set to {player.ready}')
+
+    def map_vote(self, player, args):
+        map_vote = args[0]
+        player.map_vote = map_vote
+        print(f'Voted for map {map_vote}')

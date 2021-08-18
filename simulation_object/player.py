@@ -56,6 +56,7 @@ class Player(body.ConstantAccelerationBody):
         self.beams = []
 
         self.ready = False
+        self.map_vote = None
 
 
 class ServerPlayer(SimulationObject, Player):
@@ -91,6 +92,7 @@ class ServerPlayer(SimulationObject, Player):
         self.weapon_selection = input_message.weapon_selection
         self.firing_request = input_message.firing
         self.ready = input_message.ready
+        self.map_vote = input_message.map_vote
 
     def step(self, delta_time: float, current_time: float):  # type: ignore
 
@@ -213,6 +215,7 @@ class ClientPlayer(Player, pygame.sprite.Sprite):  # TODO remove dependency on s
             firing=firing,
             weapon_selection=self.weapon_selection,
             ready=self.ready,
+            map_vote=self.map_vote,
         )
 
         network.send(self.socket, output_message)

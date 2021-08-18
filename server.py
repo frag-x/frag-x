@@ -15,10 +15,10 @@ from simulation import Simulation
 import global_simulation
 
 
-def listener(simulation, server_socket, state_queue):
+def listener(server_socket, state_queue):
     while True:
         client_socket, addr = server_socket.accept()
-        player_id = simulation.add_player(client_socket)
+        player_id = global_simulation.SIMULATION.add_player(client_socket)
         network.send(client_socket, message.ServerJoinMessage(player_id=player_id))
         print(f"Accepted connection from {addr}")
 
@@ -34,17 +34,17 @@ def client_listener(socket, input_messages):
             exit()
 
 
-def server_messager(simulation, output_messages):
+def server_messager(output_messages):
     while True:
         if not output_messages.empty():
             message = output_messages.get()
-            players = simulation.get_players()
+            players = global_simulation.SIMULATION.get_players()
             for player in players:
                 try:
                     network.send(player.socket, message)
                 except BrokenPipeError:
                     print(f"Player {player} forcibly disconnected!")
-                    simulation.remove_player(player)
+                    global_simulation.SIMULATION.remove_player(player)
 
 
 def parse_args():
@@ -79,18 +79,29 @@ def initialize_socket():
     return server_socket
 
 
+def load_requested_map(map_name, invalid_map_names, input_messages, output_messages):
+    if map_name in invalid_map_names:
+        return False
+
+    try:
+        global_simulation.SIMULATION = Simulation(map_name, input_messages, output_messages)
+    except FileNotFoundError:
+        print(f'Could not load requested map {map_name}')
+        invalid_map_names.add(map_name)
+        return False
+    else:
+        output_messages.put(message.ServerStatusMessage(status=f'changing map to {map_name}'))
+        return True
+
 def run_server(args):
     server_socket = initialize_socket()
 
     input_messages = Queue()
     output_messages = Queue()
 
-    global_simulation.SIMULATION = Simulation(args.map, input_messages, output_messages)
-
     tsa_t = Thread(
         target=listener,
         args=(
-            global_simulation.SIMULATION,
             server_socket,
             input_messages,
         ),
@@ -100,16 +111,18 @@ def run_server(args):
     gss_t = Thread(
         target=server_messager,
         args=(
-            global_simulation.SIMULATION,
             output_messages,
         ),
     )
     gss_t.start()
 
+    global_simulation.SIMULATION = Simulation(args.map, input_messages, output_messages)
+
+    invalid_map_names = set()
     while True:
-        vote_result = global_simulation.SIMULATION.step()
-        if vote_result:
-            raise NotImplementedError
+        keep_map, map_name = global_simulation.SIMULATION.step()
+        if not keep_map:
+            load_requested_map(map_name, invalid_map_names, input_messages, output_messages)
 
 
 if __name__ == "__main__":

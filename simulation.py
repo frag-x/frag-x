@@ -1,5 +1,5 @@
-from collections import defaultdict
-from typing import List
+from collections import defaultdict, Counter
+from typing import List, cast, Tuple
 from map_loading import BoundingWall
 
 import pygame
@@ -20,6 +20,7 @@ from simulation_object.hitscan_beam import HitscanBeam
 
 class Simulation:
     def __init__(self, map_name, input_messages, output_messages):
+        self.map_name = map_name
         self.map = self._load_map(map_name)
         self.input_messages = input_messages
         self.output_messages = output_messages
@@ -142,7 +143,7 @@ class Simulation:
                 colliding_objects.append(b_wall)
         return colliding_objects
 
-    def step(self):
+    def step(self) -> Tuple[bool, str]:
         delta_time = self.clock.tick(game_engine_constants.SERVER_TICK_RATE_HZ)
         current_time = pygame.time.get_ticks()
         self.hitscan_beams.clear()
@@ -154,9 +155,17 @@ class Simulation:
         # so these could change size during iteration
         players = list(self.players.values())
 
-        if not self.active and players and all(player.ready for player in players):
-            self.active = True
-            self.output_messages.put(message.ServerStatusMessage(status='active'))
+        if players:
+            if not self.active and all(player.ready for player in players):
+                self.active = True
+                self.output_messages.put(message.ServerStatusMessage(status='active'))
+
+            map_votes = Counter(player.map_vote for player in players)
+            top_map_vote, vote_count = map_votes.most_common(1)[0]
+            if top_map_vote is not None and top_map_vote != self.map_name \
+                and cast(float, vote_count) >= len(players) / 2:
+
+                return False, cast(str, top_map_vote)
 
         if self.active:
             for player in players:
@@ -172,3 +181,5 @@ class Simulation:
 
         output_message = self._make_output_message()
         self.output_messages.put(output_message)
+
+        return True, self.map_name

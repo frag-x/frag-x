@@ -141,12 +141,6 @@ class Simulation:
                 colliding_objects.append(b_wall)
         return colliding_objects
 
-    def _update_bodies_in_partitions(self):
-        bodies: List[Body] = [*self.players.values(), *self.rockets.values()]
-        for body in bodies:
-            body.partition = self.get_partition(body.position)
-            body.collision_partition = self.get_collision_partition(body.position)
-
     def step(self):
         delta_time = self.clock.tick(game_engine_constants.SERVER_TICK_RATE_HZ)
         current_time = pygame.time.get_ticks()
@@ -154,9 +148,7 @@ class Simulation:
 
         while not self.input_messages.empty():
             self._process_input_message(self.input_messages.get())
-
-        self._update_bodies_in_partitions()
-
+            
         # it's possible for an object to deregister itself during step,
         # so these could change size during iteration
         players = list(self.players.values())

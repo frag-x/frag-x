@@ -1,13 +1,10 @@
 from abc import ABC
 import math
-from dataclasses import dataclass
-import uuid
 
 import collisions
 import global_simulation
 from map_loading import BoundingWall
 from network_object.rocket import RocketNetworkObject
-from typing import List
 
 import pygame
 
@@ -80,6 +77,8 @@ class Rocket(SimulationObject, ConstantVelocityBody):
         self.collision_partition = global_simulation.SIMULATION.get_collision_partition(
             self.position
         )
+
+        # Right here self.partition.players.append()
 
         colliding_elements = global_simulation.SIMULATION.get_colliding_elements(
             self, self.partition

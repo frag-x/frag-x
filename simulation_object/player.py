@@ -96,10 +96,10 @@ class ServerPlayer(SimulationObject, Player):
 
     def step(self, delta_time: float, current_time: float):  # type: ignore
 
-        self.partition = global_simulation.SIMULATION.get_partition(self.position)
-        self.collision_partition = global_simulation.SIMULATION.get_collision_partition(
+        global_simulation.SIMULATION.get_partition(self.position).players.append(self)
+        global_simulation.SIMULATION.get_collision_partition(
             self.position
-        )
+        ).players.append(self)
 
         if self.time_of_death is not None:
             if (
@@ -128,6 +128,9 @@ class ServerPlayer(SimulationObject, Player):
                 bounding_wall = colliding_element
                 # TODO make this a player method
                 collisions.simulate_collision_v2(self, bounding_wall)
+            if type(colliding_element) is ServerPlayer:
+                colliding_player = colliding_element
+                collisions.elastic_collision_update(self, colliding_player)
 
 
 class ClientPlayer(Player, pygame.sprite.Sprite):  # TODO remove dependency on sprite

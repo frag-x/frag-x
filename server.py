@@ -1,11 +1,8 @@
 import socket
-import pygame
 import argparse
 
-from typing import List
 from queue import Queue
-from converters import str_to_player_data
-from threading import Lock, Thread
+from threading import Thread
 
 import game_engine_constants
 
@@ -85,14 +82,17 @@ def load_requested_map(map_name, invalid_map_names, input_messages, output_messa
 
     players = global_simulation.SIMULATION.players
     try:
-        global_simulation.SIMULATION = Simulation(map_name, input_messages, output_messages, players=players)
+        global_simulation.SIMULATION = Simulation(
+            map_name, input_messages, output_messages, players=players
+        )
     except FileNotFoundError:
-        print(f'Could not load requested map {map_name}')
+        print(f"Could not load requested map {map_name}")
         invalid_map_names.add(map_name)
         return False
     else:
         output_messages.put(message.ServerMapChangeMessage(map_name=map_name))
         return True
+
 
 def run_server(args):
     server_socket = initialize_socket()
@@ -111,9 +111,7 @@ def run_server(args):
 
     gss_t = Thread(
         target=server_messager,
-        args=(
-            output_messages,
-        ),
+        args=(output_messages,),
     )
     gss_t.start()
 
@@ -123,7 +121,9 @@ def run_server(args):
     while True:
         keep_map, map_name = global_simulation.SIMULATION.step()
         if not keep_map:
-            load_requested_map(map_name, invalid_map_names, input_messages, output_messages)
+            load_requested_map(
+                map_name, invalid_map_names, input_messages, output_messages
+            )
 
 
 if __name__ == "__main__":

@@ -2,6 +2,7 @@ import pygame, math, time
 import logging
 
 import game_engine_constants
+from body import Body
 
 
 def elastic_collision_update(b1, b2):
@@ -28,9 +29,9 @@ def elastic_collision_update(b1, b2):
         b2.velocity = u2
 
 
-def bodies_colliding(
-    p1: pygame.Vector2, r1: float, p2: pygame.Vector2, r2: float
-) -> bool:
+def bodies_colliding(body_1: Body, body_2: Body) -> bool:
+    p1, r1 = body_1.position, body_1.radius
+    p2, r2 = body_2.position, body_2.radius
     center_distance = (p2 - p1).magnitude()
     min_distance = r1 + r2
     return center_distance <= min_distance

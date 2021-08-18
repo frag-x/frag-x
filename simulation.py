@@ -22,7 +22,9 @@ from network_object.hitscan_beam import HitscanBeamNetworkObject
 
 
 class Simulation:
-    def __init__(self, map_name: str, input_messages: Queue, output_messages: Queue, players = {}):
+    def __init__(
+        self, map_name: str, input_messages: Queue, output_messages: Queue, players={}
+    ):
         self.map_name = map_name
         self.map = map_loading.load_map(map_name)
         self.input_messages = input_messages
@@ -34,7 +36,7 @@ class Simulation:
         for player in players.values():
             pos = random.choice(self.map.spawns).position
             player.position = pos
-            
+
         self.rockets: Dict[str, Rocket] = {}
         self.hitscan_beams: Dict[str, HitscanBeam] = {}
 
@@ -65,15 +67,15 @@ class Simulation:
 
     def register_object(self, object: SimulationObject) -> None:
         target_dict = self.type_to_dict[type(object)]
-        if object.uuid in target_dict: # type: ignore
+        if object.uuid in target_dict:  # type: ignore
             raise Exception("Object {object} registered twice!")
-        target_dict[object.uuid] = object # type: ignore
+        target_dict[object.uuid] = object  # type: ignore
 
     def deregister_object(self, object: SimulationObject) -> None:
         target_dict = self.type_to_dict[type(object)]
-        if object.uuid not in target_dict: # type: ignore
+        if object.uuid not in target_dict:  # type: ignore
             raise Exception("Object {object} not found while deregistering!")
-        del target_dict[object.uuid] # type: ignore
+        del target_dict[object.uuid]  # type: ignore
 
     def add_player(self, client_socket):
         spawn = random.choice(self.map.spawns)
@@ -109,6 +111,13 @@ class Simulation:
 
         return self.map.partitioned_map[partition_idx_y][partition_idx_x]
 
+    def clear_partitions(self):
+        map_partitions = [self.map.partitioned_map, self.map.collision_partitioned_map]
+        for partitioned_map in map_partitions:
+            for partition_row in partitioned_map:
+                for partition in partition_row:
+                    partition.players = []
+
     def get_collision_partition(
         self, position: pygame.math.Vector2
     ) -> map_loading.MapGridPartition:
@@ -138,16 +147,27 @@ class Simulation:
         :param partition:
         :return:
         """
+
+        partition = self.get_partition(body.position)
+        collision_partition = self.get_collision_partition(body.position)
+
         colliding_objects = []
-        for b_wall in partition.bounding_walls:
+        for b_wall in collision_partition.bounding_walls:
             if collisions.is_colliding_with_wall(body, b_wall):
                 colliding_objects.append(b_wall)
+
+        for player in partition.players:
+            if collisions.bodies_colliding(body, player) and body is not player:
+                colliding_objects.append(player)
+
         return colliding_objects
 
     def step(self) -> Tuple[bool, str]:
         delta_time = self.clock.tick(game_engine_constants.SERVER_TICK_RATE_HZ)
         current_time = pygame.time.get_ticks()
         self.hitscan_beams.clear()
+
+        self.clear_partitions()
 
         while not self.input_messages.empty():
             self._process_input_message(self.input_messages.get())
@@ -159,12 +179,15 @@ class Simulation:
         if players:
             if not self.active and all(player.ready for player in players):
                 self.active = True
-                self.output_messages.put(message.ServerStatusMessage(status='active'))
+                self.output_messages.put(message.ServerStatusMessage(status="active"))
 
             map_votes = Counter(player.map_vote for player in players)
             top_map_vote, vote_count = map_votes.most_common(1)[0]
-            if top_map_vote is not None and top_map_vote != self.map_name \
-                and cast(float, vote_count) >= len(players) / 2:
+            if (
+                top_map_vote is not None
+                and top_map_vote != self.map_name
+                and cast(float, vote_count) >= len(players) / 2
+            ):
 
                 return False, cast(str, top_map_vote)
 

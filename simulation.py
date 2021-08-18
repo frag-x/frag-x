@@ -1,5 +1,6 @@
 from collections import defaultdict
-from typing import Optional, Tuple, List
+from typing import List
+from map_loading import BoundingWall
 
 import pygame
 
@@ -125,7 +126,7 @@ class Simulation:
 
     def get_colliding_elements(
         self, body: Body, partition: map_loading.MapGridPartition
-    ) -> List[SimulationObject]:
+    ) -> List:
         """
         Check if the given body is colliding with anything in this partition, if the player is colliding
         then return what they are colliding with

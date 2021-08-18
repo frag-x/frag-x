@@ -1,1 +1,4 @@
-SIMULATION = None
+from typing import Any
+
+
+SIMULATION: Any = None

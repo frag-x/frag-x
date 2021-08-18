@@ -253,7 +253,7 @@ class MapGridPartition:
         self.rect = pygame.Rect(
             self.pos[0], self.pos[1], self.partition_width, self.partition_height
         )
-        self.players = []
+        self.players: List = []
         self.walls = []
         self.spawns = []
         self.bounding_walls = []

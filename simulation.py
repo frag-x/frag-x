@@ -148,7 +148,7 @@ class Simulation:
 
         while not self.input_messages.empty():
             self._process_input_message(self.input_messages.get())
-            
+
         # it's possible for an object to deregister itself during step,
         # so these could change size during iteration
         players = list(self.players.values())
@@ -164,5 +164,4 @@ class Simulation:
             hitscan_beam.step(delta_time, current_time)
 
         output_message = self._make_output_message()
-
         self.output_messages.put(output_message)

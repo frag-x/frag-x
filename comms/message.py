@@ -74,4 +74,3 @@ class SimulationStateMessage(ServerMessage):
     players: list[PlayerNetworkObject] = field(default_factory=list)
     rockets: list[RocketNetworkObject] = field(default_factory=list)
     hitscan_beams: list[HitscanBeamNetworkObject] = field(default_factory=list)
-

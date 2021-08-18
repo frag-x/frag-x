@@ -20,7 +20,7 @@ class Weapon(ABC):
         self.time_of_last_shot: float = 0
 
     @abstractmethod
-    def fire(self, firing_position: pygame.math.Vector2, aim_angle: float):
+    def fire(self, firing_player, aim_angle: float):
         pass
 
     def try_fire(self, firing_player, aim_angle: float, current_time: float):
@@ -45,7 +45,7 @@ class HitscanWeapon(Weapon, ABC):
 
     @abstractmethod
     def fire(
-        self, firing_position: pygame.math.Vector2, aim_angle: float
+        self, firing_player, aim_angle: float
     ) -> List[HitscanBeam]:
         """
         :param firing_position: the position that the weapon is fired at

@@ -32,8 +32,7 @@ class Simulation:
 
         self.players: Dict[str, ServerPlayer] = players
         for player in players.values():
-            pos = random.choice(self.map.spawns).position
-            player.position = pos
+            player.position = random.choice(self.map.spawns).position
             
         self.rockets: Dict[str, Rocket] = {}
         self.hitscan_beams: Dict[str, HitscanBeam] = {}

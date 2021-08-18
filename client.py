@@ -171,7 +171,7 @@ def update(
             client_game_manager.user_text_box.text = ""
 
     if client_game_manager.is_typing and not just_started:
-        client_game_manager.user_text_box.update()
+        client_game_manager.user_text_box.update(events)
 
     # Note: This sends the users inputs to the server
     client_game_manager.all_sprites.update()

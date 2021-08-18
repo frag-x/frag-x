@@ -57,6 +57,7 @@ class ClientGameManager:
     def load_new_map(self, map_name: str) -> None:
         self.partitioned_map_grid = map_loading.load_map(map_name)
         self.beam_messages.clear()
+        self.player.ready = False
 
     def draw_projectiles(self, camera_v):
         for projectile_message in self.projectiles:

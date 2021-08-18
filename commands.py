@@ -7,7 +7,7 @@ from simulation_object import player
 
 
 def is_command(message) -> bool:
-    return message[0] == '/'
+    return message and message[0] == '/'
 
 @dataclass
 class Command:

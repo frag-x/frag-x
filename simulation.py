@@ -24,6 +24,7 @@ class Simulation:
         self.input_messages = input_messages
         self.output_messages = output_messages
         self.clock = pygame.time.Clock()
+        self.active = False
 
         self.players = {}
         self.rockets = {}
@@ -152,16 +153,22 @@ class Simulation:
         # it's possible for an object to deregister itself during step,
         # so these could change size during iteration
         players = list(self.players.values())
-        for player in players:
-            player.step(delta_time, current_time)
 
-        rockets = list(self.rockets.values())
-        for rocket in rockets:
-            rocket.step(delta_time, current_time)
+        if not self.active and players and all(player.ready for player in players):
+            self.active = True
+            self.output_messages.put(message.ServerStatusMessage(status='active'))
 
-        hitscan_beams = list(self.hitscan_beams.values())
-        for hitscan_beam in hitscan_beams:
-            hitscan_beam.step(delta_time, current_time)
+        if self.active:
+            for player in players:
+                player.step(delta_time, current_time)
+
+            rockets = list(self.rockets.values())
+            for rocket in rockets:
+                rocket.step(delta_time, current_time)
+
+            hitscan_beams = list(self.hitscan_beams.values())
+            for hitscan_beam in hitscan_beams:
+                hitscan_beam.step(delta_time, current_time)
 
         output_message = self._make_output_message()
         self.output_messages.put(output_message)

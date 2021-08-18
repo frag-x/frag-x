@@ -40,6 +40,7 @@ class PlayerStateMessage(ClientMessage):
     delta_mouse: float
     firing: bool
     weapon_selection: int  # TODO: should just be weapon
+    ready: bool
 
 
 @dataclass
@@ -53,6 +54,11 @@ class PlayerTextMessage(ClientMessage):
 @dataclass
 class ServerJoinMessage(ServerMessage):
     player_id: str
+
+
+@dataclass
+class ServerStatusMessage(ServerMessage):
+    status: str
 
 
 @dataclass

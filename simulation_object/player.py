@@ -56,6 +56,8 @@ class Player(body.ConstantAccelerationBody):
 
         self.beams = []
 
+        self.ready = False
+
 
 class ServerPlayer(SimulationObject, Player):
     def __init__(self, start_pos, width, height, socket):
@@ -89,6 +91,7 @@ class ServerPlayer(SimulationObject, Player):
         self.rotation_request = input_message.delta_mouse
         self.weapon_selection = input_message.weapon_selection
         self.firing_request = input_message.firing
+        self.ready = input_message.ready
 
     def step(self, delta_time: float, current_time: float):  # type: ignore
 
@@ -171,9 +174,6 @@ class ClientPlayer(Player, pygame.sprite.Sprite):  # TODO remove dependency on s
 
         self.player_id = player_id
 
-    def set_sensitivity(self, new_sens):
-        self.sensitivity = new_sens * self.sensitivity_scale
-
     def set_position(self, position):
         """Set the players position and also fixes the camera to stay centered on the player"""
         self.position = position
@@ -213,6 +213,7 @@ class ClientPlayer(Player, pygame.sprite.Sprite):  # TODO remove dependency on s
             delta_mouse=dm,
             firing=firing,
             weapon_selection=self.weapon_selection,
+            ready=self.ready,
         )
 
         network.send(self.socket, output_message)

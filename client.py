@@ -150,13 +150,7 @@ def update(
             # DO ACTION
             text = client_game_manager.user_text_box.text
             if commands.is_command(text):
-                successful = (
-                    client_game_manager.client_command_runner.attempt_run_command(text)
-                )
-                if successful:
-                    print("command went through!")
-                else:
-                    print("command failed")
+                client_game_manager.client_command_runner.attempt_run_command(text)
             else:
                 # then we're dealing with a normal chat message
                 text_message = message.PlayerTextMessage(

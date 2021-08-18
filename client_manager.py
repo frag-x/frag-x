@@ -50,7 +50,7 @@ class ClientGameManager:
             font,
         )
 
-        self.client_command_runner = commands.ClientCommandRunner(self.player)
+        self.client_command_runner = commands.CommandRunner(self.player)
 
         self.all_sprites = pygame.sprite.Group()
         self.all_sprites.add(player)
@@ -89,6 +89,11 @@ class ClientGameManager:
         elif type(input_message) == message.PlayerTextMessage:
             self.user_chat_box.add_message(
                 f"{str(input_message.player_id)[:4]}: {input_message.text}"
+            )
+
+        elif type(input_message) == message.ServerStatusMessage:
+            self.user_chat_box.add_message(
+                f"Server status: {input_message.status}"
             )
 
         else:

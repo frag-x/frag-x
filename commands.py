@@ -1,63 +1,65 @@
-import enum, re, typing
+import enum, re
+from typing import Callable, List, Any, Tuple
+from dataclasses import dataclass
 
 from simulation_object import player
 
 
-class CommandType(enum.Enum):
-    CLIENT_COMMAND = enum.auto()
-    SERVER_COMMAND = enum.auto()
-
-
 def is_command(message) -> bool:
-    return bool(re.match(r"-[cs]", message))
+    return message[0] == '/'
 
-
-def get_command_type(message):
-    command_prefix = message[:3]
-    if command_prefix == "-c ":
-        return CommandType.CLIENT_COMMAND
-    elif command_prefix == "-s ":
-        return CommandType.SERVER_COMMAND
+@dataclass
+class Command:
+    callable: Callable
+    arg_types: List[Any]
 
 
 class CommandRunner:
-    def __init__(self, command_to_action: typing.Dict[str, typing.Callable]):
-        self.command_to_action = command_to_action
+    def __init__(self, player: player.ClientPlayer):
+        self.player = player
+        self.command_to_action = {
+            "sens": Command(callable=self.set_sensitivity, arg_types=[float]),
+            "ready": Command(callable=self.ready, arg_types=[]),
+        }
 
-
-class ClientCommandRunner(CommandRunner):
-    def __init__(self, curr_player: player.ClientPlayer):
-        command_to_action = {"sens": curr_player.set_sensitivity}  # (sens)
-        super().__init__(command_to_action)
-
-    def parse_command(self, full_command) -> typing.Optional[typing.Tuple[str, float]]:
+    def parse_command(self, command) -> Tuple[str, List[Any]]:
         """
-        Attempt to parse the full_command, if it's invalid then return None,
-        otherwise return the command's name and it's associated value as a tuple
+        Attempt to parse the full_command
         """
-        command = full_command[3:].strip()
+        command = command[1:] # strip /
         try:
-            command_name, value = command.split("=")
+            command_name, args = command.split(' ')
         except ValueError:
-            print("you are using the wrong syntax")
-            return None
-        try:
-            value = float(value)
-        except ValueError:
-            print("Your commands value is not a number")
-            return None
+            command_name = command
+            args = [] # okay if the command takes no args
+
         if command_name not in self.command_to_action:
-            print("Your command is not known")
-            return None
-        return command_name, float(value)
+            raise ValueError('Command does not exist')
 
-    def attempt_run_command(self, full_command) -> bool:
-        """Given a command attempt to run it, if it success return True, otherwise False"""
-        parsed_command = self.parse_command(full_command)
-        if parsed_command is not None:
-            command_name, value = parsed_command
-            self.command_to_action[command_name](value)
-            return True
-        return False
+        expected_arg_types = self.command_to_action[command_name].arg_types
+        assert len(args) == len(expected_arg_types) # type: ignore
 
-        # TODO this only works for single argument commands will change in future
+        arg_list: List[Any] = []
+        for expected_arg_type, arg in list(zip(expected_arg_types, args)): # type: ignore
+            arg_list.append(expected_arg_type(arg)) # type: ignore
+
+        return command_name, arg_list
+
+    def attempt_run_command(self, command) -> None:
+        """Given a command attempt to run it"""
+        try:
+            command_name, args = self.parse_command(command)
+            self.command_to_action[command_name].callable(self.player, args) # type: ignore
+
+        except Exception as e:
+            print(e)
+            print('Command failed!')
+
+    def set_sensitivity(self, player, args):
+        sensitivity = args[0]
+        player.sensitivity = sensitivity * self.sensitivity_scale
+        print(f'Sensitivity set to {sensitivity}')
+
+    def ready(self, player, _):
+        player.ready = not player.ready
+        print(f'Player ready state set to {player.ready}')

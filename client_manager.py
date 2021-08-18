@@ -54,6 +54,10 @@ class ClientGameManager:
         self.all_sprites.add(player)
         self.id_to_player[player_id] = player
 
+    def load_new_map(self, map_name: str) -> None:
+        self.partitioned_map_grid = map_loading.load_map(map_name)
+        self.beam_messages.clear()
+
     def draw_projectiles(self, camera_v):
         for projectile_message in self.projectiles:
             radius = (
@@ -95,8 +99,10 @@ class ClientGameManager:
             )
 
         elif type(input_message) == message.ServerMapChangeMessage:
-            self.partitioned_map_grid = map_loading.load_map(input_message.map_name)
-            self.beam_messages.clear()
+            self.load_new_map(input_message.map_name)
+            self.user_chat_box.add_message(
+                f"Map changed to {input_message.map_name}"
+            )
 
         else:
             raise message.UnknownMessageTypeError

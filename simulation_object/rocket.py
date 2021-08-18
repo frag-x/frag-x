@@ -15,6 +15,7 @@ import helpers
 from body import ConstantVelocityBody
 import weapons.constants
 from simulation_object.simulation_object import SimulationObject
+from weapons import constants
 from weapons.weapon import HitscanBeam
 
 
@@ -53,7 +54,7 @@ class Rocket(SimulationObject, ConstantVelocityBody):
         angle_fraction = math.tau / self.num_shards
         for i in range(self.num_shards):
             angle = angle_fraction * i
-            x, y = helpers.polar_to_cartesian(self.radius, angle)
+            x, y = helpers.polar_to_cartesian(constants.ROCKET_EXPLOSION_RADIUS, angle)
             relative_shard_vec = pygame.math.Vector2(x, y)
             shard_vec = relative_shard_vec + position
             HitscanBeam(

@@ -17,9 +17,7 @@ def send(socket: socket.socket, message: Message):
     bytes = pickle.dumps(message)
     num_message_bytes = len(bytes).to_bytes(4, "little")
 
-    # TODO: this needs to be sent as one message???
-    socket.sendall(num_message_bytes)
-    socket.sendall(bytes)
+    socket.sendall(num_message_bytes + bytes)
 
 
 def recv(socket: socket.socket) -> Message:

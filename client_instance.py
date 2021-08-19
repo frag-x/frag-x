@@ -37,7 +37,7 @@ class ClientInstance:
         self.socket = socket
         self.player_id = server_join_message.player_id
         self.map_name = server_join_message.map_name
-        self._set_sensitivity(sensitivity)
+        self.set_sensitivity(sensitivity)
 
         self.running = True
         self.user_typing = False
@@ -100,14 +100,17 @@ class ClientInstance:
         pygame.mouse.set_visible(False)
         pygame.event.set_grab(True)
 
-    def _set_sensitivity(self, sensitivity: float) -> None:
+    def set_sensitivity(self, sensitivity: float) -> None:
         self.sensitivity = sensitivity * game_engine_constants.SENSITIVITY_SCALE
+
+    def quit(self):
+        self.running = False
 
     def _process_pygame_events(self) -> None:
         events = pygame.event.get()
         for i, event in enumerate(events):
             if event.type == pygame.QUIT:
-                self.running = False
+                self.quit()
             elif event.type == pygame.KEYDOWN:
                 if event.key == pygame.K_t and not self.user_typing:
                     self.user_typing = True
@@ -175,9 +178,9 @@ class ClientInstance:
         if type(input_message) == SimulationStateMessage:
             self.simulation_state = input_message
             if self.player_id in self.simulation_state.players:
-                self.our_player = self.simulation_state.players[self.player_id]
-                self.position = self.our_player.position
-                self.rotation = self.our_player.rotation
+                our_player = self.simulation_state.players[self.player_id]
+                self.position = our_player.position
+                self.rotation = our_player.rotation
 
         elif type(input_message) == PlayerTextMessage:
             self.user_chat_box.add_message(

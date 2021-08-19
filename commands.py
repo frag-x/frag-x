@@ -22,6 +22,7 @@ class CommandRunner:
             "sens": Command(callable=self.set_sensitivity, arg_types=[float]),
             "ready": Command(callable=self.ready, arg_types=[]),
             "map_vote": Command(callable=self.map_vote, arg_types=[str]),
+            "quit": Command(callable=self.quit, arg_types=[])
         }
 
     def parse_command(self, command: str) -> Tuple[str, List[Any]]:
@@ -60,7 +61,7 @@ class CommandRunner:
 
     def set_sensitivity(self, client_instance, args):
         sensitivity = args[0]
-        client_instance.sensitivity = sensitivity * game_engine_constants.SENSITIVITY_SCALE
+        client_instance.set_sensitivity(sensitivity)
         print(f'Sensitivity set to {sensitivity}')
 
     def ready(self, client_instance, _):
@@ -71,3 +72,8 @@ class CommandRunner:
         map_vote = args[0]
         client_instance.map_vote = map_vote
         print(f'Voted for map {map_vote}')
+
+    def quit(self, client_instance, _):
+        client_instance.quit()
+        print('Player quit')
+    

@@ -45,7 +45,7 @@ def server_listener(
     socket: socket.socket,
     client_instance: ClientInstance,
 ) -> None:
-    while True:
+    while True: # TODO kill thread when client quits by checking flag
         input_message = cast(message.ServerMessage, network.recv(socket))
         client_instance.process_input_message(input_message)
 

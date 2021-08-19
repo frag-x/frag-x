@@ -1,4 +1,6 @@
 from dataclasses import dataclass, field
+from typing import Dict
+from uuid import UUID
 
 import pygame
 from network_object.player import PlayerNetworkObject
@@ -35,11 +37,11 @@ class ServerMessage(Message):
 class PlayerStateMessage(ClientMessage):
     """Represents client state sent to server."""
 
-    player_id: str
+    player_id: UUID
     delta_position: pygame.math.Vector2
     delta_mouse: float
     firing: bool
-    weapon_selection: int  # TODO: should just be weapon
+    weapon_selection: int
     ready: bool
     map_vote: str
 
@@ -48,13 +50,14 @@ class PlayerStateMessage(ClientMessage):
 class PlayerTextMessage(ClientMessage):
     """Represents client text messages sent to server."""
 
-    player_id: str
+    player_id: UUID
     text: str
 
 
 @dataclass
 class ServerJoinMessage(ServerMessage):
-    player_id: str
+    player_id: UUID
+    map_name: str
 
 
 @dataclass
@@ -71,6 +74,6 @@ class ServerMapChangeMessage(ServerMessage):
 class SimulationStateMessage(ServerMessage):
     """Represents simulation state sent to a client."""
 
-    players: list[PlayerNetworkObject] = field(default_factory=list)
-    rockets: list[RocketNetworkObject] = field(default_factory=list)
-    hitscan_beams: list[HitscanBeamNetworkObject] = field(default_factory=list)
+    players: Dict[UUID, PlayerNetworkObject] = field(default_factory=dict)
+    rockets: Dict[UUID, RocketNetworkObject] = field(default_factory=dict)
+    hitscan_beams: Dict[UUID, HitscanBeamNetworkObject] = field(default_factory=dict)

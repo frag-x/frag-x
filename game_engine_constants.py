@@ -18,13 +18,13 @@ SENSITIVITY_SCALE = 1 / 1000
 
 # Secondary config variables
 
-SCREEN_CENTER_POINT = (WIDTH / 2, HEIGHT / 2)
+SCREEN_CENTER_POINT = pygame.math.Vector2(WIDTH / 2, HEIGHT / 2)
 ORIGIN = (0, 0)
 
 GAME_TITLE = "frag-x"
 
-ARROW_MOVEMENT_KEYS = [pygame.K_LEFT, pygame.K_UP, pygame.K_RIGHT, pygame.K_DOWN]
-WASD_MOVEMENT_KEYS = [pygame.K_a, pygame.K_w, pygame.K_d, pygame.K_s]
+ARROW_MOVEMENT_KEYS = (pygame.K_LEFT, pygame.K_UP, pygame.K_RIGHT, pygame.K_DOWN)
+WASD_MOVEMENT_KEYS = (pygame.K_a, pygame.K_w, pygame.K_d, pygame.K_s)
 
 # Weapon keys maps onto the weapons in this order: # TODO make this a dictionary
 # rocket launcher, rail gun

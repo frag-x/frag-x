@@ -66,7 +66,7 @@ class ChatBox:
         to_be_removed = []
         for message, time in self.message_to_time.items():
             self.message_to_time[message] = time + time_since_last_frame
-            if self.message_to_time[message] > self.time_on_screen:
+            if self.message_to_time[message] / 1000 > self.time_on_screen:
                 to_be_removed.append(message)
 
         for message in to_be_removed:

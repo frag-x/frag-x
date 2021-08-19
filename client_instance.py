@@ -31,7 +31,7 @@ class ClientInstance:
 
         self.position = None # TODO this should come from server
         self.rotation = None # TODO this should come from server
-        self.camera_v = game_engine_constants.SCREEN_CENTER_POINT
+        self.camera_v = game_engine_constants.SCREEN_CENTER_POINT # TODO figure out what this is
 
         self._setup_pygame(fullscreen)
 
@@ -137,6 +137,12 @@ class ClientInstance:
         self.all_sprites.update() # TODO figure out how to use this
 
         self.send_inputs()
+        
+    self._draw_rockets():
+        pass
+
+    self._draw_hitscan_beams():
+        pass
 
     def _render(self, delta_time: float) -> None:
         self.screen.fill(pygame.color.THECOLORS["black"])  # type: ignore

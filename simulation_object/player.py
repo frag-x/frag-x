@@ -15,6 +15,7 @@ from abc import ABC
 from comms import network
 from network_object.player import PlayerNetworkObject
 
+
 class Player(SimulationObject, body.ConstantAccelerationBody):
     def __init__(self, start_position, width, height, socket):
         super().__init__()

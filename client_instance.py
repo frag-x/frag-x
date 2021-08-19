@@ -81,6 +81,8 @@ class ClientInstance:
 
         self.map = map_loading.load_map(self.map_name)
 
+        self.input_messages_recieved = 0
+
     def _setup_pygame(self, fullscreen: bool) -> None:
         pygame.init()
         pygame.mixer.init()  # sound
@@ -182,6 +184,7 @@ class ClientInstance:
         network.send(self.socket, output_message)
 
     def process_input_message(self, input_message: ServerMessage):
+        self.input_messages_recieved += 1
         if type(input_message) == SimulationStateMessage:
             self.simulation_state = input_message
             if self.player_id in self.simulation_state.players:
@@ -308,5 +311,8 @@ class ClientInstance:
         self._render(delta_time)
 
         pygame.display.flip()
+
+        print(f'for {delta_time} we got {self.input_messages_recieved}')
+        self.input_messages_recieved = 0
 
         return self.running

@@ -153,12 +153,9 @@ class ClientInstance:
             x_movement = int(keys[r]) - int(keys[l])
             y_movement = -(int(keys[u]) - int(keys[d]))
 
-        for key in game_engine_constants.WEAPON_KEYS:
+        for i, key in enumerate(game_engine_constants.WEAPON_KEYS):
             if keys[key]:
-                if key == pygame.K_c:
-                    self.weapon_selection = 0
-                elif key == pygame.K_x:
-                    self.weapon_selection = 1
+                self.weapon_selection = i
 
         firing = pygame.mouse.get_pressed()[0]
 

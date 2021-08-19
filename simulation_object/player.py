@@ -14,6 +14,7 @@ from abc import ABC
 
 from comms import network
 from network_object.player import PlayerNetworkObject
+from weapons.shotgun import ShotGun
 
 
 class Player(SimulationObject, body.ConstantAccelerationBody):
@@ -41,6 +42,7 @@ class Player(SimulationObject, body.ConstantAccelerationBody):
             # weapons.RocketLauncher(2, self, 1000),
             RocketLauncher(),
             RailGun(),
+            ShotGun(),
         ]
         self.weapon_selection = 0
 
@@ -90,7 +92,8 @@ class Player(SimulationObject, body.ConstantAccelerationBody):
 
         if self.firing_request:
             self.weapons[self.weapon_selection].try_fire(
-                self, self.rotation,
+                self,
+                self.rotation,
             )
 
         (

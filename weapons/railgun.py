@@ -87,12 +87,13 @@ class RailGun(HitscanWeapon):
             # it is guarenteed that one of these points is valid.
             for point in [point_1, point_2]:
                 if helpers.point_within_map(point):
-                    return HitscanBeam(
+                    HitscanBeam(
                         firing_player,
                         firing_player.position,
                         point,
                         constants.RAILGUN_COLLISION_FORCE,
                         constants.RAILGUN_DAMAGE,
                     )
+                    return
 
             assert False

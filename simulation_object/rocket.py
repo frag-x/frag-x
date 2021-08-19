@@ -78,26 +78,21 @@ class Rocket(SimulationObject, ConstantVelocityBody):
             self.position
         )
 
-        # Right here self.partition.players.append()
-
-        colliding_elements = global_simulation.SIMULATION.get_colliding_elements(
+        colliding_bounding_walls, colliding_players = global_simulation.SIMULATION.get_colliding_elements(
             self, self.partition
         )
 
-        # TODO think about cases when hitting multiple objects at once
-        for colliding_element in colliding_elements:
+        # Don't collide with ourselves
+        colliding_players = [player for player in colliding_players if player != self.player]
 
-            self.position = (
-                self.previous_position
-            )  # move to the point where it wasn't colliding
-
-            if type(colliding_element) is BoundingWall:
-                bounding_wall = colliding_element
+        if colliding_bounding_walls or colliding_players:
+            self.position = self.previous_position
+            
+            # Unless there's a wall, the collision point is just our position
+            collision_point = self.position
+            if colliding_bounding_walls:
                 collision_point = collisions.get_closest_point_on_wall(
-                    self, bounding_wall
+                    self, colliding_bounding_walls[0], # an arbitrary wall if multiple
                 )
-            else:  # TODO if type(colliding_element) is ServerPlayer:
-                collision_point = pygame.math.Vector2(self.position.x, self.position.y)
 
             self.explode(collision_point)
-            break

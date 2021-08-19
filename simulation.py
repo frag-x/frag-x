@@ -137,7 +137,7 @@ class Simulation:
 
     def get_colliding_elements(
         self, body: Body, partition: map_loading.MapGridPartition
-    ) -> List:
+    ) -> Tuple[List[BoundingWall], List[ServerPlayer]]:
         """
         Check if the given body is colliding with anything in this partition, if the player is colliding
         then return what they are colliding with
@@ -150,16 +150,17 @@ class Simulation:
         partition = self.get_partition(body.position)
         collision_partition = self.get_collision_partition(body.position)
 
-        colliding_objects = []
+        colliding_b_walls = []
         for b_wall in collision_partition.bounding_walls:
             if collisions.is_colliding_with_wall(body, b_wall):
-                colliding_objects.append(b_wall)
+                colliding_b_walls.append(b_wall)
 
+        colliding_players = []
         for player in partition.players:
             if collisions.bodies_colliding(body, player) and body is not player:
-                colliding_objects.append(player)
+                colliding_players.append(player)
 
-        return colliding_objects
+        return colliding_b_walls, colliding_players
 
     def _enact_player_requests(self, players):
         if players:

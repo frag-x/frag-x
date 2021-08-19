@@ -121,18 +121,15 @@ class ServerPlayer(SimulationObject, Player):
                 self, self.rotation_angle, current_time
             )
 
-        colliding_elements = global_simulation.SIMULATION.get_colliding_elements(
+        colliding_walls, colliding_players = global_simulation.SIMULATION.get_colliding_elements(
             self, self.collision_partition
         )
 
-        for colliding_element in colliding_elements:
-            if type(colliding_element) is BoundingWall:
-                bounding_wall = colliding_element
-                # TODO make this a player method
-                collisions.simulate_collision_v2(self, bounding_wall)
-            if type(colliding_element) is ServerPlayer:
-                colliding_player = colliding_element
-                collisions.elastic_collision_update(self, colliding_player)
+        for colliding_wall in colliding_walls:
+            # TODO make this a player method
+            collisions.simulate_collision_v2(self, colliding_wall)
+        for colliding_player in colliding_players:
+            collisions.elastic_collision_update(self, colliding_player)
 
 
 class ClientPlayer(Player, pygame.sprite.Sprite):  # TODO remove dependency on sprite

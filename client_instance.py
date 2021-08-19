@@ -4,6 +4,7 @@ from network_object.player import PlayerNetworkObject
 import pygame
 import game_engine_constants
 from textbox import TextInputBox
+from leaderboard import Leaderboard
 import commands
 from comms.message import (
     PlayerStateMessage,
@@ -51,6 +52,14 @@ class ClientInstance:
             0,
             game_engine_constants.WIDTH * 0.2,
             game_engine_constants.HEIGHT * 0.9,
+            self.font,
+        )
+        self.leaderboard = Leaderboard(
+            self.screen,
+            0,
+            0,
+            100,
+            100,
             self.font,
         )
         self.command_runner = commands.CommandRunner(self)
@@ -277,20 +286,7 @@ class ClientInstance:
             self._draw_players()
             self._draw_rockets()
             self._draw_hitscan_beams()
-
-        font_color = pygame.color.THECOLORS["brown3"]  # type: ignore
-
-        # TODO this math shouldn't happen here
-        # TODO actually this whole section is utterly fucked.
-        # make these objects smarter so the code doesn't live here
-        pos = self.font.render(str(self.position), False, font_color)
-        aim_angle_str = (
-            str(9 - math.floor(self.rotation / math.tau * 10)) + "/" + str(10)
-        )
-        angle = self.font.render(aim_angle_str + "τ", False, font_color)
-
-        self.screen.blit(pos, (0, 25))
-        self.screen.blit(angle, (0, 50))
+            self.leaderboard.render(self.player_id, list(self.simulation_state.players.values()))
 
         self.user_chat_box.update_message_times(delta_time)
         self.user_chat_box.draw_messages()

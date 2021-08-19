@@ -80,7 +80,7 @@ class HitscanBeam(SimulationObject):
                     hit_player.velocity = pygame.math.Vector2()
                     if hit_player.time_of_death is None:
                         hit_player.time_of_death = pygame.time.get_ticks()
-                    self.player.num_frags += 1
+                        self.player.num_frags += 1
                 else:
                     hit_player.velocity += self.direction_vector * self.collision_force
 

@@ -3,6 +3,7 @@ from queue import Queue
 from typing import List, cast, Tuple, Dict
 from map_loading import BoundingWall
 from uuid import UUID
+from typing import Optional
 
 import pygame
 
@@ -15,7 +16,7 @@ import random
 from body import Body
 from comms import message
 from simulation_object.simulation_object import SimulationObject
-from simulation_object.player import ServerPlayer
+from simulation_object.player import Player
 from simulation_object.rocket import Rocket
 from simulation_object.hitscan_beam import HitscanBeam
 from network_object.hitscan_beam import HitscanBeamNetworkObject
@@ -32,15 +33,15 @@ class Simulation:
         self.clock = pygame.time.Clock()
         self.active = False
 
-        self.players: Dict[str, ServerPlayer] = players
+        self.players: Dict[UUID, Player] = players
         for player in players.values():
             player.position = random.choice(self.map.spawns).position
 
-        self.rockets: Dict[str, Rocket] = {}
-        self.hitscan_beams: Dict[str, HitscanBeam] = {}
+        self.rockets: Dict[UUID, Rocket] = {}
+        self.hitscan_beams: Dict[UUID, HitscanBeam] = {}
 
         self.type_to_dict = {
-            ServerPlayer: self.players,
+            Player: self.players,
             Rocket: self.rockets,
             HitscanBeam: self.hitscan_beams,
         }
@@ -56,12 +57,11 @@ class Simulation:
 
     def _make_output_message(self) -> message.SimulationStateMessage:
         return message.SimulationStateMessage(
-            players=[player.to_network_object() for player in self.players.values()],
-            rockets=[rocket.to_network_object() for rocket in self.rockets.values()],
-            hitscan_beams=[
-                cast(HitscanBeamNetworkObject, hitscan_beam.to_network_object())
-                for hitscan_beam in self.hitscan_beams.values()
-            ],
+            players={uuid: player.to_network_object() for uuid, player in self.players.items()},
+            rockets={uuid: rocket.to_network_object() for uuid, rocket in self.rockets.items()},
+            hitscan_beams={uuid: cast(HitscanBeamNetworkObject, hitscan_beam.to_network_object()) 
+                for uuid, hitscan_beam in self.hitscan_beams.items()
+            },
         )
 
     def register_object(self, object: SimulationObject) -> None:
@@ -78,7 +78,7 @@ class Simulation:
 
     def add_player(self, client_socket):
         spawn = random.choice(self.map.spawns)
-        player = ServerPlayer(
+        player = Player(
             spawn.position,
             game_engine_constants.TILE_SIZE,
             game_engine_constants.TILE_SIZE,
@@ -137,7 +137,7 @@ class Simulation:
 
     def get_colliding_elements(
         self, body: Body, partition: map_loading.MapGridPartition
-    ) -> Tuple[List[BoundingWall], List[ServerPlayer]]:
+    ) -> Tuple[List[BoundingWall], List[Player]]:
         """
         Check if the given body is colliding with anything in this partition, if the player is colliding
         then return what they are colliding with
@@ -162,7 +162,7 @@ class Simulation:
 
         return colliding_b_walls, colliding_players
 
-    def _enact_player_requests(self, players):
+    def _enact_player_requests(self, players) -> Tuple[bool, Optional[str]]:
         if players:
             if not self.active and all(player.ready for player in players):
                 self.active = True
@@ -177,8 +177,9 @@ class Simulation:
             ):
 
                 return False, cast(str, top_map_vote)
+        return True, None
 
-    def step(self) -> Tuple[bool, str]:
+    def step(self) -> Tuple[bool, Optional[str]]:
         delta_time = self.clock.tick(game_engine_constants.SERVER_TICK_RATE_HZ)
         current_time = pygame.time.get_ticks()
         self.hitscan_beams.clear()
@@ -191,8 +192,8 @@ class Simulation:
         # it's possible for an object to deregister itself during step,
         # so these could change size during iteration
         players = list(self.players.values())
-        self._enact_player_requests(players)
-
+        keep_map, requested_new_map = self._enact_player_requests(players)
+        
         if self.active:
             for player in players:
                 player.step(delta_time, current_time)
@@ -208,4 +209,4 @@ class Simulation:
         output_message = self._make_output_message()
         self.output_messages.put(output_message)
 
-        return True, self.map_name
+        return keep_map, requested_new_map

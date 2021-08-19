@@ -16,7 +16,7 @@ def listener(server_socket, state_queue):
     while True:
         client_socket, addr = server_socket.accept()
         player_id = global_simulation.SIMULATION.add_player(client_socket)
-        network.send(client_socket, message.ServerJoinMessage(player_id=player_id))
+        network.send(client_socket, message.ServerJoinMessage(player_id=player_id, map_name=global_simulation.SIMULATION.map_name))
         print(f"Accepted connection from {addr}")
 
         t = Thread(target=client_listener, args=(client_socket, state_queue))
@@ -95,10 +95,12 @@ def load_requested_map(map_name, invalid_map_names, input_messages, output_messa
 
 
 def run_server(args):
-    server_socket = initialize_socket()
-
     input_messages = Queue()
     output_messages = Queue()
+
+    global_simulation.SIMULATION = Simulation(args.map, input_messages, output_messages)
+
+    server_socket = initialize_socket()
 
     tsa_t = Thread(
         target=listener,
@@ -115,14 +117,12 @@ def run_server(args):
     )
     gss_t.start()
 
-    global_simulation.SIMULATION = Simulation(args.map, input_messages, output_messages)
-
     invalid_map_names = set()
     while True:
-        keep_map, map_name = global_simulation.SIMULATION.step()
+        keep_map, requested_map_name = global_simulation.SIMULATION.step()
         if not keep_map:
             load_requested_map(
-                map_name, invalid_map_names, input_messages, output_messages
+                requested_map_name, invalid_map_names, input_messages, output_messages
             )
 
 

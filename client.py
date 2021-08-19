@@ -6,6 +6,7 @@ import argparse
 import game_engine_constants
 from threading import Thread
 from client_instance import ClientInstance
+from comms.message import ServerJoinMessage
 
 def parse_args():
     parser = argparse.ArgumentParser()
@@ -41,31 +42,30 @@ def parse_args():
     return parser.parse_args()
 
 def server_listener(
-    socket: socket.socket
+    socket: socket.socket,
+    client_instance: ClientInstance,
 ) -> None:
     while True:
         input_message = cast(message.ServerMessage, network.recv(socket))
-        # client_game_manager.parse_input_message(input_message)
+        client_instance.process_input_message(input_message)
 
-def initialize_network(ip_address: str, port: int) -> Tuple[socket.socket, str]:
+def initialize_network(ip_address: str, port: int) -> Tuple[socket.socket, ServerJoinMessage]:
     server_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     server_socket.connect((ip_address, port))
 
-    join_message = network.recv(server_socket)
-    if type(join_message) is message.ServerJoinMessage:
-        player_id = join_message.player_id
+    server_join_message = network.recv(server_socket)
+    if type(server_join_message) is message.ServerJoinMessage:
+        print(f"You are player {server_join_message.player_id}")
+        return server_socket, server_join_message
     else:
         raise message.UnknownMessageTypeError
 
-    print(f"You are player {player_id}")
-    return server_socket, player_id
-
 def run_client(args):
-    server_socket, uuid = initialize_network(args.ip_address, args.port)
+    server_socket, server_join_message = initialize_network(args.ip_address, args.port)
 
-    client_instance = ClientInstance(uuid, server_socket, args.fullscreen, args.sensitivity)
+    client_instance = ClientInstance(server_socket, server_join_message, args.fullscreen, args.sensitivity)
 
-    t = Thread(target=server_listener, args=(server_socket))
+    t = Thread(target=server_listener, args=(server_socket, client_instance))
     t.start()
 
     running = True

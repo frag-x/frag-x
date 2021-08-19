@@ -8,6 +8,7 @@ from threading import Thread
 from client_instance import ClientInstance
 from comms.message import ServerJoinMessage
 
+
 def parse_args():
     parser = argparse.ArgumentParser()
     parser.add_argument(
@@ -41,15 +42,25 @@ def parse_args():
     parser.set_defaults(fullscreen=True)
     return parser.parse_args()
 
+
 def server_listener(
     socket: socket.socket,
     client_instance: ClientInstance,
 ) -> None:
-    while True: # TODO kill thread when client quits by checking flag
+    """
+    This
+    :param socket:
+    :param client_instance:
+    :return:
+    """
+    while True:  # TODO kill thread when client quits by checking flag
         input_message = cast(message.ServerMessage, network.recv(socket))
         client_instance.process_input_message(input_message)
 
-def initialize_network(ip_address: str, port: int) -> Tuple[socket.socket, ServerJoinMessage]:
+
+def initialize_network(
+    ip_address: str, port: int
+) -> Tuple[socket.socket, ServerJoinMessage]:
     server_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     server_socket.connect((ip_address, port))
 
@@ -60,10 +71,13 @@ def initialize_network(ip_address: str, port: int) -> Tuple[socket.socket, Serve
     else:
         raise message.UnknownMessageTypeError
 
+
 def run_client(args):
     server_socket, server_join_message = initialize_network(args.ip_address, args.port)
 
-    client_instance = ClientInstance(server_socket, server_join_message, args.fullscreen, args.sensitivity)
+    client_instance = ClientInstance(
+        server_socket, server_join_message, args.fullscreen, args.sensitivity
+    )
 
     t = Thread(target=server_listener, args=(server_socket, client_instance))
     t.start()

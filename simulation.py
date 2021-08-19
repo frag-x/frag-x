@@ -1,6 +1,8 @@
 from collections import defaultdict, Counter
 from queue import Queue
 from typing import List, cast, Tuple, Dict
+
+from comms.message import SimulationStateMessage
 from map_loading import BoundingWall
 from uuid import UUID
 from typing import Optional
@@ -47,6 +49,12 @@ class Simulation:
         }
 
     def _process_input_message(self, input_message: message.ServerMessage) -> None:
+        """
+        Given a message which comes from the client, read this message and update the game accordingly
+
+        :param input_message:
+        :return:
+        """
         if type(input_message) == message.PlayerStateMessage:
             player = self.players[input_message.player_id]
             player.update(input_message)
@@ -54,6 +62,19 @@ class Simulation:
             self.output_messages.put(input_message)
         else:
             raise message.UnknownMessageTypeError(type(input_message))
+
+    def _process_output_message(self, output_message: SimulationStateMessage) -> None:
+        """
+        This client is used for a client side simulation, when the real server sends an output message
+        we take that message and use it to update the simulation
+
+        :param output_message:
+        :return:
+        """
+        for player in output_message.players:
+            if player.uuid not in self.players:
+                Player
+                self.add_player()
 
     def _make_output_message(self) -> message.SimulationStateMessage:
         return message.SimulationStateMessage(
@@ -83,12 +104,17 @@ class Simulation:
             raise Exception("Object {object} not found while deregistering!")
         del target_dict[object.uuid]  # type: ignore
 
-    def add_player(self, client_socket):
+    def add_player(self, client_socket=None):
+        """
+        Add a player to the simulation, client_socket is optional for when
+        you are running a simulation locally and you don't need to send out messages
+
+        :param client_socket:
+        :return:
+        """
         spawn = random.choice(self.map.spawns)
         player = Player(
             spawn.position,
-            game_engine_constants.TILE_SIZE,
-            game_engine_constants.TILE_SIZE,
             client_socket,
         )
         return player.uuid

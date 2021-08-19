@@ -1,10 +1,7 @@
-import random
-
-import pygame, math
+import pygame, math, uuid, random
 import collisions, global_simulation
 from comms.message import PlayerStateMessage
 import game_engine_constants, body
-from map_loading import BoundingWall
 from simulation_object import constants
 from weapons.railgun import RailGun
 from weapons.rocket_launcher import RocketLauncher
@@ -12,14 +9,13 @@ from simulation_object.simulation_object import SimulationObject
 import simulation_object.constants
 from abc import ABC
 
-from comms import network
 from network_object.player import PlayerNetworkObject
 from weapons.shotgun import ShotGun
 
 
 class Player(SimulationObject, body.ConstantAccelerationBody):
-    def __init__(self, start_position, width, height, socket):
-        super().__init__()
+    def __init__(self, start_position, socket, uuid=uuid.uuid1()):
+        super().__init__(uuid)
         super(ABC, self).__init__(
             start_position, game_engine_constants.PLAYER_RADIUS, 0.05, 1000
         )
@@ -39,7 +35,6 @@ class Player(SimulationObject, body.ConstantAccelerationBody):
         self.num_frags = 0
 
         self.weapons = [
-            # weapons.RocketLauncher(2, self, 1000),
             RocketLauncher(),
             RailGun(),
             ShotGun(),
@@ -49,7 +44,7 @@ class Player(SimulationObject, body.ConstantAccelerationBody):
         self.beams = []
 
     def __str__(self):
-        return f'{str(self.uuid)[:4]}: {self.num_frags}'
+        return f"{str(self.uuid)[:4]}: {self.num_frags}"
 
     def is_dead(self) -> bool:
         return self.time_of_death is not None

@@ -46,6 +46,9 @@ class Player(SimulationObject, body.ConstantAccelerationBody):
 
         self.beams = []
 
+    def is_dead(self) -> bool:
+        return self.time_of_death is not None
+
     def to_network_object(self):
         return PlayerNetworkObject(
             uuid=self.uuid,
@@ -79,7 +82,7 @@ class Player(SimulationObject, body.ConstantAccelerationBody):
             self.position
         ).players.append(self)
 
-        super(Player, self).step(self.movement_request, delta_time)
+        super(ABC, self).step(self.movement_request, delta_time)
         self.movement_request = pygame.math.Vector2(0, 0)
 
         self.rotation += self.rotation_request

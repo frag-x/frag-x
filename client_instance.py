@@ -5,7 +5,16 @@ import pygame
 import game_engine_constants
 from textbox import TextInputBox
 import commands
-from comms.message import PlayerStateMessage, PlayerTextMessage, ServerJoinMessage, ServerMessage, SimulationStateMessage, ServerMapChangeMessage, ServerStatusMessage, UnknownMessageTypeError
+from comms.message import (
+    PlayerStateMessage,
+    PlayerTextMessage,
+    ServerJoinMessage,
+    ServerMessage,
+    SimulationStateMessage,
+    ServerMapChangeMessage,
+    ServerStatusMessage,
+    UnknownMessageTypeError,
+)
 from comms import network
 import socket
 import map_loading
@@ -14,8 +23,15 @@ from chatbox import ChatBox
 from typing import List, Optional
 import simulation_object.constants
 
+
 class ClientInstance:
-    def __init__(self, socket: socket.socket, server_join_message: ServerJoinMessage, fullscreen: bool, sensitivity: float):
+    def __init__(
+        self,
+        socket: socket.socket,
+        server_join_message: ServerJoinMessage,
+        fullscreen: bool,
+        sensitivity: float,
+    ):
         self._setup_pygame(fullscreen)
 
         self.socket = socket
@@ -38,14 +54,18 @@ class ClientInstance:
         )
         self.command_runner = commands.CommandRunner(self)
         # TODO this also probably shouldn't be here
-        self.player_image = pygame.Surface([game_engine_constants.TILE_SIZE, game_engine_constants.TILE_SIZE], pygame.SRCALPHA, 32)
+        self.player_image = pygame.Surface(
+            [game_engine_constants.TILE_SIZE, game_engine_constants.TILE_SIZE],
+            pygame.SRCALPHA,
+            32,
+        )
         self.player_image.fill((255, 255, 255, 0))
-        
-        self.position = pygame.math.Vector2() 
+
+        self.position = pygame.math.Vector2()
         self.rotation: float = 0
         self.weapon_selection: int = 0
         self.simulation_state: Optional[SimulationStateMessage] = None
-        
+
         self.ready = False
         self.map_vote: Optional[str] = None
 
@@ -53,7 +73,7 @@ class ClientInstance:
 
     def _setup_pygame(self, fullscreen: bool) -> None:
         pygame.init()
-        pygame.mixer.init() # sound
+        pygame.mixer.init()  # sound
         pygame.font.init()
 
         self.clock = pygame.time.Clock()
@@ -83,7 +103,6 @@ class ClientInstance:
     def _set_sensitivity(self, sensitivity: float) -> None:
         self.sensitivity = sensitivity * game_engine_constants.SENSITIVITY_SCALE
 
-
     def _process_pygame_events(self) -> None:
         events = pygame.event.get()
         for i, event in enumerate(events):
@@ -93,12 +112,12 @@ class ClientInstance:
                 if event.key == pygame.K_t and not self.user_typing:
                     self.user_typing = True
                     # Only register key presses after user typing is active
-                    events = events[i+1:]
+                    events = events[i + 1 :]
                 elif event.key == pygame.K_RETURN and self.user_typing:
                     self.user_typing = False
                     # TODO make user_text_box smarter by adding a method
                     text = self.user_text_box.text
-                    self.user_text_box.text = ''
+                    self.user_text_box.text = ""
 
                     if commands.is_command(text):
                         self.command_runner.try_command(text)
@@ -110,7 +129,7 @@ class ClientInstance:
 
                 elif event.key == pygame.K_ESCAPE and self.user_typing:
                     self.user_typing = False
-                    self.user_text_box.text = ''
+                    self.user_text_box.text = ""
 
         if self.user_typing:
             self.user_text_box.update(events)
@@ -166,20 +185,16 @@ class ClientInstance:
             )
 
         elif type(input_message) == ServerStatusMessage:
-            self.user_chat_box.add_message(
-                f"Server status: {input_message.status}"
-            )
+            self.user_chat_box.add_message(f"Server status: {input_message.status}")
 
         elif type(input_message) == ServerMapChangeMessage:
             self.map = map_loading.load_map(input_message.map_name)
             # TODO other things?
-            self.user_chat_box.add_message(
-                f"Map changed to {input_message.map_name}"
-            )
+            self.user_chat_box.add_message(f"Map changed to {input_message.map_name}")
 
         else:
             raise UnknownMessageTypeError
-        
+
     def _update(self) -> None:
         self._process_pygame_events()
         self.send_inputs()
@@ -196,22 +211,26 @@ class ClientInstance:
                 pygame.color.THECOLORS["orange"],
                 player_relative_position,
                 (
-                    player_relative_position[0] + math.cos(player.rotation) * simulation_object.constants.PLAYER_AIM_LENGTH,
-                    player_relative_position[1] + math.sin(player.rotation) * simulation_object.constants.PLAYER_AIM_LENGTH,
+                    player_relative_position[0]
+                    + math.cos(player.rotation)
+                    * simulation_object.constants.PLAYER_AIM_LENGTH,
+                    player_relative_position[1]
+                    + math.sin(player.rotation)
+                    * simulation_object.constants.PLAYER_AIM_LENGTH,
                 ),
             )
 
             pygame.draw.circle(
-                self.screen, pygame.color.THECOLORS["blue"], player_relative_position, game_engine_constants.PLAYER_RADIUS
+                self.screen,
+                pygame.color.THECOLORS["blue"],
+                player_relative_position,
+                game_engine_constants.PLAYER_RADIUS,
             )
 
-        
     def _draw_rockets(self):
         for projectile in self.simulation_state.rockets.values():
             # TODO use shared variable with server
-            radius = (
-                game_engine_constants.TILE_SIZE / 4
-            )  
+            radius = game_engine_constants.TILE_SIZE / 4
             pygame.draw.circle(
                 self.screen,
                 pygame.color.THECOLORS["chartreuse4"],
@@ -241,7 +260,9 @@ class ClientInstance:
                 )
 
                 for wall in partition.walls:
-                    pygame.draw.rect(self.screen, wall.color, wall.rect.move(self._camera_view()))
+                    pygame.draw.rect(
+                        self.screen, wall.color, wall.rect.move(self._camera_view())
+                    )
 
                 for b_wall in partition.bounding_walls:
                     pygame.draw.rect(
@@ -290,5 +311,5 @@ class ClientInstance:
         self._render(delta_time)
 
         pygame.display.flip()
-        
+
         return self.running

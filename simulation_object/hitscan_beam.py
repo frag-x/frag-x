@@ -77,9 +77,7 @@ class HitscanBeam(SimulationObject):
                 hit_player.health -= self.damage
                 if hit_player.health <= 0:
                     hit_player.velocity = pygame.math.Vector2()
-                    print(hit_player.time_of_death)
                     if hit_player.time_of_death is None:
-                        print(f"player died at {current_time}")
                         hit_player.time_of_death = current_time
                     self.player.num_frags += 1
                 else:

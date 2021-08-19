@@ -57,9 +57,16 @@ class Simulation:
 
     def _make_output_message(self) -> message.SimulationStateMessage:
         return message.SimulationStateMessage(
-            players={uuid: player.to_network_object() for uuid, player in self.players.items()},
-            rockets={uuid: rocket.to_network_object() for uuid, rocket in self.rockets.items()},
-            hitscan_beams={uuid: cast(HitscanBeamNetworkObject, hitscan_beam.to_network_object()) 
+            players={
+                uuid: player.to_network_object()
+                for uuid, player in self.players.items()
+            },
+            rockets={
+                uuid: rocket.to_network_object()
+                for uuid, rocket in self.rockets.items()
+            },
+            hitscan_beams={
+                uuid: cast(HitscanBeamNetworkObject, hitscan_beam.to_network_object())
                 for uuid, hitscan_beam in self.hitscan_beams.items()
             },
         )
@@ -193,7 +200,7 @@ class Simulation:
         # so these could change size during iteration
         players = list(self.players.values())
         keep_map, requested_new_map = self._enact_player_requests(players)
-        
+
         if self.active:
             for player in players:
                 if not player.is_dead():

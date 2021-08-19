@@ -46,10 +46,10 @@ class ClientInstance:
         )
         self.user_chat_box = ChatBox(
             self.screen,
-            game_engine_constants.WIDTH * 0.8,
+            game_engine_constants.WIDTH * 2 / 3,
             0,
             game_engine_constants.WIDTH * 0.2,
-            600,
+            game_engine_constants.HEIGHT * 0.9,
             self.font,
         )
         self.command_runner = commands.CommandRunner(self)

@@ -3,7 +3,6 @@ import pygame
 
 class TextInputBox:
     def __init__(self, x, y, w, font):
-        super().__init__()
         self.color = (255, 255, 255)
         self.backcolor = None
         self.pos = (x, y)

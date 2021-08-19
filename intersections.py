@@ -1,15 +1,68 @@
+from typing import Optional, Tuple, List
+
 import game_engine_constants, helpers
 import pygame, math
 
-from weapons.weapon import HitscanBeam
+from simulation_object.simulation_object import SimulationObject
 
 
-def get_intersecting_partitions(
-    partitioned_map_grid, beam: HitscanBeam, screen_for_debug=None
-):
+def get_closest_intersecting_object_in_pmg(
+    partitioned_map_grid,
+    beam,
+) -> Tuple[Optional[pygame.math.Vector2], Optional[SimulationObject]]:
+    """
+    Given a beam that is passing through a given map , find the closest element to it
+
+    :param partitioned_map_grid:
+    :param beam:
+    :return: TODO change to None or the tuple
+    """
+    closest_hit = None
+    closest_entity = None
+
+    def update_closest(hit, entity, closest_hit, closest_entity):
+
+        if closest_hit is None:
+            closest_hit = hit
+            closest_entity = entity
+        else:
+            if hit.magnitude() <= closest_hit.magnitude():
+                closest_hit = hit
+                closest_entity = entity
+        return closest_hit, closest_entity
+
+    intersected_partitions = get_intersecting_partitions(
+        partitioned_map_grid,
+        beam,
+    )
+
+    for partition in intersected_partitions:
+        hit, entity = get_closest_intersecting_object_in_partition(beam, partition)
+
+        if hit is not None and entity is not None:
+            closest_hit, closest_entity = update_closest(
+                hit, entity, closest_hit, closest_entity
+            )
+    # Reposition relative to the player
+    if closest_hit is not None:
+        closest_hit = closest_hit + beam.start_point
+
+    return closest_hit, closest_entity
+
+
+def get_intersecting_partitions(partitioned_map_grid, beam) -> List:
+    """
+    Given a beam return the partitions that this beam intersects with
+
+    :param partitioned_map_grid: TODO removed when this is a class method for simulation
+    :param beam: a beam which is fired in this simulation
+    :return:
+    """
 
     fired_idx_x, fired_idx_y = helpers.get_partition_index(
-        partitioned_map_grid, beam.start_point
+        partitioned_map_grid.partition_width,
+        partitioned_map_grid.partition_height,
+        beam.start_point,
     )
 
     partition_fired_from = partitioned_map_grid.partitioned_map[fired_idx_y][
@@ -290,44 +343,21 @@ def get_intersecting_partitions(
     return intersecting_partitions
 
 
-def get_closest_intersecting_object_in_pmg(
-    partitioned_map_grid, beam, screen_for_debug=None
+def get_closest_intersecting_object_in_partition(
+    beam,
+    pmg,
 ):
-    closest_hit = None
-    closest_entity = None
+    """
+    Given a partition that this beam is passing through, find the closest element in the partition
+    that the beam intersects.
 
-    def update_closest(hit, entity, closest_hit, closest_entity):
+    Note: This function is used in conjunction with get_intersecting_partitions so that we can find
+    the closest element in the whole map
 
-        if closest_hit is None:
-            closest_hit = hit
-            closest_entity = entity
-        else:
-            if hit.magnitude() <= closest_hit.magnitude():
-                closest_hit = hit
-                closest_entity = entity
-        return closest_hit, closest_entity
-
-    intersected_partitions = get_intersecting_partitions(
-        partitioned_map_grid, beam, screen_for_debug
-    )
-
-    for partition in intersected_partitions:
-        hit, entity = get_closest_intersecting_object_in_partition(
-            beam, partition, screen_for_debug
-        )
-
-        if hit is not None and entity is not None:
-            closest_hit, closest_entity = update_closest(
-                hit, entity, closest_hit, closest_entity
-            )
-    # Reposition relative to the player
-    if closest_hit is not None:
-        closest_hit = closest_hit + beam.start_point
-
-    return closest_hit, closest_entity
-
-
-def get_closest_intersecting_object_in_partition(beam, pmg, screen_for_debug=None):
+    :param beam:
+    :param pmg:
+    :return:
+    """
 
     fire_origin = beam.start_point
 
@@ -516,8 +546,4 @@ def get_closest_intersecting_object_in_partition(beam, pmg, screen_for_debug=Non
                         hit, body, closest_hit, closest_entity
                     )
 
-    if closest_hit is not None:
-        # returns position relative to player which is good
-        return closest_hit, closest_entity
-    else:
-        return closest_hit, closest_entity
+    return closest_hit, closest_entity

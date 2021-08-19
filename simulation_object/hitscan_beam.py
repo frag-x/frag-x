@@ -1,6 +1,9 @@
 from dataclasses import dataclass
 import pygame
+
+import global_simulation
 import helpers
+import intersections
 
 from network_object.network_object import NetworkObject
 from network_object.hitscan_beam import HitscanBeamNetworkObject
@@ -19,6 +22,14 @@ class HitscanBeam(SimulationObject):
         collision_force=weapons.constants.RAILGUN_COLLISION_FORCE,
         damage=weapons.constants.RAILGUN_DAMAGE,
     ):
+        """
+        Set up a hitscan beam which is owned by a player
+        :param player: The player which owns this beam
+        :param start_point: The start point of the beam
+        :param end_point: The end point of the beam
+        :param collision_force: The amount of force that this beam applies to what it hits
+        :param damage: The amount of damage this beam will do to what it hits
+        """
         super().__init__()
 
         self.delta_y = end_point[1] - start_point[1]
@@ -48,4 +59,17 @@ class HitscanBeam(SimulationObject):
         )
 
     def step(self, delta_time: float, current_time: float):
-        pass
+        (
+            closest_hit,
+            closest_entity,
+        ) = intersections.get_closest_intersecting_object_in_pmg(
+            global_simulation.SIMULATION.map, self
+        )
+
+        if closest_hit is not None and closest_entity is not None:
+            if type(closest_entity) is ServerPlayer:
+                hit_player = closest_entity
+                hit_player.health
+
+        # No need to deregister the object, hitscan beams are removed
+        # before new ones are created, but after old ones are operated on

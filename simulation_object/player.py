@@ -72,7 +72,7 @@ class ServerPlayer(SimulationObject, Player):
         """
         super().__init__()
         super(SimulationObject, self).__init__(start_pos, width, height, socket)
-        self.health = 100
+        self.health = simulation_object.constants.PLAYER_HEALTH
         self.time_of_death = None
 
         self.movement_request = pygame.math.Vector2(0, 0)

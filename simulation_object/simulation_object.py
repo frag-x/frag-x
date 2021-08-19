@@ -1,8 +1,5 @@
 from abc import ABC, abstractmethod
 import uuid
-
-from comms import message
-from comms.message import ClientMessage
 from network_object.network_object import NetworkObject
 import global_simulation
 

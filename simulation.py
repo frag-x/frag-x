@@ -195,7 +195,8 @@ class Simulation:
 
         if self.active:
             for player in players:
-                player.step(delta_time, current_time)
+                if not player.is_dead():
+                    player.step(delta_time, current_time)
 
             rockets = list(self.rockets.values())
             for rocket in rockets:

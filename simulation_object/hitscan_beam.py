@@ -32,6 +32,7 @@ class HitscanBeam(SimulationObject):
         """
         super().__init__()
 
+        self.player = player
         self.delta_y = end_point[1] - start_point[1]
         self.delta_x = end_point[0] - start_point[0]
 
@@ -63,13 +64,26 @@ class HitscanBeam(SimulationObject):
             closest_hit,
             closest_entity,
         ) = intersections.get_closest_intersecting_object_in_pmg(
-            global_simulation.SIMULATION.map, self
+            self.player, global_simulation.SIMULATION.map, self
         )
 
         if closest_hit is not None and closest_entity is not None:
-            if type(closest_entity) is ServerPlayer:
+            # TODO this is fucke
+            if (
+                hasattr(closest_entity, "uuid")
+                and closest_entity.uuid in global_simulation.SIMULATION.players
+            ):
                 hit_player = closest_entity
-                hit_player.health
+                hit_player.health -= self.damage
+                if hit_player.health <= 0:
+                    hit_player.velocity = pygame.math.Vector2()
+                    print(hit_player.time_of_death)
+                    if hit_player.time_of_death is None:
+                        print(f"player died at {current_time}")
+                        hit_player.time_of_death = current_time
+                    self.player.num_frags += 1
+                else:
+                    hit_player.velocity += self.direction_vector * self.collision_force
 
         # No need to deregister the object, hitscan beams are removed
         # before new ones are created, but after old ones are operated on

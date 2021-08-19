@@ -3,16 +3,19 @@ from typing import Optional, Tuple, List
 import game_engine_constants, helpers
 import pygame, math
 
+
 from simulation_object.simulation_object import SimulationObject
 
 
 def get_closest_intersecting_object_in_pmg(
+    player,
     partitioned_map_grid,
     beam,
 ) -> Tuple[Optional[pygame.math.Vector2], Optional[SimulationObject]]:
     """
-    Given a beam that is passing through a given map , find the closest element to it
+    Given a beam that is passing through a given map fired by player , find the closest element to it which is not player
 
+    :param player:
     :param partitioned_map_grid:
     :param beam:
     :return: TODO change to None or the tuple
@@ -37,7 +40,9 @@ def get_closest_intersecting_object_in_pmg(
     )
 
     for partition in intersected_partitions:
-        hit, entity = get_closest_intersecting_object_in_partition(beam, partition)
+        hit, entity = get_closest_intersecting_object_in_partition(
+            player, beam, partition
+        )
 
         if hit is not None and entity is not None:
             closest_hit, closest_entity = update_closest(
@@ -343,10 +348,7 @@ def get_intersecting_partitions(partitioned_map_grid, beam) -> List:
     return intersecting_partitions
 
 
-def get_closest_intersecting_object_in_partition(
-    beam,
-    pmg,
-):
+def get_closest_intersecting_object_in_partition(player, beam, pmg):
     """
     Given a partition that this beam is passing through, find the closest element in the partition
     that the beam intersects.
@@ -461,89 +463,90 @@ def get_closest_intersecting_object_in_partition(
             # if len(hits) != 0:
 
     for body in pmg.players:
-        """
-        Assuming p, q are written with respect to the fire origin:
-
-        (x - p)**2 + (y - q)**2 = r**2 & y = mx
-
-        =>  (x - p)**2 + (mx - q)**2 = r**2
-
-        <=> x**2 - 2px + p**2 + (mx)**2 - 2mqx + q**2 = r**2
-
-        <=> (m**2 + 1)x**2 -2(p + mq)x + p**2 + q**2 - r**2 = 0
-
-        Quadratic Equation with
-
-        a = (m**2 + 1), b = -2(p + q) c = p**2 + q**2 - r**2
-
-        Then it will have solutions if the descriminant is positive, that is, if:
-
-        b**2 - 4ac >= 0
-
-        """
-        p, q = body.position
-        r = body.radius
-
-        # Written with respect to fire origin
-        p, q = p - fire_origin.x, q - fire_origin.y
-
-        m = beam.slope
-
-        if m == math.inf:
-            # In this case then we are setting x = 0 in the equation and getting solutions
+        if body is not player:
             """
-            (x - p)**2 + (y - q)**2 = r**2 & x = 0
+            Assuming p, q are written with respect to the fire origin:
 
-            <=> y**2 -2qy + q**2 + p**2 = r**2
+            (x - p)**2 + (y - q)**2 = r**2 & y = mx
 
-            <=> y**2 -2qy + (q**2 + p**2 - r**2) = 0
+            =>  (x - p)**2 + (mx - q)**2 = r**2
+
+            <=> x**2 - 2px + p**2 + (mx)**2 - 2mqx + q**2 = r**2
+
+            <=> (m**2 + 1)x**2 -2(p + mq)x + p**2 + q**2 - r**2 = 0
+
+            Quadratic Equation with
+
+            a = (m**2 + 1), b = -2(p + q) c = p**2 + q**2 - r**2
+
+            Then it will have solutions if the descriminant is positive, that is, if:
+
+            b**2 - 4ac >= 0
 
             """
-            a = 1
-            b = -2 * q
-            c = (p ** 2) + (q ** 2) - (r ** 2)
-        else:
-            # From initial derivation
-            a = (m ** 2) + 1
-            b = -2 * (p + (m * q))
-            c = (p ** 2) + (q ** 2) - (r ** 2)
+            p, q = body.position
+            r = body.radius
 
-        discriminant = b ** 2 - (4 * a * c)
+            # Written with respect to fire origin
+            p, q = p - fire_origin.x, q - fire_origin.y
 
-        if discriminant >= 0:
-            # Then we have at least one solution
+            m = beam.slope
+
             if m == math.inf:
-                y = (-b + (discriminant) ** (1 / 2)) / (2 * a)
-                x = 0
-            else:
-                x = (-b + (discriminant) ** (1 / 2)) / (2 * a)
-                y = m * x
-            hit = pygame.math.Vector2((x, y))
-            if (
-                helpers.get_sign(hit.x),
-                helpers.get_sign(hit.y),
-            ) == quadrant_info and helpers.part_of_beam(hit, beam):
-                closest_hit, closest_entity = update_closest(
-                    hit, body, closest_hit, closest_entity
-                )
-            if discriminant > 0:
-                # Second solution is negative
-                if m == math.inf:
-                    yn = (-b - (discriminant) ** (1 / 2)) / (2 * a)
-                    xn = 0
-                else:
-                    xn = (-b - (discriminant) ** (1 / 2)) / (2 * a)
-                    yn = m * xn
-                hit = pygame.math.Vector2((xn, yn))
+                # In this case then we are setting x = 0 in the equation and getting solutions
+                """
+                (x - p)**2 + (y - q)**2 = r**2 & x = 0
 
+                <=> y**2 -2qy + q**2 + p**2 = r**2
+
+                <=> y**2 -2qy + (q**2 + p**2 - r**2) = 0
+
+                """
+                a = 1
+                b = -2 * q
+                c = (p ** 2) + (q ** 2) - (r ** 2)
+            else:
+                # From initial derivation
+                a = (m ** 2) + 1
+                b = -2 * (p + (m * q))
+                c = (p ** 2) + (q ** 2) - (r ** 2)
+
+            discriminant = b ** 2 - (4 * a * c)
+
+            if discriminant >= 0:
+                # Then we have at least one solution
+                if m == math.inf:
+                    y = (-b + (discriminant) ** (1 / 2)) / (2 * a)
+                    x = 0
+                else:
+                    x = (-b + (discriminant) ** (1 / 2)) / (2 * a)
+                    y = m * x
+                hit = pygame.math.Vector2((x, y))
                 if (
                     helpers.get_sign(hit.x),
                     helpers.get_sign(hit.y),
-                ) == quadrant_info and helpers.part_of_beam(
-                    hit, beam
-                ):  # notice how we have to use the translated hit for part of beam
+                ) == quadrant_info and helpers.part_of_beam(hit, beam):
                     closest_hit, closest_entity = update_closest(
                         hit, body, closest_hit, closest_entity
                     )
+                if discriminant > 0:
+                    # Second solution is negative
+                    if m == math.inf:
+                        yn = (-b - (discriminant) ** (1 / 2)) / (2 * a)
+                        xn = 0
+                    else:
+                        xn = (-b - (discriminant) ** (1 / 2)) / (2 * a)
+                        yn = m * xn
+                    hit = pygame.math.Vector2((xn, yn))
+
+                    if (
+                        helpers.get_sign(hit.x),
+                        helpers.get_sign(hit.y),
+                    ) == quadrant_info and helpers.part_of_beam(
+                        hit, beam
+                    ):  # notice how we have to use the translated hit for part of beam
+                        closest_hit, closest_entity = update_closest(
+                            hit, body, closest_hit, closest_entity
+                        )
 
     return closest_hit, closest_entity

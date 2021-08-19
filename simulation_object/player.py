@@ -1,8 +1,11 @@
+import random
+
 import pygame, math
 import collisions, global_simulation
 from comms.message import PlayerStateMessage
 import game_engine_constants, body
 from map_loading import BoundingWall
+from simulation_object import constants
 from weapons.railgun import RailGun
 from weapons.rocket_launcher import RocketLauncher
 from simulation_object.simulation_object import SimulationObject
@@ -79,6 +82,13 @@ class ServerPlayer(SimulationObject, Player):
         self.rotation_request = 0
         self.firing_request = False
 
+    def is_dead(self):
+        """
+        Return if the player is dead
+        :return:
+        """
+        return self.time_of_death is not None
+
     def to_network_object(self):
         return PlayerNetworkObject(
             uuid=self.uuid,
@@ -96,19 +106,22 @@ class ServerPlayer(SimulationObject, Player):
         self.ready = input_message.ready
         self.map_vote = input_message.map_vote
 
+        if self.time_of_death is not None:
+            if (
+                pygame.time.get_ticks() - self.time_of_death
+            ) / 1000 >= simulation_object.constants.PLAYER_DEATH_SECONDS:
+                self.time_of_death = None  # alive again
+                self.position = random.choice(
+                    global_simulation.SIMULATION.map.spawns
+                ).position
+                self.health = constants.PLAYER_HEALTH
+
     def step(self, delta_time: float, current_time: float):  # type: ignore
 
         global_simulation.SIMULATION.get_partition(self.position).players.append(self)
         global_simulation.SIMULATION.get_collision_partition(
             self.position
         ).players.append(self)
-
-        if self.time_of_death is not None:
-            if (
-                self.time_of_death - current_time
-            ) / 1000 < simulation_object.constants.PLAYER_DEATH_SECONDS:
-                return  # still dead
-            self.time_of_death = None  # alive again
 
         super(Player, self).step(self.movement_request, delta_time)
         self.movement_request = pygame.math.Vector2(0, 0)
@@ -121,7 +134,10 @@ class ServerPlayer(SimulationObject, Player):
                 self, self.rotation_angle, current_time
             )
 
-        colliding_walls, colliding_players = global_simulation.SIMULATION.get_colliding_elements(
+        (
+            colliding_walls,
+            colliding_players,
+        ) = global_simulation.SIMULATION.get_colliding_elements(
             self, self.collision_partition
         )
 

@@ -59,7 +59,7 @@ class HitscanBeam(SimulationObject):
             end_point=self.end_point,
         )
 
-    def step(self, delta_time: float, current_time: float):
+    def step(self, delta_time: float):
         (
             closest_hit,
             closest_entity,
@@ -78,7 +78,7 @@ class HitscanBeam(SimulationObject):
                 if hit_player.health <= 0:
                     hit_player.velocity = pygame.math.Vector2()
                     if hit_player.time_of_death is None:
-                        hit_player.time_of_death = current_time
+                        hit_player.time_of_death = pygame.time.get_ticks()
                     self.player.num_frags += 1
                 else:
                     hit_player.velocity += self.direction_vector * self.collision_force

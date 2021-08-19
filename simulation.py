@@ -188,7 +188,6 @@ class Simulation:
 
     def step(self) -> Tuple[bool, Optional[str]]:
         delta_time = self.clock.tick(game_engine_constants.SERVER_TICK_RATE_HZ)
-        current_time = pygame.time.get_ticks()
         self.hitscan_beams.clear()
 
         self.clear_partitions()
@@ -204,15 +203,15 @@ class Simulation:
         if self.active:
             for player in players:
                 if not player.is_dead():
-                    player.step(delta_time, current_time)
+                    player.step(delta_time)
 
             rockets = list(self.rockets.values())
             for rocket in rockets:
-                rocket.step(delta_time, current_time)
+                rocket.step(delta_time)
 
             hitscan_beams = list(self.hitscan_beams.values())
             for hitscan_beam in hitscan_beams:
-                hitscan_beam.step(delta_time, current_time)
+                hitscan_beam.step(delta_time)
 
         output_message = self._make_output_message()
         self.output_messages.put(output_message)

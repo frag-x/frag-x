@@ -22,7 +22,7 @@ class SimulationObject(ABC):
         pass
 
     @abstractmethod
-    def step(self, delta_time: float, current_time: float):
+    def step(self, delta_time: float):
         """
         Simulate a step for the current simulation object
         :return:

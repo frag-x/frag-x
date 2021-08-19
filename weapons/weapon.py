@@ -1,6 +1,6 @@
 from abc import ABC, abstractmethod
 from typing import List
-
+import pygame
 import pygame.math
 
 import math
@@ -23,7 +23,8 @@ class Weapon(ABC):
     def fire(self, firing_player, aim_angle: float):
         pass
 
-    def try_fire(self, firing_player, aim_angle: float, current_time: float):
+    def try_fire(self, firing_player, aim_angle: float):
+        current_time = pygame.time.get_ticks()
         if (current_time - self.time_of_last_shot) / 1000 >= self.seconds_per_shot:
             self.fire(firing_player, aim_angle)
             self.time_of_last_shot = current_time

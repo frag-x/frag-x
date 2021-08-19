@@ -69,7 +69,7 @@ class Rocket(SimulationObject, ConstantVelocityBody):
             position=self.position,
         )
 
-    def step(self, delta_time: float, current_time: float):  # type: ignore
+    def step(self, delta_time: float):  # type: ignore
 
         super(ABC, self).step(delta_time)
 

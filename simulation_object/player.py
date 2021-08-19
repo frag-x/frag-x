@@ -76,7 +76,7 @@ class Player(SimulationObject, body.ConstantAccelerationBody):
                 ).position
                 self.health = constants.PLAYER_HEALTH
 
-    def step(self, delta_time: float, current_time: float):  # type: ignore
+    def step(self, delta_time: float):  # type: ignore
         global_simulation.SIMULATION.get_partition(self.position).players.append(self)
         global_simulation.SIMULATION.get_collision_partition(
             self.position
@@ -90,7 +90,7 @@ class Player(SimulationObject, body.ConstantAccelerationBody):
 
         if self.firing_request:
             self.weapons[self.weapon_selection].try_fire(
-                self, self.rotation, current_time
+                self, self.rotation,
             )
 
         (

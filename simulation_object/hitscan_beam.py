@@ -69,6 +69,7 @@ class HitscanBeam(SimulationObject):
 
         if closest_hit is not None and closest_entity is not None:
             # TODO this is fucke
+            self.end_point = closest_hit
             if (
                 hasattr(closest_entity, "uuid")
                 and closest_entity.uuid in global_simulation.SIMULATION.players

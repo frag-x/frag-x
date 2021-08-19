@@ -48,6 +48,9 @@ class Player(SimulationObject, body.ConstantAccelerationBody):
 
         self.beams = []
 
+    def __str__(self):
+        return f'{str(self.uuid)[:4]}: {self.num_frags}'
+
     def is_dead(self) -> bool:
         return self.time_of_death is not None
 

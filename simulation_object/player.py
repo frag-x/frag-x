@@ -184,44 +184,6 @@ class ClientPlayer(Player, pygame.sprite.Sprite):  # TODO remove dependency on s
             self.position
         )  # update the image to be at the correct location
 
-    def send_inputs(self, typing):
-
-        # we only look at the x component of mouse input
-        dm, _ = pygame.mouse.get_rel()
-        dm *= self.sensitivity
-
-        keys = pygame.key.get_pressed()
-
-        if typing:
-            x_movement = 0
-            y_movement = 0
-        else:
-            # If the player isn't typing then sample their input devices for gameplay
-            l, u, r, d = self.movement_keys
-            x_movement = int(keys[r]) - int(keys[l])
-            y_movement = -(int(keys[u]) - int(keys[d]))
-
-        for key in self.weapon_keys:
-            if keys[key]:
-                if key == pygame.K_c:
-                    self.weapon_selection = 0
-                elif key == pygame.K_x:
-                    self.weapon_selection = 1
-
-        firing = pygame.mouse.get_pressed()[0]
-
-        output_message = PlayerStateMessage(
-            player_id=self.player_id,
-            delta_position=pygame.math.Vector2(x_movement, y_movement),
-            delta_mouse=dm,
-            firing=firing,
-            weapon_selection=self.weapon_selection,
-            ready=self.ready,
-            map_vote=self.map_vote,
-        )
-
-        network.send(self.socket, output_message)
-
     def update(self):
         self.image.fill((255, 255, 255, 0))
 

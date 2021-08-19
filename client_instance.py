@@ -2,8 +2,12 @@ import pygame
 import game_engine_constants
 from textbox import TextInputBox
 import commands
-from comms import message, network
+from comms.message import PlayerStateMessage, PlayerTextMessage
+from comms import network
 import socket
+import map_loading
+import math
+from chatbox import ChatBox
 
 class ClientInstance:
     def __init__(self, uuid: str, socket: socket.socket, fullscreen: bool, sensitivity: bool):
@@ -15,6 +19,19 @@ class ClientInstance:
         self.user_text_box = TextInputBox(
             0, 0, game_engine_constants.WIDTH / 3, self.font
         )
+        self.user_chat_box = ChatBox(
+            self.screen,
+            game_engine_constants.WIDTH * 0.8,
+            0,
+            game_engine_constants.WIDTH * 0.2,
+            600,
+            self.font,
+        )
+        self.map = map_loading.load_map('some map') # TODO this should come from server
+
+        self.position = None # TODO this should come from server
+        self.rotation = None # TODO this should come from server
+        self.camera_v = game_engine_constants.SCREEN_CENTER_POINT
 
         self._setup_pygame(fullscreen)
 
@@ -63,10 +80,9 @@ class ClientInstance:
                     self.user_text_box.text = ''
 
                     if commands.is_command(text):
-                        # TODO run command
-                        pass
+                        pass # TODO run command
                     else:
-                        text_message = message.PlayerTextMessage(
+                        text_message = PlayerTextMessage(
                             player_id=self.uuid, text=text
                         )
                         network.send(self.socket, text_message)
@@ -75,53 +91,118 @@ class ClientInstance:
                     self.is_typing = False
                     self.user_text_box.text = ''
 
-        
-        
-    def update(events) -> None:
-        just_started = False
+        if self.is_typing:
+            self.user_text_box.update(events)
 
-        if not self.is_typing:
-            if helpers.started_typing(events):  # only check if they pressd when not typing
-                client_game_manager.is_typing = True
-                just_started = True
+    def send_inputs(self):
+        # we only look at the x component of mouse input
+        dm, _ = pygame.mouse.get_rel()
+        dm *= self.sensitivity
+
+        keys = pygame.key.get_pressed()
+
+        if self.user_typing:
+            x_movement = 0
+            y_movement = 0
         else:
-            if helpers.ended_typing_and_do_action(
-                events
-            ):  # they are typing and then press return
-                client_game_manager.is_typing = False
-                # DO ACTION
-                text = client_game_manager.user_text_box.text
-                if commands.is_command(text):
-                    client_game_manager.client_command_runner.attempt_run_command(text)
-                else:
-                    # then we're dealing with a normal chat message
-                    text_message = message.PlayerTextMessage(
-                        player_id=player.player_id, text=text
+            # If the player isn't typing then sample their input devices for gameplay
+            l, u, r, d = self.movement_keys
+            x_movement = int(keys[r]) - int(keys[l])
+            y_movement = -(int(keys[u]) - int(keys[d]))
+
+        for key in self.weapon_keys:
+            if keys[key]:
+                if key == pygame.K_c:
+                    self.weapon_selection = 0
+                elif key == pygame.K_x:
+                    self.weapon_selection = 1
+
+        firing = pygame.mouse.get_pressed()[0]
+
+        output_message = PlayerStateMessage(
+            player_id=self.player_id,
+            delta_position=pygame.math.Vector2(x_movement, y_movement),
+            delta_mouse=dm,
+            firing=firing,
+            weapon_selection=self.weapon_selection,
+            ready=self.ready,
+            map_vote=self.map_vote,
+        )
+
+        network.send(self.socket, output_message)
+        
+    def _update(self) -> None:
+        self._process_pygame_events()
+
+        self.all_sprites.update() # TODO figure out how to use this
+
+        self.send_inputs()
+
+    def _render(self, delta_time: float) -> None:
+        self.screen.fill(pygame.color.THECOLORS["black"])  # type: ignore
+
+        for row in self.map.partitioned_map:
+            for partition in row:
+                pygame.draw.rect(
+                    self.screen,
+                    pygame.color.THECOLORS["gold"],  # type: ignore
+                    partition.rect.move(self.camera_v),
+                    width=1,
+                )
+
+                for wall in partition.walls:
+                    pygame.draw.rect(self.screen, wall.color, wall.rect.move(self.camera_v))
+
+                for b_wall in partition.bounding_walls:
+                    pygame.draw.rect(
+                        self.screen, b_wall.color, b_wall.rect.move(self.camera_v)
                     )
-                    network.send(player.socket, text_message)
 
-                # print(f"sending {client_game_manager.user_text_box.text}")
-                client_game_manager.user_text_box.text = ""
-            elif helpers.ended_typing_and_do_nothing(events):
-                client_game_manager.is_typing = False
-                client_game_manager.user_text_box.text = ""
+        self._draw_projectiles(self.camera_v)
+        self._draw_beams(self.camera_v)
 
-        if client_game_manager.is_typing and not just_started:
-            client_game_manager.user_text_box.update(events)
+        # A drawing is based on a single network message from the server.
+        # The reason why it looks like we have shifted tiles is that we received a message in the middle, so this needs to be locked.
+        # instead of actually simulating its movement that way it seems more solid
+        for sprite in self.all_sprites: # TODO
+            # Add the player's camera offset to the coords of all sprites.
+            self.screen.blit(sprite.image, sprite.rect.topleft + self.camera_v)
 
-        # Note: This sends the users inputs to the server
-        client_game_manager.all_sprites.update()
+        font_color = pygame.color.THECOLORS["brown3"]  # type: ignore
 
-        player.send_inputs(client_game_manager.is_typing)
+        # TODO this math shouldn't happen here
+        # TODO actually this whole section is utterly fucked.
+        # make these objects smarter so the code doesn't live here
+        pos = self.font.render(str(self.position), False, font_color)
+        aim_angle_str = (
+            str(9 - math.floor(self.rotation / math.tau * 10)) + "/" + str(10)
+        )
+        angle = self.font.render(aim_angle_str + "τ", False, font_color)
+
+        self.screen.blit(pos, (0, 25))
+        self.screen.blit(angle, (0, 50))
+
+        self.user_chat_box.update_message_times(delta_time)
+        self.user_chat_box.draw_messages()
+
+        self.user_text_box.render_text()
+        utb_width, utb_height = self.user_text_box.image.get_size()
+
+        self.screen.blit(
+            self.user_text_box.image,
+            (
+                game_engine_constants.WIDTH
+                - (utb_width + 2 * self.user_text_box.border_thickness),
+                game_engine_constants.HEIGHT
+                - (utb_height + 2 * self.user_text_box.border_thickness),
+            ),
+        )
 
     def step(self) -> bool:
         delta_time = self.clock.tick(game_engine_constants.FPS)
 
-        self._process_pygame_events()
-        
-        update(client_game_manager, player, events)
-
-        render(client_game_manager, delta_time, player, screen, font)
+        self._update()
+        self._render(delta_time)
 
         pygame.display.flip()
         

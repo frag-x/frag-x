@@ -41,6 +41,7 @@ class ClientInstance:
 
         self.running = True
         self.user_typing = False
+        # TODO the way UI elements work and especially text input box is messed af
         self.user_text_box = TextInputBox(
             0, 0, game_engine_constants.WIDTH / 3, self.font
         )

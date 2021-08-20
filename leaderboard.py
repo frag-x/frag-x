@@ -18,7 +18,8 @@ class Leaderboard:
         height = self.rect.y
         for player in players:
             text = self._make_leaderboard_row(player)
-            row = self.font.render(text, False, pygame.Color("white"))
+            color = 'white' if player.uuid != our_player_id else 'gold'
+            row = self.font.render(text, False, pygame.Color(color))
             height += row.get_height()
             text_pos = (self.rect.x, height)
             self.screen.blit(row, text_pos)

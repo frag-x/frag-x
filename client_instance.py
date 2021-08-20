@@ -71,7 +71,6 @@ class ClientInstance:
 
         self.map = map_loading.load_map(self.map_name)
 
-        # client groundtruth
         self.rotation: float = 0
 
     def _setup_pygame(self, fullscreen: bool) -> None:
@@ -196,7 +195,8 @@ class ClientInstance:
 
         elif type(input_message) == ServerMapChangeMessage:
             self.map = map_loading.load_map(input_message.map_name)
-            # TODO other things?
+            self.ready = False
+            self.map_vote = None
             self.user_chat_box.add_message(f"Map changed to {input_message.map_name}")
 
         else:

@@ -1,5 +1,6 @@
 from abc import ABC
 import math
+import random
 
 import collisions
 import global_simulation
@@ -74,10 +75,24 @@ class Rocket(SimulationObject, ConstantVelocityBody):
 
         super(ABC, self).step(delta_time)
 
-        self.partition = global_simulation.SIMULATION.get_partition(self.position)
-        self.collision_partition = global_simulation.SIMULATION.get_collision_partition(
+        partition = global_simulation.SIMULATION.get_partition(self.position)
+
+        if partition:
+            partition.players.append(self)
+        else:
+            # Outside the map so delete it
+            global_simulation.SIMULATION.deregister_object(self)
+            return
+
+        collision_partition = global_simulation.SIMULATION.get_collision_partition(
             self.position
         )
+
+        if collision_partition:
+            collision_partition.players.append(self)
+        else:
+            global_simulation.SIMULATION.deregister_object(self)
+            return
 
         (
             colliding_bounding_walls,

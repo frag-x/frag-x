@@ -77,10 +77,29 @@ class Player(SimulationObject, body.ConstantAccelerationBody):
                 self.health = constants.PLAYER_HEALTH
 
     def step(self, delta_time: float):  # type: ignore
-        global_simulation.SIMULATION.get_partition(self.position).players.append(self)
-        global_simulation.SIMULATION.get_collision_partition(
+        partition = global_simulation.SIMULATION.get_partition(self.position)
+
+        if partition:
+            partition.players.append(self)
+        else:
+            self.position = random.choice(
+                global_simulation.SIMULATION.map.spawns
+            ).position
+            global_simulation.SIMULATION.get_partition(self.position).append(self)
+
+        collision_partition = global_simulation.SIMULATION.get_collision_partition(
             self.position
-        ).players.append(self)
+        )
+
+        if collision_partition:
+            collision_partition.players.append(self)
+        else:
+            self.position = random.choice(
+                global_simulation.SIMULATION.map.spawns
+            ).position
+            global_simulation.SIMULATION.get_collision_partition(self.position).append(
+                self
+            )
 
         super(ABC, self).step(self.movement_request, delta_time)
         self.movement_request = pygame.math.Vector2(0, 0)

@@ -43,8 +43,17 @@ class Player(SimulationObject, body.ConstantAccelerationBody):
 
         self.beams = []
 
-    def __str__(self):
-        return f"{str(self.uuid)[:4]}: {self.num_frags}"
+        self.color = random.choice(simulation_object.constants.PLAYER_COLORS)
+
+    def reset(self, spawn_position):
+        # TODO should this get called as part of init?
+        self.position = spawn_position
+        self.health = 100
+        self.time_of_death = None
+        self.rotation = 0
+        self.ready = False
+        self.map_vote = None
+        self.num_frags = 0
 
     def is_dead(self) -> bool:
         return self.time_of_death is not None
@@ -55,7 +64,9 @@ class Player(SimulationObject, body.ConstantAccelerationBody):
             position=self.position,
             rotation=self.rotation,
             weapon_selection=self.weapon_selection,
+            health=self.health,
             num_frags=self.num_frags,
+            color=self.color,
         )
 
     def update(self, input_message: PlayerStateMessage):

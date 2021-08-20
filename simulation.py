@@ -1,5 +1,6 @@
 from collections import defaultdict, Counter
 from queue import Queue
+import simulation_object
 from typing import List, cast, Tuple, Dict
 
 from comms.message import SimulationStateMessage
@@ -37,7 +38,7 @@ class Simulation:
 
         self.players: Dict[UUID, Player] = players
         for player in players.values():
-            player.position = random.choice(self.map.spawns).position
+            player.reset(random.choice(self.map.spawns).position)
 
         self.rockets: Dict[UUID, Rocket] = {}
         self.hitscan_beams: Dict[UUID, HitscanBeam] = {}

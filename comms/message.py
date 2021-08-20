@@ -39,7 +39,7 @@ class PlayerStateMessage(ClientMessage):
 
     player_id: UUID
     delta_position: pygame.math.Vector2
-    delta_mouse: float
+    rotation: float
     firing: bool
     weapon_selection: int
     ready: bool

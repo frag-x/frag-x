@@ -78,6 +78,9 @@ class ClientInstance:
 
         self.map = map_loading.load_map(self.map_name)
 
+        # client groundtruth
+        self.rotation: float = 0
+
     def _setup_pygame(self, fullscreen: bool) -> None:
         pygame.init()
         pygame.mixer.init()  # sound
@@ -152,6 +155,9 @@ class ClientInstance:
         delta_mouse, _ = pygame.mouse.get_rel()
         delta_mouse *= self.sensitivity
 
+        self.rotation += delta_mouse
+        self.rotation %= math.tau
+
         keys = pygame.key.get_pressed()
 
         if self.user_typing:
@@ -172,7 +178,7 @@ class ClientInstance:
         output_message = PlayerStateMessage(
             player_id=self.player_id,
             delta_position=pygame.math.Vector2(x_movement, y_movement),
-            delta_mouse=delta_mouse,
+            rotation=self.rotation,
             firing=firing,
             weapon_selection=self._this_player().weapon_selection,
             ready=self.ready,
@@ -184,6 +190,8 @@ class ClientInstance:
     def process_input_message(self, input_message: ServerMessage):
         if type(input_message) == SimulationStateMessage:
             self.simulation_state = input_message
+            if self.player_id in self.simulation_state.players:
+                self._this_player().rotation = self.rotation
 
         elif type(input_message) == PlayerTextMessage:
             self.user_chat_box.add_message(

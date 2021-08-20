@@ -21,7 +21,7 @@ import socket
 import map_loading
 import math
 from chatbox import ChatBox
-from typing import List, Optional
+from typing import List, Optional, cast
 import simulation_object.constants
 
 
@@ -71,13 +71,10 @@ class ClientInstance:
         )
         self.player_image.fill((255, 255, 255, 0))
 
-        self.position = pygame.math.Vector2()
-        self.rotation: float = 0
-        self.weapon_selection: int = 0
-        self.simulation_state: Optional[SimulationStateMessage] = None
-
         self.ready = False
         self.map_vote: Optional[str] = None
+
+        self.simulation_state: Optional[SimulationStateMessage] = None
 
         self.map = map_loading.load_map(self.map_name)
 
@@ -116,6 +113,9 @@ class ClientInstance:
     def quit(self):
         self.running = False
 
+    def _this_player(self) -> PlayerNetworkObject:
+        return cast(SimulationStateMessage, self.simulation_state).players[self.player_id]
+
     def _process_pygame_events(self) -> None:
         events = pygame.event.get()
         for i, event in enumerate(events):
@@ -149,10 +149,8 @@ class ClientInstance:
 
     def send_inputs(self):
         # we only look at the x component of mouse input
-        dm, _ = pygame.mouse.get_rel()
-        dm *= self.sensitivity
-
-        self.rotation += dm
+        delta_mouse, _ = pygame.mouse.get_rel()
+        delta_mouse *= self.sensitivity
 
         keys = pygame.key.get_pressed()
 
@@ -167,16 +165,16 @@ class ClientInstance:
 
         for i, key in enumerate(game_engine_constants.WEAPON_KEYS):
             if keys[key]:
-                self.weapon_selection = i
+                self._this_player().weapon_selection = i
 
         firing = pygame.mouse.get_pressed()[0]
 
         output_message = PlayerStateMessage(
             player_id=self.player_id,
             delta_position=pygame.math.Vector2(x_movement, y_movement),
-            delta_mouse=dm,
+            delta_mouse=delta_mouse,
             firing=firing,
-            weapon_selection=self.weapon_selection,
+            weapon_selection=self._this_player().weapon_selection,
             ready=self.ready,
             map_vote=self.map_vote,
         )
@@ -186,10 +184,6 @@ class ClientInstance:
     def process_input_message(self, input_message: ServerMessage):
         if type(input_message) == SimulationStateMessage:
             self.simulation_state = input_message
-            if self.player_id in self.simulation_state.players:
-                our_player = self.simulation_state.players[self.player_id]
-                self.position = our_player.position
-                self.rotation = our_player.rotation
 
         elif type(input_message) == PlayerTextMessage:
             self.user_chat_box.add_message(
@@ -212,7 +206,8 @@ class ClientInstance:
         self.send_inputs()
 
     def _camera_view(self) -> pygame.math.Vector2:
-        return game_engine_constants.SCREEN_CENTER_POINT - self.position
+        our_position = cast(SimulationStateMessage, self.simulation_state).players[self.player_id].position
+        return game_engine_constants.SCREEN_CENTER_POINT - our_position
 
     def _draw_players(self):
         for player in self.simulation_state.players.values():
@@ -281,11 +276,10 @@ class ClientInstance:
                         self.screen, b_wall.color, b_wall.rect.move(self._camera_view())
                     )
 
-        if self.simulation_state:
-            self._draw_players()
-            self._draw_rockets()
-            self._draw_hitscan_beams()
-            self.leaderboard.render(self.player_id, list(self.simulation_state.players.values()))
+        self._draw_players()
+        self._draw_rockets()
+        self._draw_hitscan_beams()
+        self.leaderboard.render(self.player_id, list(cast(SimulationStateMessage, self.simulation_state).players.values()))
 
         self.user_chat_box.update_message_times(delta_time)
         self.user_chat_box.draw_messages()
@@ -306,8 +300,9 @@ class ClientInstance:
     def step(self) -> bool:
         delta_time = self.clock.tick(game_engine_constants.FPS)
 
-        self._update()
-        self._render(delta_time)
+        if self.simulation_state and self.player_id in self.simulation_state.players:
+            self._update()
+            self._render(delta_time)
 
         pygame.display.flip()
 

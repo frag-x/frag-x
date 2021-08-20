@@ -151,8 +151,6 @@ class ClientInstance:
         # we only look at the x component of mouse input
         delta_mouse, _ = pygame.mouse.get_rel()
         delta_mouse *= self.sensitivity
-        
-        self._this_player().rotation += delta_mouse
 
         keys = pygame.key.get_pressed()
 

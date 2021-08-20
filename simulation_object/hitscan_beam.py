@@ -93,7 +93,7 @@ class HitscanBeam(SimulationObject):
                         hit_player.velocity = pygame.math.Vector2()
                         if hit_player.time_of_death is None:
                             hit_player.time_of_death = pygame.time.get_ticks()
-                        self.player.num_frags += 1
+                            self.player.num_frags += 1
 
         # No need to deregister the object, hitscan beams are removed
         # before new ones are created, but after old ones are operated on

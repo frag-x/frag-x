@@ -75,22 +75,7 @@ class Rocket(SimulationObject, ConstantVelocityBody):
 
         super(ABC, self).step(delta_time)
 
-        partition = global_simulation.SIMULATION.get_partition(self.position)
-
-        if partition:
-            partition.players.append(self)
-        else:
-            # Outside the map so delete it
-            global_simulation.SIMULATION.deregister_object(self)
-            return
-
-        collision_partition = global_simulation.SIMULATION.get_collision_partition(
-            self.position
-        )
-
-        if collision_partition:
-            collision_partition.players.append(self)
-        else:
+        if not helpers.point_within_map(self.position):
             global_simulation.SIMULATION.deregister_object(self)
             return
 

@@ -76,7 +76,6 @@ class CommandRunner:
     def map_vote(self, args):
         map_vote = args[0]
         self.client_instance.map_vote = map_vote
-        self.client_instance.user_chat_box.add_message(f'Voted for map {map_vote}')
         # TODO this is fucked
         text_message = PlayerTextMessage(
             player_id=self.client_instance.player_id, text=f'voted for map {map_vote}'

@@ -1,5 +1,7 @@
 from collections import defaultdict, Counter
 from queue import Queue
+from typing import List, cast, Tuple, Dict, Union
+import simulation_object
 from typing import List, cast, Tuple, Dict
 
 from comms.message import SimulationStateMessage
@@ -37,7 +39,7 @@ class Simulation:
 
         self.players: Dict[UUID, Player] = players
         for player in players.values():
-            player.position = random.choice(self.map.spawns).position
+            player.reset(random.choice(self.map.spawns).position)
 
         self.rockets: Dict[UUID, Rocket] = {}
         self.hitscan_beams: Dict[UUID, HitscanBeam] = {}
@@ -127,11 +129,9 @@ class Simulation:
 
     def get_partition(
         self, position: pygame.math.Vector2
-    ) -> map_loading.MapGridPartition:
+    ) -> Union[bool, map_loading.MapGridPartition]:
         """
-        Precondition: The position must be inside the map, or else this function will fail
-
-        return the partition that the player is within
+        Return the partition that the position is within, if this position is outside of the map then return False
 
         :param position:
         :return:
@@ -141,7 +141,12 @@ class Simulation:
             self.map.partition_width, self.map.partition_height, position
         )
 
-        return self.map.partitioned_map[partition_idx_y][partition_idx_x]
+        index = (partition_idx_x, partition_idx_y)
+
+        if helpers.valid_2d_index_for_partitioned_map_grid(index, self.map):
+            return self.map.partitioned_map[partition_idx_y][partition_idx_x]
+        else:
+            return False
 
     def clear_partitions(self):
         map_partitions = [self.map.partitioned_map, self.map.collision_partitioned_map]

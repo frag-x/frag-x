@@ -9,4 +9,6 @@ class PlayerNetworkObject(NetworkObject):
     position: pygame.math.Vector2
     rotation: float
     weapon_selection: int
+    health: float
     num_frags: int
+    color: pygame.Color

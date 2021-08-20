@@ -125,8 +125,7 @@ def simulate_collision_v2(body, b_wall):
         logging.info(closest_v.x, closest_v.y)
         colliding = is_colliding_with_wall(body, b_wall)
         closest_v = get_closest_point_on_wall(body, b_wall)
-        assert colliding == False
-        logging.info("corrected: ", closest_v.x, closest_v.y)
+        # assert colliding == False
         # reset position and then continue
         body.position = curr_pos
 

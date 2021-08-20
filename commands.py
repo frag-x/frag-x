@@ -2,6 +2,8 @@ import enum, re
 from typing import Callable, List, Any, Tuple
 from dataclasses import dataclass
 import game_engine_constants
+from comms.message import PlayerTextMessage
+from comms import network
 
 from simulation_object import player
 
@@ -53,27 +55,38 @@ class CommandRunner:
         """Given a command attempt to run it"""
         try:
             command_name, args = self.parse_command(command)
-            self.command_to_action[command_name].callable(self.client_instance, args) # type: ignore
+            self.command_to_action[command_name].callable(args) # type: ignore
 
         except Exception as e:
-            print(e)
-            print('Command failed!')
+            self.client_instance.user_chat_box.add_message(f'Command {command} failed!')
 
-    def set_sensitivity(self, client_instance, args):
+    def set_sensitivity(self, args):
         sensitivity = args[0]
-        client_instance.set_sensitivity(sensitivity)
-        print(f'Sensitivity set to {sensitivity}')
+        self.client_instance.set_sensitivity(sensitivity)
+        self.client_instance.user_chat_box.add_message(f'Sensitivity set to {sensitivity}')
 
-    def ready(self, client_instance, _):
-        client_instance.ready = not client_instance.ready
-        print(f'Player ready state set to {client_instance.ready}')
+    def ready(self, _):
+        self.client_instance.ready = True
+        # TODO this is fucked
+        text_message = PlayerTextMessage(
+            player_id=self.client_instance.player_id, text=f'readied up'
+        )
+        network.send(self.client_instance.socket, text_message)
 
-    def map_vote(self, client_instance, args):
+    def map_vote(self, args):
         map_vote = args[0]
-        client_instance.map_vote = map_vote
-        print(f'Voted for map {map_vote}')
+        self.client_instance.map_vote = map_vote
+        # TODO this is fucked
+        text_message = PlayerTextMessage(
+            player_id=self.client_instance.player_id, text=f'voted for map {map_vote}'
+        )
+        network.send(self.client_instance.socket, text_message)
 
-    def quit(self, client_instance, _):
-        client_instance.quit()
-        print('Player quit')
+    def quit(self, _):
+        self.client_instance.quit()
+        # TODO this is fucked
+        text_message = PlayerTextMessage(
+            player_id=self.client_instance.player_id, text=f'quit the game'
+        )
+        network.send(self.client_instance.socket, text_message)
     

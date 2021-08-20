@@ -63,13 +63,6 @@ class ClientInstance:
             self.font,
         )
         self.command_runner = commands.CommandRunner(self)
-        # TODO this also probably shouldn't be here
-        self.player_image = pygame.Surface(
-            [game_engine_constants.TILE_SIZE, game_engine_constants.TILE_SIZE],
-            pygame.SRCALPHA,
-            32,
-        )
-        self.player_image.fill((255, 255, 255, 0))
 
         self.ready = False
         self.map_vote: Optional[str] = None
@@ -78,7 +71,6 @@ class ClientInstance:
 
         self.map = map_loading.load_map(self.map_name)
 
-        # client groundtruth
         self.rotation: float = 0
 
     def _setup_pygame(self, fullscreen: bool) -> None:
@@ -199,11 +191,12 @@ class ClientInstance:
             )
 
         elif type(input_message) == ServerStatusMessage:
-            self.user_chat_box.add_message(f"Server status: {input_message.status}")
+            self.user_chat_box.add_message(f"Server status {input_message.status}")
 
         elif type(input_message) == ServerMapChangeMessage:
             self.map = map_loading.load_map(input_message.map_name)
-            # TODO other things?
+            self.ready = False
+            self.map_vote = None
             self.user_chat_box.add_message(f"Map changed to {input_message.map_name}")
 
         else:
@@ -237,7 +230,7 @@ class ClientInstance:
 
             pygame.draw.circle(
                 self.screen,
-                pygame.color.THECOLORS["blue"],
+                player.color if player.health > 0 else simulation_object.constants.PLAYER_DEATH_COLOR,
                 player_relative_position,
                 game_engine_constants.PLAYER_RADIUS,
             )
@@ -267,13 +260,6 @@ class ClientInstance:
 
         for row in self.map.partitioned_map:
             for partition in row:
-                pygame.draw.rect(
-                    self.screen,
-                    pygame.color.THECOLORS["gold"],  # type: ignore
-                    partition.rect.move(self._camera_view()),
-                    width=1,
-                )
-
                 for wall in partition.walls:
                     pygame.draw.rect(
                         self.screen, wall.color, wall.rect.move(self._camera_view())
@@ -304,6 +290,9 @@ class ClientInstance:
                 - (utb_height + 2 * self.user_text_box.border_thickness),
             ),
         )
+
+        health_surface = self.font.render(f'Health: {self._this_player().health}', False, pygame.Color("white"))
+        self.screen.blit(health_surface, (0, game_engine_constants.HEIGHT - health_surface.get_height()))
 
     def step(self) -> bool:
         delta_time = self.clock.tick(game_engine_constants.FPS)

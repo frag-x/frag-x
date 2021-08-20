@@ -43,8 +43,17 @@ class Player(SimulationObject, body.ConstantAccelerationBody):
 
         self.beams = []
 
-    def __str__(self):
-        return f"{str(self.uuid)[:4]}: {self.num_frags}"
+        self.color = random.choice(simulation_object.constants.PLAYER_COLORS)
+
+    def reset(self, spawn_position):
+        # TODO should this get called as part of init?
+        self.position = spawn_position
+        self.health = 100
+        self.time_of_death = None
+        self.rotation = 0
+        self.ready = False
+        self.map_vote = None
+        self.num_frags = 0
 
     def is_dead(self) -> bool:
         return self.time_of_death is not None
@@ -55,7 +64,9 @@ class Player(SimulationObject, body.ConstantAccelerationBody):
             position=self.position,
             rotation=self.rotation,
             weapon_selection=self.weapon_selection,
+            health=self.health,
             num_frags=self.num_frags,
+            color=self.color,
         )
 
     def update(self, input_message: PlayerStateMessage):
@@ -77,10 +88,29 @@ class Player(SimulationObject, body.ConstantAccelerationBody):
                 self.health = constants.PLAYER_HEALTH
 
     def step(self, delta_time: float):  # type: ignore
-        global_simulation.SIMULATION.get_partition(self.position).players.append(self)
-        global_simulation.SIMULATION.get_collision_partition(
+        partition = global_simulation.SIMULATION.get_partition(self.position)
+
+        if partition:
+            partition.players.append(self)
+        else:
+            self.position = random.choice(
+                global_simulation.SIMULATION.map.spawns
+            ).position
+            global_simulation.SIMULATION.get_partition(self.position).append(self)
+
+        collision_partition = global_simulation.SIMULATION.get_collision_partition(
             self.position
-        ).players.append(self)
+        )
+
+        if collision_partition:
+            collision_partition.players.append(self)
+        else:
+            self.position = random.choice(
+                global_simulation.SIMULATION.map.spawns
+            ).position
+            global_simulation.SIMULATION.get_collision_partition(self.position).append(
+                self
+            )
 
         super(ABC, self).step(self.movement_request, delta_time)
         self.movement_request = pygame.math.Vector2(0, 0)

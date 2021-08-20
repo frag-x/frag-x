@@ -62,7 +62,7 @@ class Player(SimulationObject, body.ConstantAccelerationBody):
 
     def update(self, input_message: PlayerStateMessage):
         self.movement_request = pygame.math.Vector2(input_message.delta_position)
-        self.rotation_request = input_message.delta_mouse
+        self.rotation = input_message.rotation
         self.weapon_selection = input_message.weapon_selection
         self.firing_request = input_message.firing
         self.ready = input_message.ready
@@ -86,9 +86,6 @@ class Player(SimulationObject, body.ConstantAccelerationBody):
 
         super(ABC, self).step(self.movement_request, delta_time)
         self.movement_request = pygame.math.Vector2(0, 0)
-
-        self.rotation += self.rotation_request
-        self.rotation %= math.tau
 
         if self.firing_request:
             self.weapons[self.weapon_selection].try_fire(

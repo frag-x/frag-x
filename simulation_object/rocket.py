@@ -60,6 +60,7 @@ class Rocket(SimulationObject, ConstantVelocityBody):
                 shard_vec,
                 weapons.constants.ROCKET_EXPLOSION_COLLISION_FORCE,
                 weapons.constants.ROCKET_EXPLOSION_DAMAGE,
+                applies_force_to_player=True,
             )  # note this adds it to the simulation
         global_simulation.SIMULATION.deregister_object(self)
 
@@ -78,21 +79,25 @@ class Rocket(SimulationObject, ConstantVelocityBody):
             self.position
         )
 
-        colliding_bounding_walls, colliding_players = global_simulation.SIMULATION.get_colliding_elements(
-            self, self.partition
-        )
+        (
+            colliding_bounding_walls,
+            colliding_players,
+        ) = global_simulation.SIMULATION.get_colliding_elements(self, self.partition)
 
         # Don't collide with ourselves
-        colliding_players = [player for player in colliding_players if player != self.player]
+        colliding_players = [
+            player for player in colliding_players if player != self.player
+        ]
 
         if colliding_bounding_walls or colliding_players:
             self.position = self.previous_position
-            
+
             # Unless there's a wall, the collision point is just our position
             collision_point = self.position
             if colliding_bounding_walls:
                 collision_point = collisions.get_closest_point_on_wall(
-                    self, colliding_bounding_walls[0], # an arbitrary wall if multiple
+                    self,
+                    colliding_bounding_walls[0],  # an arbitrary wall if multiple
                 )
 
             self.explode(collision_point)

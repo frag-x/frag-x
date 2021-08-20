@@ -21,6 +21,7 @@ class HitscanBeam(SimulationObject):
         end_point: pygame.math.Vector2,
         collision_force=weapons.constants.RAILGUN_COLLISION_FORCE,
         damage=weapons.constants.RAILGUN_DAMAGE,
+        applies_force_to_player=False,
     ):
         """
         Set up a hitscan beam which is owned by a player
@@ -29,12 +30,15 @@ class HitscanBeam(SimulationObject):
         :param end_point: The end point of the beam
         :param collision_force: The amount of force that this beam applies to what it hits
         :param damage: The amount of damage this beam will do to what it hits
+        :param applies_force_to_player: If this beam can apply a force to the owner
         """
         super().__init__()
 
         self.player = player
         self.delta_y = end_point[1] - start_point[1]
         self.delta_x = end_point[0] - start_point[0]
+
+        self.applies_force_to_player = applies_force_to_player
 
         self.direction_vector = (end_point - start_point).normalize()
 
@@ -64,7 +68,10 @@ class HitscanBeam(SimulationObject):
             closest_hit,
             closest_entity,
         ) = intersections.get_closest_intersecting_object_in_pmg(
-            self.player, global_simulation.SIMULATION.map, self
+            self.player,
+            global_simulation.SIMULATION.map,
+            self,
+            self.applies_force_to_player,
         )
 
         if closest_hit is not None and closest_entity is not None:
@@ -73,16 +80,20 @@ class HitscanBeam(SimulationObject):
             if (
                 hasattr(closest_entity, "uuid")
                 and closest_entity.uuid in global_simulation.SIMULATION.players
-            ):
+            ):  # this verifies if what it hit is a player
                 hit_player = closest_entity
-                hit_player.health -= self.damage
-                if hit_player.health <= 0:
-                    hit_player.velocity = pygame.math.Vector2()
-                    if hit_player.time_of_death is None:
-                        hit_player.time_of_death = pygame.time.get_ticks()
-                    self.player.num_frags += 1
-                else:
+                if (hit_player is self.player and self.applies_force_to_player) or (
+                    hit_player is not self.player
+                ):
                     hit_player.velocity += self.direction_vector * self.collision_force
+
+                if hit_player is not self.player:
+                    hit_player.health -= self.damage
+                    if hit_player.health <= 0:
+                        hit_player.velocity = pygame.math.Vector2()
+                        if hit_player.time_of_death is None:
+                            hit_player.time_of_death = pygame.time.get_ticks()
+                        self.player.num_frags += 1
 
         # No need to deregister the object, hitscan beams are removed
         # before new ones are created, but after old ones are operated on

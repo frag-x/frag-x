@@ -8,9 +8,7 @@ from simulation_object.simulation_object import SimulationObject
 
 
 def get_closest_intersecting_object_in_pmg(
-    player,
-    partitioned_map_grid,
-    beam,
+    player, partitioned_map_grid, beam, applies_force_to_player
 ) -> Tuple[Optional[pygame.math.Vector2], Optional[SimulationObject]]:
     """
     Given a beam that is passing through a given map fired by player , find the closest element to it which is not player
@@ -41,7 +39,7 @@ def get_closest_intersecting_object_in_pmg(
 
     for partition in intersected_partitions:
         hit, entity = get_closest_intersecting_object_in_partition(
-            player, beam, partition
+            player, beam, partition, applies_force_to_player
         )
 
         if hit is not None and entity is not None:
@@ -348,7 +346,9 @@ def get_intersecting_partitions(partitioned_map_grid, beam) -> List:
     return intersecting_partitions
 
 
-def get_closest_intersecting_object_in_partition(player, beam, pmg):
+def get_closest_intersecting_object_in_partition(
+    player, beam, pmg, applies_force_to_player
+):
     """
     Given a partition that this beam is passing through, find the closest element in the partition
     that the beam intersects.
@@ -463,7 +463,7 @@ def get_closest_intersecting_object_in_partition(player, beam, pmg):
             # if len(hits) != 0:
 
     for body in pmg.players:
-        if body is not player:
+        if (body is not player) or (body is player and applies_force_to_player):
             """
             Assuming p, q are written with respect to the fire origin:
 

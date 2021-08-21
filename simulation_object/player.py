@@ -17,7 +17,7 @@ class Player(SimulationObject, body.ConstantAccelerationBody):
     def __init__(self, start_position, socket):
         super().__init__()
         super(ABC, self).__init__(
-            start_position, game_engine_constants.PLAYER_RADIUS, 0.05, 1000
+            start_position, game_engine_constants.PLAYER_RADIUS, 0.05, 1500
         )
         self.health = 100
         self.time_of_death = None

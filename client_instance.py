@@ -194,7 +194,8 @@ class ClientInstance:
             self.user_chat_box.add_message(f"Server status {input_message.status}")
 
         elif type(input_message) == ServerMapChangeMessage:
-            self.map = map_loading.load_map(input_message.map_name)
+            self.map_name = input_message.map_name
+            self.map = map_loading.load_map(self.map_name)
             self.ready = False
             self.map_vote = None
             self.user_chat_box.add_message(f"Map changed to {input_message.map_name}")

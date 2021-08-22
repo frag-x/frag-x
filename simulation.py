@@ -145,11 +145,11 @@ class Simulation:
 
         # TODO FIX
 
-        fixed_index = (partition_idx_x % (self.map.num_x_partitions - 1), partition_idx_y % (self.map.num_y_partitions - 1))
+        fixed_index = (partition_idx_x % (self.map.num_x_partitions), partition_idx_y % (self.map.num_y_partitions))
 
         #if helpers.valid_2d_index_for_partitioned_map_grid(index, self.map):
         #    return self.map.partitioned_map[partition_idx_y][partition_idx_x]
-        return self.map.partitioned_map[partition_idx_y][partition_idx_x]
+        return self.map.partitioned_map[fixed_index[1]][fixed_index[0]]
 
     def clear_partitions(self):
         map_partitions = [self.map.partitioned_map, self.map.collision_partitioned_map]

@@ -102,15 +102,19 @@ class Player(SimulationObject, body.ConstantAccelerationBody):
             self.position
         )
 
-        if collision_partition:
-            collision_partition.players.append(self)
-        else:
-            self.position = random.choice(
-                global_simulation.SIMULATION.map.spawns
-            ).position
-            global_simulation.SIMULATION.get_collision_partition(self.position).append(
-                self
-            )
+        collision_partition.players.append(self)
+
+
+
+        #if collision_partition:
+        #    collision_partition.players.append(self)
+        #else:
+        #    self.position = random.choice(
+        #        global_simulation.SIMULATION.map.spawns
+        #    ).position
+        #    global_simulation.SIMULATION.get_collision_partition(self.position).append(
+        #        self
+        #    )
 
         super(ABC, self).step(self.movement_request, delta_time)
         self.movement_request = pygame.math.Vector2(0, 0)

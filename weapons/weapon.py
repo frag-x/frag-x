@@ -42,6 +42,7 @@ class HitscanWeapon(Weapon, ABC):
         :param damage: the amount of damage that a successful hit will do
         """
         super().__init__(fire_rate_hz=fire_rate)
+        # TODO remove damage? that belongs in the beam it spawns
         self.damage = damage
 
     @abstractmethod

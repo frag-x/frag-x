@@ -10,7 +10,7 @@ from weapons.weapon import HitscanWeapon, HitscanBeam
 class ShotGun(HitscanWeapon):
     def __init__(self):
         super().__init__(
-            fire_rate=constants.RAILGUN_FIRE_RATE_HZ, damage=constants.RAILGUN_DAMAGE
+            fire_rate=constants.SHOTGUN_FIRE_RATE_HZ, damage=constants.RAILGUN_DAMAGE
         )
 
     def fire(self, firing_player, aim_angle: float):

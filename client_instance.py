@@ -1,5 +1,3 @@
-from network_object.hitscan_beam import HitscanBeamNetworkObject
-from network_object.rocket import RocketNetworkObject
 from network_object.player import PlayerNetworkObject
 import pygame
 import game_engine_constants
@@ -21,7 +19,7 @@ import socket
 import map_loading
 import math
 from chatbox import ChatBox
-from typing import List, Optional, cast
+from typing import Optional, cast
 import simulation_object.constants
 
 

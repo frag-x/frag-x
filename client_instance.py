@@ -29,6 +29,7 @@ class ClientInstance:
         socket: socket.socket,
         server_join_message: ServerJoinMessage,
         fullscreen: bool,
+        frame_rate: int,
         sensitivity: float,
     ):
         self._setup_pygame(fullscreen)
@@ -36,6 +37,7 @@ class ClientInstance:
         self.socket = socket
         self.player_id = server_join_message.player_id
         self.map_name = server_join_message.map_name
+        self.frame_rate = frame_rate
         self.set_sensitivity(sensitivity)
 
         self.running = True
@@ -294,7 +296,7 @@ class ClientInstance:
         self.screen.blit(health_surface, (0, game_engine_constants.HEIGHT - health_surface.get_height()))
 
     def step(self) -> bool:
-        delta_time = self.clock.tick(game_engine_constants.FPS)
+        delta_time = self.clock.tick(self.frame_rate)
 
         if self.simulation_state and self.player_id in self.simulation_state.players:
             self._update()

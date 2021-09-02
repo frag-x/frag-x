@@ -12,32 +12,39 @@ from comms.message import ServerJoinMessage
 def parse_args():
     parser = argparse.ArgumentParser()
     parser.add_argument(
-        "--ip_address",
         "-i",
+        "--ip_address",
         type=str,
         default="localhost",
         help="ip to connect to server on",
     )
     parser.add_argument(
-        "--port",
         "-p",
+        "--port",
         type=int,
         default=game_engine_constants.DEFAULT_PORT,
         help="port to connect to server on",
     )
     parser.add_argument(
-        "--windowed",
         "-w",
+        "--windowed",
         dest="fullscreen",
         action="store_false",
         help="run in windowed mode",
     )
     parser.add_argument(
-        "--sensitivity",
         "-s",
+        "--sensitivity",
         type=float,
         default=game_engine_constants.DEFAULT_SENSITIVITY,
         help="mouse sensitivity",
+    )
+    parser.add_argument(
+        "-f",
+        "--frame_rate",
+        type=float,
+        default=game_engine_constants.FPS,
+        help="frame rate",
     )
     parser.set_defaults(fullscreen=True)
     return parser.parse_args()
@@ -76,7 +83,11 @@ def run_client(args):
     server_socket, server_join_message = initialize_network(args.ip_address, args.port)
 
     client_instance = ClientInstance(
-        server_socket, server_join_message, args.fullscreen, args.sensitivity
+        server_socket,
+        server_join_message,
+        args.fullscreen,
+        args.frame_rate,
+        args.sensitivity,
     )
 
     t = Thread(target=server_listener, args=(server_socket, client_instance))

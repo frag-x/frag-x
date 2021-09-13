@@ -4,6 +4,42 @@ import logging
 import game_engine_constants
 from body import Body
 
+"""
+TODO make a test to see if these output the same numbers or very close.
+"""
+
+
+def elastic_collision_update_v2(b1, b2):
+    """
+    simulate an elastic collision
+
+    proof: https://gitlab.com/cuppajoeman/knowledge-data/-/blob/master/Velocity_after_Elastic_Collision_between_two_2_Dimensional_Bodies-MjRbjnneR2XhTD5jMv2.pdf
+
+    :param b1:
+    :param b2:
+    :return:
+    """
+    if b1.position != b2.position:
+        m1, m2 = b1.mass, b2.mass
+        M = m1 + m2
+
+        p1, p2 = b1.position, b2.position
+
+        v1, v2 = b1.velocity, b2.velocity
+
+        u = (p1 - p2).normalize()
+
+        v1_prime = (
+            v1 + (((2 * m2) / (m1 + m2)) * pygame.math.Vector2.dot(u, v2 - v1)) * u
+        )
+
+        v2_prime = (
+            v2 + (((2 * m1) / (m1 + m2)) * pygame.math.Vector2.dot(u, v1 - v2)) * u
+        )
+
+        b1.velocity = v1_prime
+        b2.velocity = v2_prime
+
 
 def elastic_collision_update(b1, b2):
     """if two bodies are not at the exact same position then perform an elastic collision"""

@@ -104,11 +104,9 @@ class Player(SimulationObject, body.ConstantAccelerationBody):
 
         collision_partition.players.append(self)
 
-
-
-        #if collision_partition:
+        # if collision_partition:
         #    collision_partition.players.append(self)
-        #else:
+        # else:
         #    self.position = random.choice(
         #        global_simulation.SIMULATION.map.spawns
         #    ).position
@@ -136,4 +134,4 @@ class Player(SimulationObject, body.ConstantAccelerationBody):
             # TODO make this a player method
             collisions.simulate_collision_v2(self, colliding_wall)
         for colliding_player in colliding_players:
-            collisions.elastic_collision_update(self, colliding_player)
+            collisions.elastic_collision_update_v2(self, colliding_player)

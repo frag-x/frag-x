@@ -43,7 +43,7 @@ class ConstantAccelerationBody(Body):
         self.acceleration = acceleration
 
     def step(self, movement_vector: pygame.math.Vector2, delta_time: float):
-        delta_time /= 1000  # TODO this is arbitrary and fucked
+        delta_time /= 1000  # TODO this is arbitrary and bad
 
         self.previous_position = pygame.math.Vector2(self.position.x, self.position.y)
 

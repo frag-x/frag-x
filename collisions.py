@@ -13,7 +13,7 @@ def elastic_collision_update_v2(b1, b2):
     """
     simulate an elastic collision
 
-    proof: https://gitlab.com/cuppajoeman/knowledge-data/-/blob/master/Velocity_after_Elastic_Collision_between_two_2_Dimensional_Bodies-MjRbjnneR2XhTD5jMv2.pdf
+    proof: https://getlab.com/cuppajoeman/knowledge-data/-/blob/master/Velocity_after_Elastic_Collision_between_two_2_Dimensional_Bodies-MjRbjnneR2XhTD5jMv2.pdf
 
     :param b1:
     :param b2:

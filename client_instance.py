@@ -180,6 +180,9 @@ class ClientInstance:
         network.send(self.socket, output_message)
 
     def process_input_message(self, input_message: ServerMessage):
+        """
+        Given a message from the server perform the appropriate action.
+        """
         if type(input_message) == SimulationStateMessage:
             self.simulation_state = input_message
             if self.player_id in self.simulation_state.players:

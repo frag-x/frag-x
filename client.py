@@ -55,9 +55,10 @@ def server_listener(
     client_instance: ClientInstance,
 ) -> None:
     """
-    This
-    :param socket:
-    :param client_instance:
+    Waits for messages from the server and then processes them
+
+    :param socket: the connection to the server
+    :param client_instance: the instance of the client
     :return:
     """
     while True:  # TODO kill thread when client quits by checking flag
@@ -68,6 +69,13 @@ def server_listener(
 def initialize_network(
     ip_address: str, port: int
 ) -> Tuple[socket.socket, ServerJoinMessage]:
+    """
+    Makes an initial connection with the server, returns the socket it is connected through
+    and the join message from the server
+
+    :param ip_address: the ip address of the server
+    :param port: the port of the server
+    """
     server_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     server_socket.connect((ip_address, port))
 
@@ -79,7 +87,12 @@ def initialize_network(
         raise message.UnknownMessageTypeError
 
 
-def run_client(args):
+def run_client(args) -> None:
+    """
+    Starts a client
+
+    :param args: command line arguments parsed by argparse
+    """
     server_socket, server_join_message = initialize_network(args.ip_address, args.port)
 
     client_instance = ClientInstance(

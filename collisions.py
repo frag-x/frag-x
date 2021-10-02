@@ -4,24 +4,19 @@ import logging
 import game_engine_constants
 from body import Body
 
-"""
-TODO make a test to see if these output the same numbers or very close.
-"""
 
-
-def elastic_collision_update_v2(b1, b2):
+def elastic_collision_update(b1, b2):
     """
     simulate an elastic collision
 
-    proof: https://getlab.com/cuppajoeman/knowledge-data/-/blob/master/Velocity_after_Elastic_Collision_between_two_2_Dimensional_Bodies-MjRbjnneR2XhTD5jMv2.pdf
+    proof: https://gitlab.com/cuppajoeman/knowledge-data/-/blob/master/Velocity_after_Elastic_Collision_between_two_2_Dimensional_Bodies-MjRbjnneR2XhTD5jMv2.pdf
 
-    :param b1:
-    :param b2:
+    :param b1: the first body
+    :param b2: the second body
     :return:
     """
     if b1.position != b2.position:
         m1, m2 = b1.mass, b2.mass
-        M = m1 + m2
 
         p1, p2 = b1.position, b2.position
 
@@ -40,29 +35,7 @@ def elastic_collision_update_v2(b1, b2):
         b1.velocity = v1_prime
         b2.velocity = v2_prime
 
-
-def elastic_collision_update(b1, b2):
-    """if two bodies are not at the exact same position then perform an elastic collision"""
-    if b1.position != b2.position:
-        m1, m2 = b1.mass, b2.mass
-        M = m1 + m2
-
-        p1, p2 = b1.position, b2.position
-
-        len_squared = (p1 - p2).length_squared()
-
-        v1, v2 = b1.velocity, b2.velocity
-
-        # Compute their new velocities - TODO understand this formula
-        u1 = v1 - (2 * m2 / M) * (
-            pygame.math.Vector2.dot(v1 - v2, p1 - p2) / (len_squared)
-        ) * (p1 - p2)
-        u2 = v2 - (2 * m1 / M) * (
-            pygame.math.Vector2.dot(v2 - v1, p2 - p1) / (len_squared)
-        ) * (p2 - p1)
-
-        b1.velocity = u1
-        b2.velocity = u2
+        print(v1_prime, v2_prime)
 
 
 def bodies_colliding(body_1: Body, body_2: Body) -> bool:
@@ -98,7 +71,7 @@ def get_closest_point_on_wall(body, b_wall) -> pygame.math.Vector2:
     return closest_v
 
 
-def simulate_collision_v2(body, b_wall):
+def simulate_collision(body, b_wall):
 
     start_collision_simulation_time = time.time()
 

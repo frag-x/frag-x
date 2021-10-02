@@ -131,8 +131,6 @@ class Player(SimulationObject, body.ConstantAccelerationBody):
         )
 
         for colliding_wall in colliding_walls:
-            # TODO make this a player method
-            collisions.simulate_collision_v2(self, colliding_wall)
+            collisions.simulate_collision(self, colliding_wall)
         for colliding_player in colliding_players:
-            # collisions.elastic_collision_update_v2(self, colliding_player)
-            collisions.elastic_collision_update_v2(self, colliding_player)
+            collisions.elastic_collision_update(self, colliding_player)

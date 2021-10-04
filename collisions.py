@@ -5,7 +5,7 @@ import game_engine_constants
 from body import Body
 
 
-def elastic_collision_update(b1, b2):
+def simulate_elastic_collision_between_bodies(b1, b2):
     """
     simulate an elastic collision
 
@@ -66,16 +66,27 @@ def get_closest_point_on_wall(body, b_wall) -> pygame.math.Vector2:
     )
     closest_x = clamp(body.position.x, left, right)
     closest_y = clamp(body.position.y, top, bottom)
-    closest_v = pygame.math.Vector2(closest_x, closest_y)
 
-    return closest_v
+    # If the body is inside the wall this makes sure to force it to be on the edge.
+    closest_x_on_wall = min([left, right], key=lambda x: abs(x - closest_x))
+    closest_y_on_wall = min([bottom, top], key=lambda y: abs(y - closest_y))
+
+    closest_point_on_wall = pygame.math.Vector2(closest_x_on_wall, closest_y_on_wall)
+
+    return closest_point_on_wall
 
 
-def simulate_collision(body, b_wall):
+def simulate_body_wall_collision(body, b_wall):
+    """
+    Given a body that is colliding with a ball simulate a collision
+    :param body:
+    :param b_wall:
+    :return:
+    """
 
     start_collision_simulation_time = time.time()
 
-    closest_v = get_closest_point_on_wall(body, b_wall)
+    closest_point_on_wall = get_closest_point_on_wall(body, b_wall)
 
     top, left, bottom, right = (
         b_wall.rect.top,
@@ -89,7 +100,7 @@ def simulate_collision(body, b_wall):
     # Unstick amount should be relative to the amount of velocity we have
     # unstick_amount = 1 + body.velocity.magnitude()/1000
     extra_buffer = 3
-    # TODO ABOUT TO SET THIS TO AN EXACT POSITION SOMETHING LIKE
+    # TODO set this to the amount we are in there
     unstick_amount = body.radius + extra_buffer
 
     """
@@ -100,7 +111,9 @@ def simulate_collision(body, b_wall):
 
     """
 
-    fully_in = (left < closest_v.x < right) and (top < closest_v.y < bottom)
+    fully_in = (left < closest_point_on_wall.x < right) and (
+        top < closest_point_on_wall.y < bottom
+    )
 
     """
      __A__ 
@@ -112,28 +125,27 @@ def simulate_collision(body, b_wall):
     |_____|   |____...____|
 
     """
-    A = (left < closest_v.x < right) and (
-        (closest_v.y == top and not top_visible)
-        or (closest_v.y == bottom and not bottom_visible)
+    A = (left < closest_point_on_wall.x < right) and (
+        (closest_point_on_wall.y == top and not top_visible)
+        or (closest_point_on_wall.y == bottom and not bottom_visible)
     )
-    B = (top < closest_v.y < bottom) and (
-        (closest_v.x == left and not left_visible)
-        or (closest_v.x == right and not right_visible)
+
+    B = (top < closest_point_on_wall.y < bottom) and (
+        (closest_point_on_wall.x == left and not left_visible)
+        or (closest_point_on_wall.x == right and not right_visible)
     )
 
     half_in = A or B
 
+    # TODO context was the code which sets position to the prev one because I fixed the get closest point on wall
     if fully_in or half_in:
-        logging.info("body is inside")
         prev_pos = body.previous_position
         curr_pos = body.position
         # Then we use the previous position, and get it's closest position
         # Which is guarenteed to be neither half nor fully in
         # And use that to figure out what kind of it hit it is
         body.position = prev_pos
-        logging.info(closest_v.x, closest_v.y)
-        colliding = is_colliding_with_wall(body, b_wall)
-        closest_v = get_closest_point_on_wall(body, b_wall)
+        closest_point_on_wall = get_closest_point_on_wall(body, b_wall)
         # assert colliding == False
         # reset position and then continue
         body.position = curr_pos
@@ -147,16 +159,18 @@ def simulate_collision(body, b_wall):
                     ...     ...
     """
 
-    A1 = (closest_v.x == right and closest_v.y == top) and (
+    A1 = (closest_point_on_wall.x == right and closest_point_on_wall.y == top) and (
         right_visible and top_visible
     )
-    B1 = (closest_v.x == right and closest_v.y == bottom) and (
+    B1 = (closest_point_on_wall.x == right and closest_point_on_wall.y == bottom) and (
         right_visible and bottom_visible
     )
-    C1 = (closest_v.x == left and closest_v.y == bottom) and (
+    C1 = (closest_point_on_wall.x == left and closest_point_on_wall.y == bottom) and (
         left_visible and bottom_visible
     )
-    D1 = (closest_v.x == left and closest_v.y == top) and (left_visible and top_visible)
+    D1 = (closest_point_on_wall.x == left and closest_point_on_wall.y == top) and (
+        left_visible and top_visible
+    )
 
     case_1 = [A1, B1, C1, D1]
 
@@ -170,10 +184,26 @@ def simulate_collision(body, b_wall):
                              ...      
 
     """
-    A2 = closest_v.x == right and top < closest_v.y < bottom and right_visible
-    B2 = closest_v.x == left and top < closest_v.y < bottom and left_visible
-    C2 = closest_v.y == bottom and left < closest_v.x < right and bottom_visible
-    D2 = closest_v.y == top and left < closest_v.x < right and top_visible
+    A2 = (
+        closest_point_on_wall.x == right
+        and top < closest_point_on_wall.y < bottom
+        and right_visible
+    )
+    B2 = (
+        closest_point_on_wall.x == left
+        and top < closest_point_on_wall.y < bottom
+        and left_visible
+    )
+    C2 = (
+        closest_point_on_wall.y == bottom
+        and left < closest_point_on_wall.x < right
+        and bottom_visible
+    )
+    D2 = (
+        closest_point_on_wall.y == top
+        and left < closest_point_on_wall.x < right
+        and top_visible
+    )
 
     case_2 = [A2, B2, C2, D2]
 
@@ -190,17 +220,33 @@ def simulate_collision(body, b_wall):
 
     """
 
-    A3 = (closest_v.x == right and (closest_v.y == top and not top_visible)) or (
-        closest_v.x == right and (closest_v.y == bottom and not bottom_visible)
+    A3 = (
+        closest_point_on_wall.x == right
+        and (closest_point_on_wall.y == top and not top_visible)
+    ) or (
+        closest_point_on_wall.x == right
+        and (closest_point_on_wall.y == bottom and not bottom_visible)
     )
-    B3 = (closest_v.x == left and (closest_v.y == top and not top_visible)) or (
-        closest_v.x == left and (closest_v.y == bottom and not bottom_visible)
+    B3 = (
+        closest_point_on_wall.x == left
+        and (closest_point_on_wall.y == top and not top_visible)
+    ) or (
+        closest_point_on_wall.x == left
+        and (closest_point_on_wall.y == bottom and not bottom_visible)
     )
-    C3 = (closest_v.y == top and (closest_v.x == left and not left_visible)) or (
-        closest_v.y == top and (closest_v.x == right and not right_visible)
+    C3 = (
+        closest_point_on_wall.y == top
+        and (closest_point_on_wall.x == left and not left_visible)
+    ) or (
+        closest_point_on_wall.y == top
+        and (closest_point_on_wall.x == right and not right_visible)
     )
-    D3 = (closest_v.y == bottom and (closest_v.x == left and not left_visible)) or (
-        closest_v.y == bottom and (closest_v.x == right and not right_visible)
+    D3 = (
+        closest_point_on_wall.y == bottom
+        and (closest_point_on_wall.x == left and not left_visible)
+    ) or (
+        closest_point_on_wall.y == bottom
+        and (closest_point_on_wall.x == right and not right_visible)
     )
 
     case_3 = [A3, B3, C3, D3]
@@ -220,7 +266,7 @@ def simulate_collision(body, b_wall):
             r_v = pygame.math.Vector2(unstick_amount, 0)
             r_v.rotate_ip_rad(-math.tau / 8)
 
-            body.position = closest_v + r_v
+            body.position = closest_point_on_wall + r_v
 
         elif B1:
             logging.info("bottom right")
@@ -232,7 +278,7 @@ def simulate_collision(body, b_wall):
             r_v = pygame.math.Vector2(unstick_amount, 0)
             r_v.rotate_ip_rad(math.tau / 8)
 
-            body.position = closest_v + r_v
+            body.position = closest_point_on_wall + r_v
         elif C1:
             logging.info("bottom left")
             rotated_vel = pygame.math.Vector2.rotate_rad(body.velocity, -math.tau / 8)
@@ -243,7 +289,7 @@ def simulate_collision(body, b_wall):
             r_v = pygame.math.Vector2(-unstick_amount, 0)
             r_v.rotate_ip_rad(-math.tau / 8)
 
-            body.position = closest_v + r_v
+            body.position = closest_point_on_wall + r_v
 
         elif D1:
             logging.info("top left")
@@ -256,35 +302,35 @@ def simulate_collision(body, b_wall):
             r_v = pygame.math.Vector2(-unstick_amount, 0)
             r_v.rotate_ip_rad(math.tau / 8)
 
-            body.position = closest_v + r_v
+            body.position = closest_point_on_wall + r_v
 
     elif any(case_2):
         if A2:
             right_reflect(
                 body,
                 unstick_amount,
-                closest_v,
+                closest_point_on_wall,
                 game_engine_constants.VELOCITY_REDUCTION_MODIFIER,
             )
         elif B2:
             left_reflect(
                 body,
                 unstick_amount,
-                closest_v,
+                closest_point_on_wall,
                 game_engine_constants.VELOCITY_REDUCTION_MODIFIER,
             )
         elif C2:
             bottom_reflect(
                 body,
                 unstick_amount,
-                closest_v,
+                closest_point_on_wall,
                 game_engine_constants.VELOCITY_REDUCTION_MODIFIER,
             )
         elif D2:
             top_reflect(
                 body,
                 unstick_amount,
-                closest_v,
+                closest_point_on_wall,
                 game_engine_constants.VELOCITY_REDUCTION_MODIFIER,
             )
     elif any(case_3):
@@ -292,28 +338,28 @@ def simulate_collision(body, b_wall):
             right_reflect(
                 body,
                 unstick_amount,
-                closest_v,
+                closest_point_on_wall,
                 game_engine_constants.VELOCITY_REDUCTION_MODIFIER,
             )
         elif B3:
             left_reflect(
                 body,
                 unstick_amount,
-                closest_v,
+                closest_point_on_wall,
                 game_engine_constants.VELOCITY_REDUCTION_MODIFIER,
             )
         elif C3:
             top_reflect(
                 body,
                 unstick_amount,
-                closest_v,
+                closest_point_on_wall,
                 game_engine_constants.VELOCITY_REDUCTION_MODIFIER,
             )
         elif D3:
             bottom_reflect(
                 body,
                 unstick_amount,
-                closest_v,
+                closest_point_on_wall,
                 game_engine_constants.VELOCITY_REDUCTION_MODIFIER,
             )
     else:

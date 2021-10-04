@@ -1,7 +1,10 @@
-import pygame, math, uuid, random
-import collisions, global_simulation
+import pygame
+import random
+import collisions
+import global_simulation
+import game_engine_constants
+import body
 from comms.message import PlayerStateMessage
-import game_engine_constants, body
 from simulation_object import constants
 from weapons.railgun import RailGun
 from weapons.rocket_launcher import RocketLauncher
@@ -131,6 +134,6 @@ class Player(SimulationObject, body.ConstantAccelerationBody):
         )
 
         for colliding_wall in colliding_walls:
-            collisions.simulate_collision(self, colliding_wall)
+            collisions.simulate_body_wall_collision(self, colliding_wall)
         for colliding_player in colliding_players:
-            collisions.elastic_collision_update(self, colliding_player)
+            collisions.simulate_elastic_collision_between_bodies(self, colliding_player)

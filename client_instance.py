@@ -82,7 +82,7 @@ class ClientInstance:
         self.font = pygame.font.SysFont(pygame.font.get_default_font(), 30)
 
         if fullscreen:
-            self.screen = pygame.display.set_mode((0, 0), pygame.FULLSCREEN)
+            self.screen = pygame.display.set_mode((0, 0), flags=pygame.FULLSCREEN)
             (
                 game_engine_constants.WIDTH,
                 game_engine_constants.HEIGHT,

@@ -11,6 +11,7 @@ from simulation_object.simulation_object import SimulationObject
 import weapons.constants
 
 
+
 class HitscanBeam(SimulationObject):
     """A hitscan beam is a shot from a weapon"""
 
@@ -88,6 +89,7 @@ class HitscanBeam(SimulationObject):
                     hit_player.velocity += self.direction_vector * self.collision_force
 
                 if hit_player is not self.player:
+                    # TODO: Based on the gamemode being played, this needs to change.
                     hit_player.health -= self.damage
                     if hit_player.health <= 0:
                         hit_player.velocity = pygame.math.Vector2()

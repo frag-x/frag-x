@@ -10,7 +10,7 @@ from comms import network, message
 from simulation import Simulation
 
 import global_simulation
-
+import game_modes
 
 def listener(server_socket, state_queue):
     while True:
@@ -83,7 +83,7 @@ def load_requested_map(map_name, invalid_map_names, input_messages, output_messa
     players = global_simulation.SIMULATION.players
     try:
         global_simulation.SIMULATION = Simulation(
-            map_name, input_messages, output_messages, players=players
+            map_name, input_messages, output_messages, game_mode = game_modes.InstakillGameMode, players=players
         )
     except FileNotFoundError:
         print(f"Could not load requested map {map_name}")
@@ -98,7 +98,7 @@ def run_server(args):
     input_messages = Queue()
     output_messages = Queue()
 
-    global_simulation.SIMULATION = Simulation(args.map, input_messages, output_messages)
+    global_simulation.SIMULATION = Simulation(args.map, input_messages, output_messages, game_mode = game_modes.InstakillGameMode)
 
     server_socket = initialize_socket()
 

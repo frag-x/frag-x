@@ -24,11 +24,12 @@ from simulation_object.player import Player
 from simulation_object.rocket import Rocket
 from simulation_object.hitscan_beam import HitscanBeam
 from network_object.hitscan_beam import HitscanBeamNetworkObject
+import game_modes
 
 
 class Simulation:
     def __init__(
-        self, map_name: str, input_messages: Queue, output_messages: Queue, players={}
+        self, map_name: str, input_messages: Queue, output_messages: Queue, game_mode: game_modes.GameMode, players={}, 
     ):
         self.map_name = map_name
         self.map = map_loading.load_map(map_name)
@@ -36,6 +37,7 @@ class Simulation:
         self.output_messages = output_messages
         self.clock = pygame.time.Clock()
         self.active = False
+        self.game_mode = game_mode
 
         self.players: Dict[UUID, Player] = players
         for player in players.values():

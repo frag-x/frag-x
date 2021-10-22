@@ -9,7 +9,7 @@ from network_object.network_object import NetworkObject
 from network_object.hitscan_beam import HitscanBeamNetworkObject
 from simulation_object.simulation_object import SimulationObject
 import weapons.constants
-
+import game_modes  # TODO: This should not be here
 
 
 class HitscanBeam(SimulationObject):
@@ -89,13 +89,18 @@ class HitscanBeam(SimulationObject):
                     hit_player.velocity += self.direction_vector * self.collision_force
 
                 if hit_player is not self.player:
-                    # TODO: Based on the gamemode being played, this needs to change.
-                    hit_player.health -= self.damage
+                    # print(type(global_simulation.SIMULATION.game_mode), game_modes.InstakillGameMode)
+                    # if isinstance(global_simulation.SIMULATION.game_mode, game_modes.InstakillGameMode):
+                    #     hit_player.health = 0  
+                    # else:
+                    #     hit_player.health -= self.damage
+                    # TODO: Implement this for different game modes (Like above)
+                    hit_player.health = 0    
                     if hit_player.health <= 0:
                         hit_player.velocity = pygame.math.Vector2()
                         if hit_player.time_of_death is None:
                             hit_player.time_of_death = pygame.time.get_ticks()
                             self.player.num_frags += 1
-
+                    
         # No need to deregister the object, hitscan beams are removed
         # before new ones are created, but after old ones are operated on

@@ -9,7 +9,7 @@ from simulation_object.simulation_object import SimulationObject
 
 def get_closest_intersecting_object_in_pmg(
     player, partitioned_map_grid, beam, applies_force_to_player
-) -> Tuple[Optional[pygame.math.Vector2], Optional[SimulationObject]]:
+) -> Tuple[pygame.math.Vector2, SimulationObject]:  #Remove Optional 
     """
     Given a beam that is passing through a given map fired by player , find the closest element to it which is not player
 

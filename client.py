@@ -7,6 +7,7 @@ import game_engine_constants
 from threading import Thread
 from client_instance import ClientInstance
 from comms.message import ServerJoinMessage
+from config_file import load_config_file
 
 
 def parse_args():
@@ -102,6 +103,8 @@ def run_client(args) -> None:
         args.frame_rate,
         args.sensitivity,
     )
+
+    load_config_file(client_instance)
 
     t = Thread(target=server_listener, args=(server_socket, client_instance))
     t.start()

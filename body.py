@@ -4,7 +4,7 @@ import game_engine_constants
 
 # TODO make this a simulation object
 class Body:
-    """An object that moves within a map, it has constant acceleration"""
+    """An object that moves within a map"""
 
     def __init__(self, start_pos, radius, friction):
         self.position = pygame.math.Vector2(start_pos)
@@ -29,7 +29,7 @@ class ConstantVelocityBody(Body):
     def __init__(self, start_pos, radius, friction, velocity: pygame.math.Vector2):
         super().__init__(start_pos, radius, friction)
         self.velocity = velocity
-
+        
     def step(self, delta_time: float):
         # Everything is measured per second
         delta_time /= 1000

@@ -21,7 +21,7 @@ import math
 from chatbox import ChatBox
 from typing import Optional, cast
 import simulation_object.constants
-
+from client_elements import weapon_directory
 
 class ClientInstance:
     def __init__(
@@ -62,6 +62,8 @@ class ClientInstance:
             100,
             self.font,
         )
+        self.weapon_directory = weapon_directory.WeaponDirectory(self.screen, game_engine_constants.WIDTH / 2, 0 , 500, 100, self.font)
+            
         self.command_runner = commands.CommandRunner(self)
 
         self.ready = False
@@ -278,7 +280,7 @@ class ClientInstance:
         self._draw_rockets()
         self._draw_hitscan_beams()
         self.leaderboard.render(self.player_id, list(cast(SimulationStateMessage, self.simulation_state).players.values()))
-
+        self.weapon_directory.render()
         self.user_chat_box.update_message_times(delta_time)
         self.user_chat_box.draw_messages()
 

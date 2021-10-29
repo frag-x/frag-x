@@ -89,13 +89,14 @@ class HitscanBeam(SimulationObject):
                     hit_player.velocity += self.direction_vector * self.collision_force
 
                 if hit_player is not self.player:
-                    # print(type(global_simulation.SIMULATION.game_mode), game_modes.InstakillGameMode)
+                    
                     # if isinstance(global_simulation.SIMULATION.game_mode, game_modes.InstakillGameMode):
                     #     hit_player.health = 0  
                     # else:
                     #     hit_player.health -= self.damage
                     # TODO: Implement this for different game modes (Like above)
-                    hit_player.health = 0    
+                    hit_player.health = 0   
+                    print(type(global_simulation.SIMULATION.game_mode), type(game_modes.InstakillGameMode)) 
                     if hit_player.health <= 0:
                         hit_player.velocity = pygame.math.Vector2()
                         if hit_player.time_of_death is None:

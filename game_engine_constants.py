@@ -29,7 +29,7 @@ WASD_MOVEMENT_KEYS = (pygame.K_a, pygame.K_w, pygame.K_d, pygame.K_s)
 # Weapon keys maps onto the weapons in this order: # TODO make this a dictionary
 # rocket launcher, rail gun
 WEAPON_KEYS = [pygame.K_c, pygame.K_x, pygame.K_f]
-WEAPON_NAME_TO_KEY = {"Rocket Launcher": chr(pygame.K_c) , "Railgun": chr(pygame.K_x) , "Shotgun": chr(pygame.K_f)}
+WEAPON_NAME_TO_KEY = {"Rocket Launcher": chr(pygame.K_c).upper() , "Railgun": chr(pygame.K_x).upper() , "Shotgun": chr(pygame.K_f).upper()}
 
 
 MAX_SPEED = 500

@@ -62,7 +62,7 @@ class ClientInstance:
             100,
             self.font,
         )
-        self.weapon_directory = weapon_directory.WeaponDirectory(self.screen, game_engine_constants.WIDTH / 2, 0 , 500, 100, self.font)
+        self.weapon_directory = weapon_directory.WeaponDirectory(self.screen, game_engine_constants.WIDTH / 2, 0 , 300, 100, self.font)
             
         self.command_runner = commands.CommandRunner(self)
 

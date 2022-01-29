@@ -3,6 +3,7 @@ from network_object.player import PlayerNetworkObject
 from typing import List
 import pygame
 
+
 class Leaderboard:
     def __init__(self, screen, x, y, width, height, font):
         self.screen = screen
@@ -10,7 +11,7 @@ class Leaderboard:
         self.font = font
 
     def _make_leaderboard_row(self, player: PlayerNetworkObject):
-        return f'{str(player.uuid)[:4]}: {player.num_frags}'
+        return f"{str(player.uuid)[:4]}: {player.num_frags}"
 
     def render(self, our_player_id: UUID, players: List[PlayerNetworkObject]):
         players.sort(key=lambda player: player.num_frags, reverse=True)
@@ -18,7 +19,7 @@ class Leaderboard:
         height = self.rect.y
         for player in players:
             text = self._make_leaderboard_row(player)
-            color = 'white' if player.uuid != our_player_id else 'gold'
+            color = "white" if player.uuid != our_player_id else "gold"
             row = self.font.render(text, False, pygame.Color(color))
             height += row.get_height()
             text_pos = (self.rect.x, height)

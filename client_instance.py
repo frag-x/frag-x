@@ -109,7 +109,9 @@ class ClientInstance:
         self.running = False
 
     def _this_player(self) -> PlayerNetworkObject:
-        return cast(SimulationStateMessage, self.simulation_state).players[self.player_id]
+        return cast(SimulationStateMessage, self.simulation_state).players[
+            self.player_id
+        ]
 
     def _process_pygame_events(self) -> None:
         events = pygame.event.get()
@@ -211,7 +213,11 @@ class ClientInstance:
         self.send_inputs()
 
     def _camera_view(self) -> pygame.math.Vector2:
-        our_position = cast(SimulationStateMessage, self.simulation_state).players[self.player_id].position
+        our_position = (
+            cast(SimulationStateMessage, self.simulation_state)
+            .players[self.player_id]
+            .position
+        )
         return game_engine_constants.SCREEN_CENTER_POINT - our_position
 
     def _draw_players(self):
@@ -234,7 +240,9 @@ class ClientInstance:
 
             pygame.draw.circle(
                 self.screen,
-                player.color if player.health > 0 else simulation_object.constants.PLAYER_DEATH_COLOR,
+                player.color
+                if player.health > 0
+                else simulation_object.constants.PLAYER_DEATH_COLOR,
                 player_relative_position,
                 game_engine_constants.PLAYER_RADIUS,
             )
@@ -277,7 +285,10 @@ class ClientInstance:
         self._draw_players()
         self._draw_rockets()
         self._draw_hitscan_beams()
-        self.leaderboard.render(self.player_id, list(cast(SimulationStateMessage, self.simulation_state).players.values()))
+        self.leaderboard.render(
+            self.player_id,
+            list(cast(SimulationStateMessage, self.simulation_state).players.values()),
+        )
 
         self.user_chat_box.update_message_times(delta_time)
         self.user_chat_box.draw_messages()
@@ -295,8 +306,13 @@ class ClientInstance:
             ),
         )
 
-        health_surface = self.font.render(f'Health: {self._this_player().health}', False, pygame.Color("white"))
-        self.screen.blit(health_surface, (0, game_engine_constants.HEIGHT - health_surface.get_height()))
+        health_surface = self.font.render(
+            f"Health: {self._this_player().health}", False, pygame.Color("white")
+        )
+        self.screen.blit(
+            health_surface,
+            (0, game_engine_constants.HEIGHT - health_surface.get_height()),
+        )
 
     def step(self) -> bool:
         delta_time = self.clock.tick(self.frame_rate)

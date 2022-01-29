@@ -46,9 +46,7 @@ class HitscanWeapon(Weapon, ABC):
         self.damage = damage
 
     @abstractmethod
-    def fire(
-        self, firing_player, aim_angle: float
-    ) -> List[HitscanBeam]:
+    def fire(self, firing_player, aim_angle: float) -> List[HitscanBeam]:
         """
         :param firing_position: the position that the weapon is fired at
         :param aim_angle: the angle that the weapon is fired at

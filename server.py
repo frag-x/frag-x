@@ -16,7 +16,12 @@ def listener(server_socket, state_queue):
     while True:
         client_socket, addr = server_socket.accept()
         player_id = global_simulation.SIMULATION.add_player(client_socket)
-        network.send(client_socket, message.ServerJoinMessage(player_id=player_id, map_name=global_simulation.SIMULATION.map_name))
+        network.send(
+            client_socket,
+            message.ServerJoinMessage(
+                player_id=player_id, map_name=global_simulation.SIMULATION.map_name
+            ),
+        )
         print(f"Accepted connection from {addr}")
 
         t = Thread(target=client_listener, args=(client_socket, state_queue))

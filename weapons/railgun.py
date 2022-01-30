@@ -5,15 +5,17 @@ import pygame
 import game_engine_constants
 from weapons import constants, helpers
 from weapons.weapon import HitscanWeapon, HitscanBeam
+from typing import Any
 
 
 class RailGun(HitscanWeapon):
-    def __init__(self):
+    def __init__(self) -> None:
         super().__init__(
             fire_rate=constants.RAILGUN_FIRE_RATE_HZ, damage=constants.RAILGUN_DAMAGE
         )
 
-    def fire(self, firing_player, aim_angle: float):
+    # NOTE: we can't type firing player more strictly without a dependency cycle
+    def fire(self, firing_player: Any, aim_angle: float) -> None:
         """
         Return the fired HitscanBeam from the railgun
         :param firing_player: the player that shot this weapon

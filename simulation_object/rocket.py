@@ -1,10 +1,8 @@
 from abc import ABC
 import math
-import random
 
 import collisions
 import global_simulation
-from map_loading import BoundingWall
 from network_object.rocket import RocketNetworkObject
 
 import pygame
@@ -15,6 +13,7 @@ import weapons.constants
 from simulation_object.simulation_object import SimulationObject
 from weapons import constants
 from weapons.weapon import HitscanBeam
+from typing import Any
 
 
 class Rocket(SimulationObject, ConstantVelocityBody):
@@ -22,9 +21,10 @@ class Rocket(SimulationObject, ConstantVelocityBody):
     A rocket is a type of projectile which moves with constant velocity, it's payload is an explosion
     """
 
+    # NOTE: player cannot be typed without creating a dependency cycle
     def __init__(
         self,
-        player,
+        player: Any,
         radius: float,
         speed: int,
         direction: pygame.math.Vector2,
@@ -48,7 +48,7 @@ class Rocket(SimulationObject, ConstantVelocityBody):
         self.player = player  # TODO eventually OwnedSimulation Object
         self.num_shards = num_shards
 
-    def explode(self, position: pygame.math.Vector2):
+    def explode(self, position: pygame.math.Vector2) -> None:
         angle_fraction = math.tau / self.num_shards
         for i in range(self.num_shards):
             angle = angle_fraction * i
@@ -71,7 +71,7 @@ class Rocket(SimulationObject, ConstantVelocityBody):
             position=self.position,
         )
 
-    def step(self, delta_time: float):  # type: ignore
+    def step(self, delta_time: float) -> None:
 
         super(ABC, self).step(delta_time)
 

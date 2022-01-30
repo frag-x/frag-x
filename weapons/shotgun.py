@@ -1,19 +1,20 @@
-import math
+from typing import Any
 
 import pygame
 
 from helpers import polar_to_cartesian
-from weapons import constants, helpers
+from weapons import constants
 from weapons.weapon import HitscanWeapon, HitscanBeam
 
 
 class ShotGun(HitscanWeapon):
-    def __init__(self):
+    def __init__(self) -> None:
         super().__init__(
             fire_rate=constants.SHOTGUN_FIRE_RATE_HZ, damage=constants.RAILGUN_DAMAGE
         )
 
-    def fire(self, firing_player, aim_angle: float):
+    # NOTE: firing player can't be more strictly typed without creating a dependancy cycle
+    def fire(self, firing_player: Any, aim_angle: float) -> None:
         """
         Return the fired HitscanBeam from the railgun
         :param firing_player: the player that shot this weapon

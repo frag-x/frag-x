@@ -105,7 +105,7 @@ class ClientInstance:
     def set_sensitivity(self, sensitivity: float) -> None:
         self.sensitivity = sensitivity * game_engine_constants.SENSITIVITY_SCALE
 
-    def quit(self):
+    def quit(self) -> None:
         self.running = False
 
     def _this_player(self) -> PlayerNetworkObject:
@@ -144,7 +144,7 @@ class ClientInstance:
         if self.user_typing:
             self.user_text_box.update(events)
 
-    def send_inputs(self):
+    def send_inputs(self) -> None:
         # we only look at the x component of mouse input
         delta_mouse, _ = pygame.mouse.get_rel()
         delta_mouse *= self.sensitivity
@@ -181,7 +181,7 @@ class ClientInstance:
 
         network.send(self.socket, output_message)
 
-    def process_input_message(self, input_message: ServerMessage):
+    def process_input_message(self, input_message: ServerMessage) -> None:
         """
         Given a message from the server perform the appropriate action.
         """
@@ -220,7 +220,7 @@ class ClientInstance:
         )
         return game_engine_constants.SCREEN_CENTER_POINT - our_position
 
-    def _draw_players(self):
+    def _draw_players(self) -> None:
         for player in self.simulation_state.players.values():
             player_relative_position = player.position + self._camera_view()
 
@@ -247,7 +247,7 @@ class ClientInstance:
                 game_engine_constants.PLAYER_RADIUS,
             )
 
-    def _draw_rockets(self):
+    def _draw_rockets(self) -> None:
         for projectile in self.simulation_state.rockets.values():
             # TODO use shared variable with server
             radius = game_engine_constants.TILE_SIZE / 4
@@ -258,7 +258,7 @@ class ClientInstance:
                 radius,
             )
 
-    def _draw_hitscan_beams(self):
+    def _draw_hitscan_beams(self) -> None:
         for hitscan_beam in self.simulation_state.hitscan_beams.values():
             pygame.draw.line(
                 self.screen,

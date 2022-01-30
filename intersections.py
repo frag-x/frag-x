@@ -1,14 +1,19 @@
-from typing import Optional, Tuple, List
+from typing import Optional, Tuple, Any, Set
 
 import game_engine_constants, helpers
 import pygame, math
 
 
 from simulation_object.simulation_object import SimulationObject
+from map_loading import PartitionedMapGrid, BoundingWall
 
 
+# NOTE: player and beam can't be typed more strictly without creating a dependancy cycle
 def get_closest_intersecting_object_in_pmg(
-    player, partitioned_map_grid, beam, applies_force_to_player
+    player: Any,
+    partitioned_map_grid: PartitionedMapGrid,
+    beam: Any,
+    applies_force_to_player: bool,
 ) -> Tuple[Optional[pygame.math.Vector2], Optional[SimulationObject]]:
     """
     Given a beam that is passing through a given map fired by player , find the closest element to it which is not player
@@ -21,7 +26,12 @@ def get_closest_intersecting_object_in_pmg(
     closest_hit = None
     closest_entity = None
 
-    def update_closest(hit, entity, closest_hit, closest_entity):
+    def update_closest(
+        hit: pygame.math.Vector2,
+        entity: BoundingWall,
+        closest_hit: pygame.math.Vector2,
+        closest_entity: BoundingWall,
+    ) -> Tuple[pygame.math.Vector2, BoundingWall]:
 
         if closest_hit is None:
             closest_hit = hit
@@ -53,7 +63,10 @@ def get_closest_intersecting_object_in_pmg(
     return closest_hit, closest_entity
 
 
-def get_intersecting_partitions(partitioned_map_grid, beam) -> List:
+# NOTE: beam can't be typed more strictly without creating a dependancy cycle
+def get_intersecting_partitions(
+    partitioned_map_grid: PartitionedMapGrid, beam: Any
+) -> Set:
     """
     Given a beam return the partitions that this beam intersects with
 
@@ -135,8 +148,6 @@ def get_intersecting_partitions(partitioned_map_grid, beam) -> List:
             # TODO remove hardcode on tilesize?
             untranslated_y = y + beam.start_point.y
             untranslated_x = vxpst + beam.start_point.x
-
-            point = pygame.math.Vector2(untranslated_x, untranslated_y)
 
             intersecting_bottom_of_quad_patch = (
                 partitioned_map_grid.partition_height - game_engine_constants.TILE_SIZE
@@ -244,8 +255,6 @@ def get_intersecting_partitions(partitioned_map_grid, beam) -> List:
             untranslated_x = x + beam.start_point.x
             untranslated_y = vypst + beam.start_point.y
 
-            point = pygame.math.Vector2(untranslated_x, untranslated_y)
-
             intersecting_left_of_quad_patch = (
                 partitioned_map_grid.partition_width - game_engine_constants.TILE_SIZE
                 <= untranslated_x % partitioned_map_grid.partition_width
@@ -347,8 +356,8 @@ def get_intersecting_partitions(partitioned_map_grid, beam) -> List:
 
 
 def get_closest_intersecting_object_in_partition(
-    player, beam, pmg, applies_force_to_player
-):
+    player: Any, beam: Any, pmg: PartitionedMapGrid, applies_force_to_player: bool
+) -> Tuple[pygame.math.Vector2, BoundingWall]:
     """
     Given a partition that this beam is passing through, find the closest element in the partition
     that the beam intersects.
@@ -368,7 +377,12 @@ def get_closest_intersecting_object_in_partition(
 
     quadrant_info = beam.quadrant_info
 
-    def update_closest(hit, entity, closest_hit, closest_entity):
+    def update_closest(
+        hit: pygame.math.Vector2,
+        entity: BoundingWall,
+        closest_hit: pygame.math.Vector2,
+        closest_entity: BoundingWall,
+    ) -> Tuple[pygame.math.Vector2, BoundingWall]:
 
         if closest_hit is None:
             closest_hit = hit
@@ -504,14 +518,14 @@ def get_closest_intersecting_object_in_partition(
                 """
                 a = 1
                 b = -2 * q
-                c = (p ** 2) + (q ** 2) - (r ** 2)
+                c = (p**2) + (q**2) - (r**2)
             else:
                 # From initial derivation
-                a = (m ** 2) + 1
+                a = (m**2) + 1
                 b = -2 * (p + (m * q))
-                c = (p ** 2) + (q ** 2) - (r ** 2)
+                c = (p**2) + (q**2) - (r**2)
 
-            discriminant = b ** 2 - (4 * a * c)
+            discriminant = b**2 - (4 * a * c)
 
             if discriminant >= 0:
                 # Then we have at least one solution

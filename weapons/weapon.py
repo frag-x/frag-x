@@ -1,11 +1,7 @@
 from abc import ABC, abstractmethod
-from typing import List
+from typing import List, Any
 import pygame
 import pygame.math
-
-import math
-
-from weapons import helpers
 from simulation_object.hitscan_beam import HitscanBeam
 
 
@@ -19,11 +15,13 @@ class Weapon(ABC):
         # Initialize to a value where they can shoot immediatly
         self.time_of_last_shot: float = 0
 
+    # NOTE: firing player can't be more strictly typed without creating a dependancy cycle
     @abstractmethod
-    def fire(self, firing_player, aim_angle: float):
+    def fire(self, firing_player: Any, aim_angle: float) -> None:
         pass
 
-    def try_fire(self, firing_player, aim_angle: float):
+    # NOTE: firing player can't be more strictly typed without creating a dependancy cycle
+    def try_fire(self, firing_player: Any, aim_angle: float) -> None:
         current_time = pygame.time.get_ticks()
         if (current_time - self.time_of_last_shot) / 1000 >= self.seconds_per_shot:
             self.fire(firing_player, aim_angle)
@@ -45,8 +43,9 @@ class HitscanWeapon(Weapon, ABC):
         # TODO remove damage? that belongs in the beam it spawns
         self.damage = damage
 
+    # NOTE: firing player can't be more strictly typed without creating a dependancy cycle
     @abstractmethod
-    def fire(self, firing_player, aim_angle: float) -> List[HitscanBeam]:
+    def fire(self, firing_player: Any, aim_angle: float) -> List[HitscanBeam]:
         """
         :param firing_position: the position that the weapon is fired at
         :param aim_angle: the angle that the weapon is fired at

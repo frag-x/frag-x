@@ -1,3 +1,4 @@
+from typing import Tuple
 import math, pygame
 import game_engine_constants
 
@@ -6,14 +7,14 @@ import game_engine_constants
 class Body:
     """An object that moves within a map, it has constant acceleration"""
 
-    def __init__(self, start_pos, radius, friction):
+    def __init__(self, start_pos: Tuple[float, float], radius: float, friction: float):
         self.position = pygame.math.Vector2(start_pos)
         self.previous_position = (
             None  # This represents the position of the player of the previous frame
         )
         self.radius = radius
         # mass is equal to area
-        self.mass = math.pi * (self.radius ** 2)
+        self.mass = math.pi * (self.radius**2)
 
         self.velocity = pygame.math.Vector2(0, 0)
 
@@ -26,11 +27,17 @@ class Body:
 
 
 class ConstantVelocityBody(Body):
-    def __init__(self, start_pos, radius, friction, velocity: pygame.math.Vector2):
+    def __init__(
+        self,
+        start_pos: Tuple[float, float],
+        radius: float,
+        friction: float,
+        velocity: pygame.math.Vector2,
+    ):
         super().__init__(start_pos, radius, friction)
         self.velocity = velocity
 
-    def step(self, delta_time: float):
+    def step(self, delta_time: float) -> None:
         # Everything is measured per second
         delta_time /= 1000
         self.previous_position = pygame.math.Vector2(self.position.x, self.position.y)
@@ -38,11 +45,17 @@ class ConstantVelocityBody(Body):
 
 
 class ConstantAccelerationBody(Body):
-    def __init__(self, start_pos, radius, friction, acceleration):
+    def __init__(
+        self,
+        start_pos: Tuple[float, float],
+        radius: float,
+        friction: float,
+        acceleration: float,
+    ):
         super().__init__(start_pos, radius, friction)
         self.acceleration = acceleration
 
-    def step(self, movement_vector: pygame.math.Vector2, delta_time: float):
+    def step(self, movement_vector: pygame.math.Vector2, delta_time: float) -> None:
         delta_time /= 1000  # TODO this is arbitrary and bad
 
         self.previous_position = pygame.math.Vector2(self.position.x, self.position.y)

@@ -9,7 +9,7 @@ from client_instance import ClientInstance
 from comms.message import ServerJoinMessage
 
 
-def parse_args():
+def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser()
     parser.add_argument(
         "-i",
@@ -87,7 +87,7 @@ def initialize_network(
         raise message.UnknownMessageTypeError
 
 
-def run_client(args) -> None:
+def run_client(args: argparse.Namespace) -> None:
     """
     Starts a client
 

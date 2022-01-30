@@ -2,10 +2,10 @@ import math
 
 import pygame
 
-from body import ConstantVelocityBody
 import weapons.constants
 from weapons.weapon import Weapon
 from simulation_object.rocket import Rocket
+from typing import Any
 
 
 class RocketLauncher(Weapon):
@@ -13,10 +13,11 @@ class RocketLauncher(Weapon):
     A rocket launcher is a weapon which shoots rockets
     """
 
-    def __init__(self):
+    def __init__(self) -> None:
         super().__init__(fire_rate_hz=weapons.constants.ROCKET_LAUNCHER_FIRE_RATE_HZ)
 
-    def fire(self, firing_player, aim_angle: float) -> Rocket:
+    # NOTE: firing player can't be more strictly typed without creating a dependancy cycle
+    def fire(self, firing_player: Any, aim_angle: float) -> Rocket:
         """
         Return a fired rocket
         :param firing_player: the player that fired the rocket launcher

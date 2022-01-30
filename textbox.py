@@ -1,8 +1,9 @@
 import pygame
+from typing import List
 
 
 class TextInputBox:
-    def __init__(self, x, y, w, font):
+    def __init__(self, x: int, y: int, w: int, font: pygame.font.Font) -> None:
         self.color = (255, 255, 255)
         self.backcolor = None
         self.pos = (x, y)
@@ -13,7 +14,7 @@ class TextInputBox:
         self.rect = None
         self.render_text()
 
-    def render_text(self):
+    def render_text(self) -> None:
         t_surf = self.font.render(self.text, True, self.color, self.backcolor)
         self.image = pygame.Surface(
             (max(self.width, t_surf.get_width() + 10), t_surf.get_height() + 10),
@@ -30,7 +31,7 @@ class TextInputBox:
         )
         self.rect = self.image.get_rect(topleft=self.pos)
 
-    def update(self, event_list):
+    def update(self, event_list: List[pygame.event.Event]) -> None:
         for event in event_list:
             if event.type == pygame.KEYDOWN:
                 if event.key == pygame.K_BACKSPACE:

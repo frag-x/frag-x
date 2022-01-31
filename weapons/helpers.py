@@ -4,10 +4,8 @@ import pygame.math
 
 import game_engine_constants
 
-from typing import Tuple
 
-
-def polar_to_cartesian(radius: float, angle: float) -> Tuple[float, float]:
+def polar_to_cartesian(radius: float, angle: float) -> tuple[float, float]:
     return math.cos(angle) * radius, math.sin(angle) * radius
 
 
@@ -15,7 +13,7 @@ def get_sign(num: float) -> int:
     return 1 if num >= 0 else -1
 
 
-def point_within_map(point: Tuple[float, float]) -> bool:
+def point_within_map(point: tuple[float, float]) -> bool:
     x_valid = 0 <= point[0] <= game_engine_constants.MAP_DIM_X
     y_valid = 0 <= point[1] <= game_engine_constants.MAP_DIM_Y
     return x_valid and y_valid

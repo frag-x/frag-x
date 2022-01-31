@@ -1,4 +1,4 @@
-from typing import Tuple, Any
+from typing import Any
 
 import game_engine_constants
 import math
@@ -11,7 +11,7 @@ import pygame.math
 import game_engine_constants
 
 
-def polar_to_cartesian(radius: int, angle: float) -> Tuple[float, float]:
+def polar_to_cartesian(radius: int, angle: float) -> tuple[float, float]:
     return math.cos(angle) * radius, math.sin(angle) * radius
 
 
@@ -45,12 +45,12 @@ def clamp(val: float, min_val: float, max_val: float) -> float:
     return min(max(val, min_val), max_val)
 
 
-def tuple_add(t0: Tuple[int, int], t1: Tuple[int, int]) -> Tuple[int, int]:
+def tuple_add(t0: tuple[int, int], t1: tuple[int, int]) -> tuple[int, int]:
     return (int(t0[0] + t1[0]), int(t0[1] + t1[1]))
 
 
 # NOTE: beam can't be more strongly typed without an import cycle
-def part_of_beam(point: Tuple[float, float], beam: Any) -> bool:
+def part_of_beam(point: tuple[float, float], beam: Any) -> bool:
     """Given a point on the line defined by the beams line segment,
     check if the point is part of the line segment"""
     x, y = point[0], point[1]
@@ -71,7 +71,7 @@ def copy_vector(v: pygame.math.Vector2) -> pygame.math.Vector2:
 
 
 # NOTE: pmg can't be typed more strictly than Any because it would lead to a dependency cycle
-def valid_2d_index_for_partitioned_map_grid(idx: Tuple[int, int], pmg: Any) -> bool:
+def valid_2d_index_for_partitioned_map_grid(idx: tuple[int, int], pmg: Any) -> bool:
     x, y = idx
     return 0 <= x <= pmg.num_x_partitions - 1 and 0 <= y <= pmg.num_y_partitions - 1
 
@@ -86,7 +86,7 @@ def translate_point_for_camera(
 
 def get_partition_index(
     partition_width: int, partition_height: int, position: pygame.math.Vector2
-) -> Tuple[int, int]:
+) -> tuple[int, int]:
     partition_idx_x = int(position[0] // partition_width)
     partition_idx_y = int(position[1] // partition_height)
     return partition_idx_x, partition_idx_y

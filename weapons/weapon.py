@@ -1,5 +1,5 @@
 from abc import ABC, abstractmethod
-from typing import List, Any
+from typing import Any
 import pygame
 import pygame.math
 from simulation_object.hitscan_beam import HitscanBeam
@@ -45,7 +45,7 @@ class HitscanWeapon(Weapon, ABC):
 
     # NOTE: firing player can't be more strictly typed without creating a dependancy cycle
     @abstractmethod
-    def fire(self, firing_player: Any, aim_angle: float) -> List[HitscanBeam]:
+    def fire(self, firing_player: Any, aim_angle: float) -> list[HitscanBeam]:
         """
         :param firing_position: the position that the weapon is fired at
         :param aim_angle: the angle that the weapon is fired at

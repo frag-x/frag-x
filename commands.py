@@ -1,17 +1,17 @@
-from typing import Callable, List, Any, Tuple, Union
+from typing import Callable, Any
 from dataclasses import dataclass
 from comms.message import PlayerTextMessage
 from comms import network
 
 
-def is_command(message: Union[str, Any]) -> bool:
+def is_command(message: str | Any) -> bool:
     return bool(message) and message[0] == "/"
 
 
 @dataclass
 class Command:
     callable: Callable
-    arg_types: List[Any]
+    arg_types: list[Any]
 
 
 class CommandRunner:
@@ -25,7 +25,7 @@ class CommandRunner:
             "quit": Command(callable=self.quit, arg_types=[]),
         }
 
-    def parse_command(self, command: str) -> Tuple[str, List[Any]]:
+    def parse_command(self, command: str) -> tuple[str, list[Any]]:
         """
         Attempt to parse the full_command
         """
@@ -43,13 +43,13 @@ class CommandRunner:
         expected_arg_types = self.command_to_action[command_name].arg_types
         assert len(args) == len(expected_arg_types)  # type: ignore
 
-        arg_list: List[Any] = []
+        arg_list: list[Any] = []
         for expected_arg_type, arg in list(zip(expected_arg_types, args)):  # type: ignore
             arg_list.append(expected_arg_type(arg))  # type: ignore
 
         return command_name, arg_list
 
-    def try_command(self, command: Union[str, Any]) -> None:
+    def try_command(self, command: str | Any) -> None:
         """Given a command attempt to run it"""
         try:
             command_name, args = self.parse_command(command)
@@ -58,7 +58,7 @@ class CommandRunner:
         except Exception:
             self.client_instance.user_chat_box.add_message(f"Command {command} failed!")
 
-    def set_sensitivity(self, args: List[float]) -> None:
+    def set_sensitivity(self, args: list[float]) -> None:
         sensitivity = args[0]
         self.client_instance.set_sensitivity(sensitivity)
         self.client_instance.user_chat_box.add_message(
@@ -73,7 +73,7 @@ class CommandRunner:
         )
         network.send(self.client_instance.socket, text_message)
 
-    def map_vote(self, args: List[str]) -> None:
+    def map_vote(self, args: list[str]) -> None:
         map_vote = args[0]
         self.client_instance.map_vote = map_vote
         # TODO this is bad

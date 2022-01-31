@@ -19,7 +19,7 @@ import socket
 import map_loading
 import math
 from chatbox import ChatBox
-from typing import Optional, cast
+from typing import cast
 import simulation_object.constants
 
 
@@ -65,9 +65,9 @@ class ClientInstance:
         self.command_runner = commands.CommandRunner(self)
 
         self.ready = False
-        self.map_vote: Optional[str] = None
+        self.map_vote: str | None = None
 
-        self.simulation_state: Optional[SimulationStateMessage] = None
+        self.simulation_state: SimulationStateMessage | None = None
 
         self.map = map_loading.load_map(self.map_name)
 

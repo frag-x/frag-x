@@ -1,5 +1,4 @@
 import pygame
-from typing import List
 
 
 class TextInputBox:
@@ -31,7 +30,7 @@ class TextInputBox:
         )
         self.rect = self.image.get_rect(topleft=self.pos)
 
-    def update(self, event_list: List[pygame.event.Event]) -> None:
+    def update(self, event_list: list[pygame.event.Event]) -> None:
         for event in event_list:
             if event.type == pygame.KEYDOWN:
                 if event.key == pygame.K_BACKSPACE:

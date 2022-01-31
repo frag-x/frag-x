@@ -1,5 +1,3 @@
-from typing import List, Set, Union
-
 import socket
 import argparse
 
@@ -86,8 +84,8 @@ def initialize_socket() -> socket.socket:
 
 
 def load_requested_map(
-    map_name: Union[str, None],
-    invalid_map_names: Set[str],
+    map_name: str | None,
+    invalid_map_names: set[str],
     input_messages: Queue[message.Message],
     output_messages: Queue[message.Message],
 ) -> bool:
@@ -131,7 +129,7 @@ def run_server(args: argparse.Namespace) -> None:
     )
     gss_t.start()
 
-    invalid_map_names: Set[str] = set()
+    invalid_map_names: set[str] = set()
     while True:
         keep_map, requested_map_name = global_simulation.SIMULATION.step()
         if not keep_map:

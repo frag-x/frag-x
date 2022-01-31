@@ -1,4 +1,3 @@
-from typing import Tuple
 import math, pygame
 import game_engine_constants
 
@@ -7,7 +6,7 @@ import game_engine_constants
 class Body:
     """An object that moves within a map, it has constant acceleration"""
 
-    def __init__(self, start_pos: Tuple[float, float], radius: float, friction: float):
+    def __init__(self, start_pos: tuple[float, float], radius: float, friction: float):
         self.position = pygame.math.Vector2(start_pos)
         self.previous_position = (
             None  # This represents the position of the player of the previous frame
@@ -29,7 +28,7 @@ class Body:
 class ConstantVelocityBody(Body):
     def __init__(
         self,
-        start_pos: Tuple[float, float],
+        start_pos: tuple[float, float],
         radius: float,
         friction: float,
         velocity: pygame.math.Vector2,
@@ -47,7 +46,7 @@ class ConstantVelocityBody(Body):
 class ConstantAccelerationBody(Body):
     def __init__(
         self,
-        start_pos: Tuple[float, float],
+        start_pos: tuple[float, float],
         radius: float,
         friction: float,
         acceleration: float,

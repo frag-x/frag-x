@@ -3,17 +3,16 @@ import random
 import pygame
 import game_engine_constants
 import helpers
-from typing import List, Optional, Tuple
 
 
-def get_pixels(filename: str) -> List[List[int]]:
+def get_pixels(filename: str) -> list[list[int]]:
     img = Image.open(filename)
     w, h = img.size
     pix = list(img.getdata())
     return [pix[n : n + w] for n in range(0, w * h, w)]
 
 
-def create_blank_map(filename: str) -> List[List[None]]:
+def create_blank_map(filename: str) -> list[list[None]]:
     img = Image.open(filename)
     w, h = img.size
     return [[None for _ in range(w)] for _ in range(h)]
@@ -23,7 +22,7 @@ class Tile:
     """A tile is a block in the game, it can represent something solid or empty"""
 
     def __init__(
-        self, x_idx: int, y_idx: int, color: Tuple[int, int, int, int]
+        self, x_idx: int, y_idx: int, color: tuple[int, int, int, int]
     ) -> None:
         """
         x_idx and y_idx represent positions in the non-scaled version of the map
@@ -52,7 +51,7 @@ class Spawn(Tile):
         self,
         x: int,
         y: int,
-        color: Tuple[int, int, int, int] = game_engine_constants.SPAWN_COLOR,
+        color: tuple[int, int, int, int] = game_engine_constants.SPAWN_COLOR,
     ):
         super().__init__(x, y, color)
 
@@ -62,7 +61,7 @@ class Wall(Tile):
         self,
         x: int,
         y: int,
-        color: Tuple[int, int, int, int] = pygame.color.THECOLORS["grey"],
+        color: tuple[int, int, int, int] = pygame.color.THECOLORS["grey"],
     ):
         super().__init__(x, y, color)
 
@@ -72,7 +71,7 @@ class BoundingWall(Wall):
         self,
         x: int,
         y: int,
-        color: Tuple[int, int, int, int] = pygame.color.THECOLORS["grey"],
+        color: tuple[int, int, int, int] = pygame.color.THECOLORS["grey"],
     ):
         super().__init__(x, y, color)
         self.visible_sides = None
@@ -81,11 +80,11 @@ class BoundingWall(Wall):
 # TODO make this taken in something other than filename for input so that ineheritance will work.
 # Make it takin a list of pixels and then the partitioned version will call this on the chunked thing.
 class MapGrid:
-    def __init__(self, pixel_map: List[List[int]]):
+    def __init__(self, pixel_map: list[list[int]]):
         self.pixel_map = pixel_map
-        self.walls: List[Wall] = []
-        self.spawns: List[Spawn] = []
-        self.bounding_walls: List[BoundingWall] = []
+        self.walls: list[Wall] = []
+        self.spawns: list[Spawn] = []
+        self.bounding_walls: list[BoundingWall] = []
         self.base_height = len(pixel_map)
         self.base_width = len(pixel_map[0])
 
@@ -175,7 +174,7 @@ class PMGManager:
 class PartitionedMapGrid(MapGrid):
     def __init__(
         self,
-        pixel_map: List[List[int]],
+        pixel_map: list[list[int]],
         partition_width_base: int,
         partition_height_base: int,
     ):
@@ -260,10 +259,10 @@ class PartitionedMapGrid(MapGrid):
 class MapGridPartition:
     def __init__(
         self,
-        pos: Tuple[int, int],
+        pos: tuple[int, int],
         partition_width_base: int,
         partition_height_base: int,
-        partition_data: List[List[Optional[Wall]]],
+        partition_data: list[list[Wall | None]],
         randomly_color_partition: bool = False,
     ):
         self.pos = (
@@ -275,7 +274,7 @@ class MapGridPartition:
         self.rect = pygame.Rect(
             self.pos[0], self.pos[1], self.partition_width, self.partition_height
         )
-        self.players: List = []
+        self.players: list = []
         self.walls = []
         self.spawns = []
         self.bounding_walls = []
@@ -295,7 +294,7 @@ class MapGridPartition:
                     self.spawns.append(data)
 
 
-def is_wall(x: int, y: int, pixel_map: List[List[int]]) -> bool:
+def is_wall(x: int, y: int, pixel_map: list[list[int]]) -> bool:
     color = pixel_map[y][x]
     return color == (0, 0, 0, 255) or color == (
         0,
@@ -306,17 +305,17 @@ def is_wall(x: int, y: int, pixel_map: List[List[int]]) -> bool:
     # have it's own constants.
 
 
-def is_spawn(x: int, y: int, pixel_map: List[List[int]]) -> bool:
+def is_spawn(x: int, y: int, pixel_map: list[list[int]]) -> bool:
     color = pixel_map[y][x]
     return color == (100, 100, 100, 255) or color == (100, 100, 100)
 
 
-def is_empty(x: int, y: int, pixel_map: List[List[int]]) -> bool:
+def is_empty(x: int, y: int, pixel_map: list[list[int]]) -> bool:
     color = pixel_map[y][x]
     return color == (255, 255, 255, 255) or color == (255, 255, 255)
 
 
-def is_bounding(x: int, y: int, pixel_map: List[List[int]]) -> bool:
+def is_bounding(x: int, y: int, pixel_map: list[list[int]]) -> bool:
     # Assuming pixel map non-empty
     # minus one because of indices
     if is_wall(x, y, pixel_map):
@@ -336,7 +335,7 @@ def is_bounding(x: int, y: int, pixel_map: List[List[int]]) -> bool:
         return False
 
 
-def classify_bounding_walls(bounding_walls: List[BoundingWall], filename: str) -> None:
+def classify_bounding_walls(bounding_walls: list[BoundingWall], filename: str) -> None:
     # construct simple representation
     blank_map = create_blank_map(filename)
     for b_wall in bounding_walls:

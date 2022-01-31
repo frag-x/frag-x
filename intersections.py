@@ -1,4 +1,4 @@
-from typing import Optional, Tuple, Any, Set
+from typing import Any
 
 import game_engine_constants, helpers
 import pygame, math
@@ -14,7 +14,7 @@ def get_closest_intersecting_object_in_pmg(
     partitioned_map_grid: PartitionedMapGrid,
     beam: Any,
     applies_force_to_player: bool,
-) -> Tuple[Optional[pygame.math.Vector2], Optional[SimulationObject]]:
+) -> tuple[pygame.math.Vector2 | None, SimulationObject | None]:
     """
     Given a beam that is passing through a given map fired by player , find the closest element to it which is not player
 
@@ -31,7 +31,7 @@ def get_closest_intersecting_object_in_pmg(
         entity: BoundingWall,
         closest_hit: pygame.math.Vector2,
         closest_entity: BoundingWall,
-    ) -> Tuple[pygame.math.Vector2, BoundingWall]:
+    ) -> tuple[pygame.math.Vector2, BoundingWall]:
 
         if closest_hit is None:
             closest_hit = hit
@@ -66,7 +66,7 @@ def get_closest_intersecting_object_in_pmg(
 # NOTE: beam can't be typed more strictly without creating a dependancy cycle
 def get_intersecting_partitions(
     partitioned_map_grid: PartitionedMapGrid, beam: Any
-) -> Set:
+) -> set:
     """
     Given a beam return the partitions that this beam intersects with
 
@@ -357,7 +357,7 @@ def get_intersecting_partitions(
 
 def get_closest_intersecting_object_in_partition(
     player: Any, beam: Any, pmg: PartitionedMapGrid, applies_force_to_player: bool
-) -> Tuple[pygame.math.Vector2, BoundingWall]:
+) -> tuple[pygame.math.Vector2, BoundingWall]:
     """
     Given a partition that this beam is passing through, find the closest element in the partition
     that the beam intersects.
@@ -382,7 +382,7 @@ def get_closest_intersecting_object_in_partition(
         entity: BoundingWall,
         closest_hit: pygame.math.Vector2,
         closest_entity: BoundingWall,
-    ) -> Tuple[pygame.math.Vector2, BoundingWall]:
+    ) -> tuple[pygame.math.Vector2, BoundingWall]:
 
         if closest_hit is None:
             closest_hit = hit

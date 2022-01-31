@@ -1,4 +1,4 @@
-from typing import cast, Tuple
+from typing import cast
 import socket
 import pygame
 from comms import network, message
@@ -68,7 +68,7 @@ def server_listener(
 
 def initialize_network(
     ip_address: str, port: int
-) -> Tuple[socket.socket, ServerJoinMessage]:
+) -> tuple[socket.socket, ServerJoinMessage]:
     """
     Makes an initial connection with the server, returns the socket it is connected through
     and the join message from the server

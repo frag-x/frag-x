@@ -1,6 +1,5 @@
 from uuid import UUID
 from network_object.player import PlayerNetworkObject
-from typing import List
 import pygame
 
 
@@ -21,7 +20,7 @@ class Leaderboard:
     def _make_leaderboard_row(self, player: PlayerNetworkObject) -> str:
         return f"{str(player.uuid)[:4]}: {player.num_frags}"
 
-    def render(self, our_player_id: UUID, players: List[PlayerNetworkObject]) -> None:
+    def render(self, our_player_id: UUID, players: list[PlayerNetworkObject]) -> None:
         players.sort(key=lambda player: player.num_frags, reverse=True)
 
         height = self.rect.y

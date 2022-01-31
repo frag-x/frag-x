@@ -1,4 +1,3 @@
-from typing import Tuple, List
 from weapons.weapon import HitscanBeam
 import pygame
 import random
@@ -20,7 +19,7 @@ from weapons.shotgun import ShotGun
 
 
 class Player(SimulationObject, body.ConstantAccelerationBody):
-    def __init__(self, start_position: Tuple[float, float], socket: socket.socket):
+    def __init__(self, start_position: tuple[float, float], socket: socket.socket):
         super().__init__()
         super(ABC, self).__init__(
             start_position, game_engine_constants.PLAYER_RADIUS, 0.05, 1500
@@ -47,7 +46,7 @@ class Player(SimulationObject, body.ConstantAccelerationBody):
         ]
         self.weapon_selection = 0
 
-        self.beams: List[HitscanBeam] = []
+        self.beams: list[HitscanBeam] = []
 
         self.color = random.choice(simulation_object.constants.PLAYER_COLORS)
 

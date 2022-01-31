@@ -1,11 +1,10 @@
 from collections import Counter
 from queue import Queue
-from typing import List, cast, Tuple, Dict, Union
+from typing import cast
 
 from comms.message import SimulationStateMessage
 from map_loading import BoundingWall
 from uuid import UUID
-from typing import Optional
 
 import pygame
 import socket
@@ -31,7 +30,7 @@ class Simulation:
         map_name: str,
         input_messages: Queue,
         output_messages: Queue,
-        players: Dict[UUID, Player] = {},
+        players: dict[UUID, Player] = {},
     ):
         self.map_name = map_name
         self.map = map_loading.load_map(map_name)
@@ -44,8 +43,8 @@ class Simulation:
         for player in players.values():
             player.reset(random.choice(self.map.spawns).position)
 
-        self.rockets: Dict[UUID, Rocket] = {}
-        self.hitscan_beams: Dict[UUID, HitscanBeam] = {}
+        self.rockets: dict[UUID, Rocket] = {}
+        self.hitscan_beams: dict[UUID, HitscanBeam] = {}
 
         self.type_to_dict = {
             Player: self.players,
@@ -127,12 +126,12 @@ class Simulation:
     def remove_player(self, player: SimulationObject) -> None:
         self.deregister_object(player)
 
-    def get_players(self) -> List[Player]:
+    def get_players(self) -> list[Player]:
         return list(self.players.values())
 
     def get_partition(
         self, position: pygame.math.Vector2
-    ) -> Union[bool, map_loading.MapGridPartition]:
+    ) -> bool | map_loading.MapGridPartition:
         """
         Return the partition that the position is within, if this position is outside of the map then return False
 
@@ -186,7 +185,7 @@ class Simulation:
 
     def get_colliding_elements(
         self, body: Body, partition: map_loading.MapGridPartition
-    ) -> Tuple[List[BoundingWall], List[Player]]:
+    ) -> tuple[list[BoundingWall], list[Player]]:
         """
         Check if the given body is colliding with anything in this partition, if the player is colliding
         then return what they are colliding with
@@ -211,9 +210,7 @@ class Simulation:
 
         return colliding_b_walls, colliding_players
 
-    def _enact_player_requests(
-        self, players: List[Player]
-    ) -> Tuple[bool, Optional[str]]:
+    def _enact_player_requests(self, players: list[Player]) -> tuple[bool, str | None]:
         if players:
             if not self.active and all(player.ready for player in players):
                 self.active = True
@@ -230,7 +227,7 @@ class Simulation:
                 return False, cast(str, top_map_vote)
         return True, None
 
-    def step(self) -> Tuple[bool, Optional[str]]:
+    def step(self) -> tuple[bool, str | None]:
         delta_time = self.clock.tick(game_engine_constants.SERVER_TICK_RATE_HZ)
         self.hitscan_beams.clear()
 

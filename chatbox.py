@@ -1,4 +1,3 @@
-from typing import Dict, List
 import enum
 
 import pygame
@@ -35,8 +34,8 @@ class ChatBox:
         self.rect = pygame.Rect(x, y, width, height)
         self.font = font
         self.time_on_screen = time_on_screen
-        self.message_to_time: Dict[pygame.surface.Surface, float] = {}
-        self.messages: List[pygame.surface.Surface] = []
+        self.message_to_time: dict[pygame.surface.Surface, float] = {}
+        self.messages: list[pygame.surface.Surface] = []
         self.curr_height = 0
 
     def add_message(self, message: str) -> None:

@@ -145,9 +145,12 @@ class Simulation:
 
         # TODO FIX
 
-        fixed_index = (partition_idx_x % (self.map.num_x_partitions), partition_idx_y % (self.map.num_y_partitions))
+        fixed_index = (
+            partition_idx_x % (self.map.num_x_partitions),
+            partition_idx_y % (self.map.num_y_partitions),
+        )
 
-        #if helpers.valid_2d_index_for_partitioned_map_grid(index, self.map):
+        # if helpers.valid_2d_index_for_partitioned_map_grid(index, self.map):
         #    return self.map.partitioned_map[partition_idx_y][partition_idx_x]
         return self.map.partitioned_map[fixed_index[1]][fixed_index[0]]
 
@@ -174,7 +177,7 @@ class Simulation:
             self.map.partition_width, self.map.partition_height, position
         )
 
-        # TEMP FIX FIX THIS 
+        # TEMP FIX FIX THIS
         partition_idx_x %= len(self.map.partitioned_map[0])
         partition_idx_y %= len(self.map.partitioned_map)
 

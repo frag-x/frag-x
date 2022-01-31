@@ -1,0 +1,12 @@
+---
+name: Lint with Black
+on:
+  push:
+    branches: ["**"]
+jobs:
+  lint:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - name: Lint with Black
+        uses: psf/black@stable

@@ -73,7 +73,7 @@ def copy_vector(v):
 def valid_2d_index_for_partitioned_map_grid(idx, pmg):
     x, y = idx
     return 0 <= x <= pmg.num_x_partitions - 1 and 0 <= y <= pmg.num_y_partitions - 1
-    
+
 
 def translate_point_for_camera(player, point: pygame.math.Vector2):
     offset = game_engine_constants.SCREEN_CENTER_POINT - player.position

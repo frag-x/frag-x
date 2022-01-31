@@ -3,6 +3,7 @@ from network_object.network_object import NetworkObject
 
 import pygame
 
+
 @dataclass
 class HitscanBeamNetworkObject(NetworkObject):
     """Represents the server-side state of a beam."""

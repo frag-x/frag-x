@@ -1,11 +1,13 @@
 import pygame, math, time
 import logging
+from helpers import clamp
 
 import game_engine_constants
 from body import Body
+from map_loading import BoundingWall
 
 
-def elastic_collision_update(b1, b2):
+def elastic_collision_update(b1: Body, b2: Body) -> None:
     """
     simulate an elastic collision
 
@@ -46,17 +48,13 @@ def bodies_colliding(body_1: Body, body_2: Body) -> bool:
     return center_distance <= min_distance
 
 
-def clamp(val, min_val, max_val):
-    return min(max(val, min_val), max_val)
-
-
-def is_colliding_with_wall(body, b_wall):
+def is_colliding_with_wall(body: Body, b_wall: BoundingWall) -> bool:
     """Return if the body is colliding with a wall"""
     closest_v = get_closest_point_on_wall(body, b_wall)
     return (closest_v - body.position).magnitude() <= body.radius
 
 
-def get_closest_point_on_wall(body, b_wall) -> pygame.math.Vector2:
+def get_closest_point_on_wall(body: Body, b_wall: BoundingWall) -> pygame.math.Vector2:
     """Return the closest point to the body on this wall"""
     top, left, bottom, right = (
         b_wall.rect.top,
@@ -71,7 +69,7 @@ def get_closest_point_on_wall(body, b_wall) -> pygame.math.Vector2:
     return closest_v
 
 
-def simulate_collision(body, b_wall):
+def simulate_collision(body: Body, b_wall: BoundingWall) -> None:
 
     start_collision_simulation_time = time.time()
 
@@ -331,28 +329,48 @@ def simulate_collision(body, b_wall):
 
 
 # TODO combine functionality by realizing you can always do body.velocity.[xy] *= 1
-def right_reflect(body, unstick_amount, closest_v, velocity_reduction_multiplier):
+def right_reflect(
+    body: Body,
+    unstick_amount: float,
+    closest_v: pygame.math.Vector2,
+    velocity_reduction_multiplier: float,
+) -> None:
     logging.info("right")
     body.velocity.x *= -1 * velocity_reduction_multiplier
     # Unstick player
     body.position = closest_v + pygame.math.Vector2(unstick_amount, 0)
 
 
-def left_reflect(body, unstick_amount, closest_v, velocity_reduction_multiplier):
+def left_reflect(
+    body: Body,
+    unstick_amount: float,
+    closest_v: pygame.math.Vector2,
+    velocity_reduction_multiplier: float,
+) -> None:
     logging.info("left")
     body.velocity.x *= -1 * velocity_reduction_multiplier
     # Unstick player
     body.position = closest_v + pygame.math.Vector2(-unstick_amount, 0)
 
 
-def top_reflect(body, unstick_amount, closest_v, velocity_reduction_multiplier):
+def top_reflect(
+    body: Body,
+    unstick_amount: float,
+    closest_v: pygame.math.Vector2,
+    velocity_reduction_multiplier: float,
+) -> None:
     logging.info("top")
     body.velocity.y *= -1 * velocity_reduction_multiplier
     # Unstick player
     body.position = closest_v + pygame.math.Vector2(0, -unstick_amount)
 
 
-def bottom_reflect(body, unstick_amount, closest_v, velocity_reduction_multiplier):
+def bottom_reflect(
+    body: Body,
+    unstick_amount: float,
+    closest_v: pygame.math.Vector2,
+    velocity_reduction_multiplier: float,
+) -> None:
     logging.info("bottom")
     body.velocity.y *= -1 * velocity_reduction_multiplier
     # Unstick player

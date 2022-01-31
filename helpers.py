@@ -1,9 +1,8 @@
-from typing import Tuple
+from typing import Any
 
 import game_engine_constants
 import math
 import pygame
-
 
 import math
 
@@ -12,15 +11,15 @@ import pygame.math
 import game_engine_constants
 
 
-def polar_to_cartesian(radius, angle):
+def polar_to_cartesian(radius: int, angle: float) -> tuple[float, float]:
     return math.cos(angle) * radius, math.sin(angle) * radius
 
 
-def get_sign(num) -> int:
+def get_sign(num: float) -> int:
     return 1 if num >= 0 else -1
 
 
-def point_within_map(point) -> bool:
+def point_within_map(point: pygame.math.Vector2) -> bool:
     x_valid = 0 <= point[0] <= game_engine_constants.MAP_DIM_X
     y_valid = 0 <= point[1] <= game_engine_constants.MAP_DIM_Y
     return x_valid and y_valid
@@ -42,15 +41,16 @@ def get_slope_from_deltas(delta_x: float, delta_y: float) -> float:
     return slope
 
 
-def clamp(val, min_val, max_val):
+def clamp(val: float, min_val: float, max_val: float) -> float:
     return min(max(val, min_val), max_val)
 
 
-def tuple_add(t0, t1):
+def tuple_add(t0: tuple[int, int], t1: tuple[int, int]) -> tuple[int, int]:
     return (int(t0[0] + t1[0]), int(t0[1] + t1[1]))
 
 
-def part_of_beam(point, beam):
+# NOTE: beam can't be more strongly typed without an import cycle
+def part_of_beam(point: tuple[float, float], beam: Any) -> bool:
     """Given a point on the line defined by the beams line segment,
     check if the point is part of the line segment"""
     x, y = point[0], point[1]
@@ -66,35 +66,31 @@ def part_of_beam(point, beam):
     return lower_bound < value < upper_bound
 
 
-def copy_vector(v):
+def copy_vector(v: pygame.math.Vector2) -> pygame.math.Vector2:
     return pygame.math.Vector2(v.x, v.y)
 
 
-def valid_2d_index_for_partitioned_map_grid(idx, pmg):
+# NOTE: pmg can't be typed more strictly than Any because it would lead to a dependency cycle
+def valid_2d_index_for_partitioned_map_grid(idx: tuple[int, int], pmg: Any) -> bool:
     x, y = idx
     return 0 <= x <= pmg.num_x_partitions - 1 and 0 <= y <= pmg.num_y_partitions - 1
 
 
-def translate_point_for_camera(player, point: pygame.math.Vector2):
+# NOTE: player can't be typed more strictly without creating a dependency cycle
+def translate_point_for_camera(
+    player: Any, point: pygame.math.Vector2
+) -> pygame.math.Vector2:
     offset = game_engine_constants.SCREEN_CENTER_POINT - player.position
     return point + offset
 
 
-def get_partition_index(partition_width, partition_height, position) -> Tuple[int, int]:
+def get_partition_index(
+    partition_width: int, partition_height: int, position: pygame.math.Vector2
+) -> tuple[int, int]:
     partition_idx_x = int(position[0] // partition_width)
     partition_idx_y = int(position[1] // partition_height)
     return partition_idx_x, partition_idx_y
 
 
-def recv_exactly(socket, size):
-    data = b""
-    while len(data) < size:
-        chunk = socket.recv(size - len(data))
-        if chunk == b"":
-            raise IOError("...something")
-        data += chunk
-    return data
-
-
-def magnitude(v):
-    return math.sqrt(v.x ** 2 + v.y ** 2)
+def magnitude(v: pygame.math.Vector2) -> float:
+    return math.sqrt(v.x**2 + v.y**2)

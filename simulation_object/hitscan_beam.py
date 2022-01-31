@@ -1,4 +1,4 @@
-from dataclasses import dataclass
+from typing import Any
 import pygame
 
 import global_simulation
@@ -14,14 +14,15 @@ import weapons.constants
 class HitscanBeam(SimulationObject):
     """A hitscan beam is a shot from a weapon"""
 
+    # NOTE: player can't be typed more strictly without creating a dependancy cycle
     def __init__(
         self,
-        player,
+        player: Any,
         start_point: pygame.math.Vector2,
         end_point: pygame.math.Vector2,
-        collision_force=weapons.constants.RAILGUN_COLLISION_FORCE,
-        damage=weapons.constants.RAILGUN_DAMAGE,
-        applies_force_to_player=False,
+        collision_force: int = weapons.constants.RAILGUN_COLLISION_FORCE,
+        damage: int = weapons.constants.RAILGUN_DAMAGE,
+        applies_force_to_player: bool = False,
     ):
         """
         Set up a hitscan beam which is owned by a player
@@ -63,7 +64,7 @@ class HitscanBeam(SimulationObject):
             end_point=self.end_point,
         )
 
-    def step(self, delta_time: float):
+    def step(self, _: float) -> None:
         (
             closest_hit,
             closest_entity,

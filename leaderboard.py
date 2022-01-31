@@ -1,19 +1,26 @@
 from uuid import UUID
 from network_object.player import PlayerNetworkObject
-from typing import List
 import pygame
 
 
 class Leaderboard:
-    def __init__(self, screen, x, y, width, height, font):
+    def __init__(
+        self,
+        screen: pygame.surface.Surface,
+        x: int,
+        y: int,
+        width: int,
+        height: int,
+        font: pygame.font.Font,
+    ):
         self.screen = screen
         self.rect = pygame.Rect(x, y, width, height)
         self.font = font
 
-    def _make_leaderboard_row(self, player: PlayerNetworkObject):
+    def _make_leaderboard_row(self, player: PlayerNetworkObject) -> str:
         return f"{str(player.uuid)[:4]}: {player.num_frags}"
 
-    def render(self, our_player_id: UUID, players: List[PlayerNetworkObject]):
+    def render(self, our_player_id: UUID, players: list[PlayerNetworkObject]) -> None:
         players.sort(key=lambda player: player.num_frags, reverse=True)
 
         height = self.rect.y

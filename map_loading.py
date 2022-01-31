@@ -3,31 +3,27 @@ import random
 import pygame
 import game_engine_constants
 import helpers
-from typing import List, Optional, Tuple
 
 
-def load_map(map_name):
-    map_fullpath = f"{game_engine_constants.MAP_PREFIX}{map_name}.png"
-    return PartitionedMapGrid(get_pixels(map_fullpath), 10, 10)
-
-
-def get_pixels(filename):
+def get_pixels(filename: str) -> list[list[int]]:
     img = Image.open(filename)
     w, h = img.size
     pix = list(img.getdata())
     return [pix[n : n + w] for n in range(0, w * h, w)]
 
 
-def create_blank_map(filename):
+def create_blank_map(filename: str) -> list[list[None]]:
     img = Image.open(filename)
     w, h = img.size
-    return [[None for x in range(w)] for y in range(h)]
+    return [[None for _ in range(w)] for _ in range(h)]
 
 
 class Tile:
     """A tile is a block in the game, it can represent something solid or empty"""
 
-    def __init__(self, x_idx, y_idx, color):
+    def __init__(
+        self, x_idx: int, y_idx: int, color: tuple[int, int, int, int]
+    ) -> None:
         """
         x_idx and y_idx represent positions in the non-scaled version of the map
         """
@@ -51,17 +47,32 @@ class Space(Tile):
 class Spawn(Tile):
     # we made this a class because in the future we might need to check if there is someone about to spawn here so we might need
     # some attribute called "about to teleport" or something like that.
-    def __init__(self, x, y, color=game_engine_constants.SPAWN_COLOR):
+    def __init__(
+        self,
+        x: int,
+        y: int,
+        color: tuple[int, int, int, int] = game_engine_constants.SPAWN_COLOR,
+    ):
         super().__init__(x, y, color)
 
 
 class Wall(Tile):
-    def __init__(self, x, y, color=pygame.color.THECOLORS["grey"]):
+    def __init__(
+        self,
+        x: int,
+        y: int,
+        color: tuple[int, int, int, int] = pygame.color.THECOLORS["grey"],
+    ):
         super().__init__(x, y, color)
 
 
 class BoundingWall(Wall):
-    def __init__(self, x, y, color=pygame.color.THECOLORS["grey"]):
+    def __init__(
+        self,
+        x: int,
+        y: int,
+        color: tuple[int, int, int, int] = pygame.color.THECOLORS["grey"],
+    ):
         super().__init__(x, y, color)
         self.visible_sides = None
 
@@ -69,11 +80,11 @@ class BoundingWall(Wall):
 # TODO make this taken in something other than filename for input so that ineheritance will work.
 # Make it takin a list of pixels and then the partitioned version will call this on the chunked thing.
 class MapGrid:
-    def __init__(self, pixel_map):
+    def __init__(self, pixel_map: list[list[int]]):
         self.pixel_map = pixel_map
-        self.walls = []
-        self.spawns = []
-        self.bounding_walls = []
+        self.walls: list[Wall] = []
+        self.spawns: list[Spawn] = []
+        self.bounding_walls: list[BoundingWall] = []
         self.base_height = len(pixel_map)
         self.base_width = len(pixel_map[0])
 
@@ -81,7 +92,7 @@ class MapGrid:
         self.width = self.base_width * game_engine_constants.TILE_SIZE
 
         self.map = [
-            [None for x in range(self.base_width)] for y in range(self.base_height)
+            [None for _ in range(self.base_width)] for _ in range(self.base_height)
         ]
 
         self.construct_walls()
@@ -89,31 +100,31 @@ class MapGrid:
         self.classify_bounding_walls()
         self.construct_spawns()
 
-    def construct_walls(self):
+    def construct_walls(self) -> None:
         for y, row in enumerate(self.pixel_map):
-            for x, element in enumerate(row):
+            for x, _ in enumerate(row):
                 if is_wall(x, y, self.pixel_map):
                     w = Wall(x, y, pygame.color.THECOLORS["grey"])
                     self.walls.append(w)
                     self.map[y][x] = w
 
-    def construct_spawns(self):
+    def construct_spawns(self) -> None:
         for y, row in enumerate(self.pixel_map):
-            for x, element in enumerate(row):
+            for x, _ in enumerate(row):
                 if is_spawn(x, y, self.pixel_map):
                     s = Spawn(x, y)
                     self.spawns.append(s)
                     self.map[y][x] = s
 
-    def construct_bounding_walls(self):
+    def construct_bounding_walls(self) -> None:
         for y, row in enumerate(self.pixel_map):
-            for x, element in enumerate(row):
+            for x, _ in enumerate(row):
                 if is_bounding(x, y, self.pixel_map):
                     bw = BoundingWall(x, y, pygame.color.THECOLORS["aquamarine4"])
                     self.bounding_walls.append(bw)
                     self.map[y][x] = bw
 
-    def classify_bounding_walls(self):
+    def classify_bounding_walls(self) -> None:
         # construct simple representation
 
         # Indices max
@@ -161,7 +172,12 @@ class PMGManager:
 
 
 class PartitionedMapGrid(MapGrid):
-    def __init__(self, pixel_map, partition_width_base, partition_height_base):
+    def __init__(
+        self,
+        pixel_map: list[list[int]],
+        partition_width_base: int,
+        partition_height_base: int,
+    ):
         super().__init__(pixel_map)
 
         self.partition_width_base = partition_width_base
@@ -182,12 +198,12 @@ class PartitionedMapGrid(MapGrid):
         self.num_x_partitions = self.base_width // self.partition_width_base
         self.num_y_partitions = self.base_height // self.partition_height_base
         self.partitioned_map = [
-            [None for x in range(self.num_x_partitions)]
-            for y in range(self.num_y_partitions)
+            [None for _ in range(self.num_x_partitions)]
+            for _ in range(self.num_y_partitions)
         ]
         self.collision_partitioned_map = [
-            [None for x in range(self.num_x_partitions)]
-            for y in range(self.num_y_partitions)
+            [None for _ in range(self.num_x_partitions)]
+            for _ in range(self.num_y_partitions)
         ]
         self.partition_map()
 
@@ -198,12 +214,12 @@ class PartitionedMapGrid(MapGrid):
             for spawn in partition.spawns
         ]
 
-    def reset_players_in_partitions(self):
+    def reset_players_in_partitions(self) -> None:
         for row in self.partitioned_map:
             for partition in row:
                 partition.players = []
 
-    def partition_map(self):
+    def partition_map(self) -> None:
         for j in range(0, self.base_height, self.partition_height_base):
             for i in range(0, self.base_width, self.partition_width_base):
 
@@ -243,11 +259,11 @@ class PartitionedMapGrid(MapGrid):
 class MapGridPartition:
     def __init__(
         self,
-        pos: Tuple[int, int],
+        pos: tuple[int, int],
         partition_width_base: int,
         partition_height_base: int,
-        partition_data: List[List[Optional[Wall]]],
-        randomly_color_partition=False,
+        partition_data: list[list[Wall | None]],
+        randomly_color_partition: bool = False,
     ):
         self.pos = (
             pos[0] * game_engine_constants.TILE_SIZE,
@@ -258,7 +274,7 @@ class MapGridPartition:
         self.rect = pygame.Rect(
             self.pos[0], self.pos[1], self.partition_width, self.partition_height
         )
-        self.players: List = []
+        self.players: list = []
         self.walls = []
         self.spawns = []
         self.bounding_walls = []
@@ -278,25 +294,7 @@ class MapGridPartition:
                     self.spawns.append(data)
 
 
-def construct_walls(pixel_map):
-    walls = []
-    for y, row in enumerate(pixel_map):
-        for x, element in enumerate(row):
-            if is_wall(x, y, pixel_map):
-                walls.append(Wall(x, y))
-    return walls
-
-
-def construct_bounding_walls(pixel_map):
-    bounding_walls = []
-    for y, row in enumerate(pixel_map):
-        for x, element in enumerate(row):
-            if is_bounding(x, y, pixel_map):
-                bounding_walls.append(Wall(x, y, pygame.color.THECOLORS["aquamarine4"]))
-    return bounding_walls
-
-
-def is_wall(x, y, pixel_map):
+def is_wall(x: int, y: int, pixel_map: list[list[int]]) -> bool:
     color = pixel_map[y][x]
     return color == (0, 0, 0, 255) or color == (
         0,
@@ -307,17 +305,17 @@ def is_wall(x, y, pixel_map):
     # have it's own constants.
 
 
-def is_spawn(x, y, pixel_map):
+def is_spawn(x: int, y: int, pixel_map: list[list[int]]) -> bool:
     color = pixel_map[y][x]
     return color == (100, 100, 100, 255) or color == (100, 100, 100)
 
 
-def is_empty(x, y, pixel_map):
+def is_empty(x: int, y: int, pixel_map: list[list[int]]) -> bool:
     color = pixel_map[y][x]
     return color == (255, 255, 255, 255) or color == (255, 255, 255)
 
 
-def is_bounding(x, y, pixel_map):
+def is_bounding(x: int, y: int, pixel_map: list[list[int]]) -> bool:
     # Assuming pixel map non-empty
     # minus one because of indices
     if is_wall(x, y, pixel_map):
@@ -332,11 +330,12 @@ def is_bounding(x, y, pixel_map):
                     if is_empty(point_x, point_y, pixel_map):
                         # An empty square
                         return True
+        return False
     else:
         return False
 
 
-def classify_bounding_walls(bounding_walls, filename):
+def classify_bounding_walls(bounding_walls: list[BoundingWall], filename: str) -> None:
     # construct simple representation
     blank_map = create_blank_map(filename)
     for b_wall in bounding_walls:
@@ -366,3 +365,8 @@ def classify_bounding_walls(bounding_walls, filename):
                         around.append(False)
 
                 wall.visible_sides = [not x for x in around]
+
+
+def load_map(map_name: str) -> PartitionedMapGrid:
+    map_fullpath = f"{game_engine_constants.MAP_PREFIX}{map_name}.png"
+    return PartitionedMapGrid(get_pixels(map_fullpath), 10, 10)

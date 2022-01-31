@@ -5,7 +5,7 @@ import global_simulation
 
 
 class SimulationObject(ABC):
-    def __init__(self):
+    def __init__(self) -> None:
         """
         Gives the simulation object a unique id and adds it to the simulation.
 
@@ -18,7 +18,7 @@ class SimulationObject(ABC):
         self.uuid = uuid.uuid1()
         global_simulation.SIMULATION.register_object(self)
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         return str(self.uuid)
 
     @abstractmethod
@@ -26,7 +26,7 @@ class SimulationObject(ABC):
         pass
 
     @abstractmethod
-    def step(self, delta_time: float):
+    def step(self, delta_time: float) -> None:
         """
         Simulate a step for the current simulation object
         :return:

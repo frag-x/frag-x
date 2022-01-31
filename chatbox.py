@@ -9,14 +9,6 @@ class JustificationSetting(enum.Enum):
     CENTER_JUSTIFIED = enum.auto()
 
 
-class TextRectException:
-    def __init__(self, message=None):
-        self.message = message
-
-    def __str__(self):
-        return self.message
-
-
 class ChatBox:
     """
     A chatbox represents an area which is to be filled with other surfaces from the bottom to the top.
@@ -26,13 +18,24 @@ class ChatBox:
     After a certian amount of time (measured in seconds) messages fade away and are removed from the chat
     """
 
-    def __init__(self, screen, x, y, width, height, font, time_on_screen=10):
+    # TODO: should these arguments (and the message_to_tiem dict) be floats or ints
+
+    def __init__(
+        self,
+        screen: pygame.Surface,
+        x: float,
+        y: float,
+        width: float,
+        height: float,
+        font: pygame.font.Font,
+        time_on_screen: float = 10,
+    ) -> None:
         self.screen = screen
         self.rect = pygame.Rect(x, y, width, height)
         self.font = font
         self.time_on_screen = time_on_screen
-        self.message_to_time = {}
-        self.messages = []
+        self.message_to_time: dict[pygame.surface.Surface, float] = {}
+        self.messages: list[pygame.surface.Surface] = []
         self.curr_height = 0
 
     def add_message(self, message: str) -> None:
@@ -51,7 +54,7 @@ class ChatBox:
         # recursively? what if it's still too big, well then their message is too long
         # we will have an upper bound on message height so we can figure that out later
 
-    def draw_messages(self):
+    def draw_messages(self) -> None:
         """This method takes all the messages and draws them from the bottom to the top"""
         accumulated_height = 0
         for message in reversed(self.messages):

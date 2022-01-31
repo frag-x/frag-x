@@ -1,5 +1,4 @@
 from dataclasses import dataclass, field
-from typing import Dict
 from uuid import UUID
 
 import pygame
@@ -74,6 +73,6 @@ class ServerMapChangeMessage(ServerMessage):
 class SimulationStateMessage(ServerMessage):
     """Represents simulation state sent to a client."""
 
-    players: Dict[UUID, PlayerNetworkObject] = field(default_factory=dict)
-    rockets: Dict[UUID, RocketNetworkObject] = field(default_factory=dict)
-    hitscan_beams: Dict[UUID, HitscanBeamNetworkObject] = field(default_factory=dict)
+    players: dict[UUID, PlayerNetworkObject] = field(default_factory=dict)
+    rockets: dict[UUID, RocketNetworkObject] = field(default_factory=dict)
+    hitscan_beams: dict[UUID, HitscanBeamNetworkObject] = field(default_factory=dict)

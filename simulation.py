@@ -1,15 +1,13 @@
-from collections import defaultdict, Counter
+from collections import Counter
 from queue import Queue
-from typing import List, cast, Tuple, Dict, Union
-import simulation_object
-from typing import List, cast, Tuple, Dict
+from typing import cast
 
 from comms.message import SimulationStateMessage
 from map_loading import BoundingWall
 from uuid import UUID
-from typing import Optional
 
 import pygame
+import socket
 
 import collisions
 import game_engine_constants
@@ -28,7 +26,11 @@ from network_object.hitscan_beam import HitscanBeamNetworkObject
 
 class Simulation:
     def __init__(
-        self, map_name: str, input_messages: Queue, output_messages: Queue, players={}
+        self,
+        map_name: str,
+        input_messages: Queue,
+        output_messages: Queue,
+        players: dict[UUID, Player] = {},
     ):
         self.map_name = map_name
         self.map = map_loading.load_map(map_name)
@@ -37,12 +39,12 @@ class Simulation:
         self.clock = pygame.time.Clock()
         self.active = False
 
-        self.players: Dict[UUID, Player] = players
+        self.players = players
         for player in players.values():
             player.reset(random.choice(self.map.spawns).position)
 
-        self.rockets: Dict[UUID, Rocket] = {}
-        self.hitscan_beams: Dict[UUID, HitscanBeam] = {}
+        self.rockets: dict[UUID, Rocket] = {}
+        self.hitscan_beams: dict[UUID, HitscanBeam] = {}
 
         self.type_to_dict = {
             Player: self.players,
@@ -106,7 +108,7 @@ class Simulation:
             raise Exception("Object {object} not found while deregistering!")
         del target_dict[object.uuid]  # type: ignore
 
-    def add_player(self, client_socket=None):
+    def add_player(self, client_socket: socket.socket = None) -> UUID:
         """
         Add a player to the simulation, client_socket is optional for when
         you are running a simulation locally and you don't need to send out messages
@@ -121,15 +123,15 @@ class Simulation:
         )
         return player.uuid
 
-    def remove_player(self, player):
+    def remove_player(self, player: SimulationObject) -> None:
         self.deregister_object(player)
 
-    def get_players(self):
+    def get_players(self) -> list[Player]:
         return list(self.players.values())
 
     def get_partition(
         self, position: pygame.math.Vector2
-    ) -> Union[bool, map_loading.MapGridPartition]:
+    ) -> bool | map_loading.MapGridPartition:
         """
         Return the partition that the position is within, if this position is outside of the map then return False
 
@@ -140,8 +142,6 @@ class Simulation:
         partition_idx_x, partition_idx_y = helpers.get_partition_index(
             self.map.partition_width, self.map.partition_height, position
         )
-
-        index = (partition_idx_x, partition_idx_y)
 
         # TODO FIX
 
@@ -154,7 +154,7 @@ class Simulation:
         #    return self.map.partitioned_map[partition_idx_y][partition_idx_x]
         return self.map.partitioned_map[fixed_index[1]][fixed_index[0]]
 
-    def clear_partitions(self):
+    def clear_partitions(self) -> None:
         map_partitions = [self.map.partitioned_map, self.map.collision_partitioned_map]
         for partitioned_map in map_partitions:
             for partition_row in partitioned_map:
@@ -185,7 +185,7 @@ class Simulation:
 
     def get_colliding_elements(
         self, body: Body, partition: map_loading.MapGridPartition
-    ) -> Tuple[List[BoundingWall], List[Player]]:
+    ) -> tuple[list[BoundingWall], list[Player]]:
         """
         Check if the given body is colliding with anything in this partition, if the player is colliding
         then return what they are colliding with
@@ -210,7 +210,7 @@ class Simulation:
 
         return colliding_b_walls, colliding_players
 
-    def _enact_player_requests(self, players) -> Tuple[bool, Optional[str]]:
+    def _enact_player_requests(self, players: list[Player]) -> tuple[bool, str | None]:
         if players:
             if not self.active and all(player.ready for player in players):
                 self.active = True
@@ -227,7 +227,7 @@ class Simulation:
                 return False, cast(str, top_map_vote)
         return True, None
 
-    def step(self) -> Tuple[bool, Optional[str]]:
+    def step(self) -> tuple[bool, str | None]:
         delta_time = self.clock.tick(game_engine_constants.SERVER_TICK_RATE_HZ)
         self.hitscan_beams.clear()
 

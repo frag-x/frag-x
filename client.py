@@ -1,4 +1,4 @@
-from typing import cast, Tuple
+from typing import cast
 import socket
 import pygame
 from comms import network, message
@@ -9,7 +9,7 @@ from client_instance import ClientInstance
 from comms.message import ServerJoinMessage
 
 
-def parse_args():
+def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser()
     parser.add_argument(
         "-i",
@@ -68,7 +68,7 @@ def server_listener(
 
 def initialize_network(
     ip_address: str, port: int
-) -> Tuple[socket.socket, ServerJoinMessage]:
+) -> tuple[socket.socket, ServerJoinMessage]:
     """
     Makes an initial connection with the server, returns the socket it is connected through
     and the join message from the server
@@ -87,7 +87,7 @@ def initialize_network(
         raise message.UnknownMessageTypeError
 
 
-def run_client(args) -> None:
+def run_client(args: argparse.Namespace) -> None:
     """
     Starts a client
 

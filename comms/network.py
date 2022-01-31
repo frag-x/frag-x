@@ -13,7 +13,7 @@ def _recv_exactly(socket: socket.socket, num_bytes: int) -> bytes:
     return data
 
 
-def send(socket: socket.socket, message: Message):
+def send(socket: socket.socket, message: Message) -> None:
     bytes = pickle.dumps(message)
     num_message_bytes = len(bytes).to_bytes(4, "little")
 

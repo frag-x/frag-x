@@ -1,7 +1,12 @@
-import pygame, math, uuid, random
-import collisions, global_simulation
+from weapons.weapon import HitscanBeam
+import pygame
+import random
+import socket
+import collisions
+import global_simulation
 from comms.message import PlayerStateMessage
-import game_engine_constants, body
+import game_engine_constants
+import body
 from simulation_object import constants
 from weapons.railgun import RailGun
 from weapons.rocket_launcher import RocketLauncher
@@ -14,7 +19,7 @@ from weapons.shotgun import ShotGun
 
 
 class Player(SimulationObject, body.ConstantAccelerationBody):
-    def __init__(self, start_position, socket):
+    def __init__(self, start_position: tuple[float, float], socket: socket.socket):
         super().__init__()
         super(ABC, self).__init__(
             start_position, game_engine_constants.PLAYER_RADIUS, 0.05, 1500
@@ -41,11 +46,11 @@ class Player(SimulationObject, body.ConstantAccelerationBody):
         ]
         self.weapon_selection = 0
 
-        self.beams = []
+        self.beams: list[HitscanBeam] = []
 
         self.color = random.choice(simulation_object.constants.PLAYER_COLORS)
 
-    def reset(self, spawn_position):
+    def reset(self, spawn_position: pygame.math.Vector2) -> None:
         # TODO should this get called as part of init?
         self.position = spawn_position
         self.health = 100
@@ -58,7 +63,7 @@ class Player(SimulationObject, body.ConstantAccelerationBody):
     def is_dead(self) -> bool:
         return self.time_of_death is not None
 
-    def to_network_object(self):
+    def to_network_object(self) -> PlayerNetworkObject:
         return PlayerNetworkObject(
             uuid=self.uuid,
             position=self.position,
@@ -69,7 +74,7 @@ class Player(SimulationObject, body.ConstantAccelerationBody):
             color=self.color,
         )
 
-    def update(self, input_message: PlayerStateMessage):
+    def update(self, input_message: PlayerStateMessage) -> None:
         self.movement_request = pygame.math.Vector2(input_message.delta_position)
         self.rotation = input_message.rotation
         self.weapon_selection = input_message.weapon_selection

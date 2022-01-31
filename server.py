@@ -12,7 +12,7 @@ from simulation import Simulation
 import global_simulation
 
 
-def listener(server_socket, state_queue):
+def listener(server_socket: socket.socket, state_queue: Queue[message.Message]) -> None:
     while True:
         client_socket, addr = server_socket.accept()
         player_id = global_simulation.SIMULATION.add_player(client_socket)
@@ -28,7 +28,9 @@ def listener(server_socket, state_queue):
         t.start()
 
 
-def client_listener(socket, input_messages):
+def client_listener(
+    socket: socket.socket, input_messages: Queue[message.Message]
+) -> None:
     while True:
         try:
             input_messages.put(network.recv(socket))
@@ -36,7 +38,7 @@ def client_listener(socket, input_messages):
             exit()
 
 
-def server_messager(output_messages):
+def server_messager(output_messages: Queue[message.Message]) -> None:
     while True:
         if not output_messages.empty():
             message = output_messages.get()
@@ -49,7 +51,7 @@ def server_messager(output_messages):
                     global_simulation.SIMULATION.remove_player(player)
 
 
-def parse_args():
+def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser()
     parser.add_argument("--local", "-l", dest="local", action="store_true")
     parser.add_argument(
@@ -70,7 +72,7 @@ def parse_args():
     return parser.parse_args()
 
 
-def initialize_socket():
+def initialize_socket() -> socket.socket:
     server_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     ip_address = "localhost" if args.local else ""
 
@@ -81,7 +83,12 @@ def initialize_socket():
     return server_socket
 
 
-def load_requested_map(map_name, invalid_map_names, input_messages, output_messages):
+def load_requested_map(
+    map_name: str | None,
+    invalid_map_names: set[str],
+    input_messages: Queue[message.Message],
+    output_messages: Queue[message.Message],
+) -> bool:
     if map_name in invalid_map_names:
         return False
 
@@ -99,9 +106,9 @@ def load_requested_map(map_name, invalid_map_names, input_messages, output_messa
         return True
 
 
-def run_server(args):
-    input_messages = Queue()
-    output_messages = Queue()
+def run_server(args: argparse.Namespace) -> None:
+    input_messages: Queue[message.Message] = Queue()
+    output_messages: Queue[message.Message] = Queue()
 
     global_simulation.SIMULATION = Simulation(args.map, input_messages, output_messages)
 
@@ -122,7 +129,7 @@ def run_server(args):
     )
     gss_t.start()
 
-    invalid_map_names = set()
+    invalid_map_names: set[str] = set()
     while True:
         keep_map, requested_map_name = global_simulation.SIMULATION.step()
         if not keep_map:

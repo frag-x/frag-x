@@ -13,13 +13,19 @@ from weapons.rocket_launcher import RocketLauncher
 from simulation_object.simulation_object import SimulationObject
 import simulation_object.constants
 from abc import ABC
+from typing import Any
 
 from network_object.player import PlayerNetworkObject
 from weapons.shotgun import ShotGun
 
 
 class Player(SimulationObject, body.ConstantAccelerationBody):
-    def __init__(self, start_position: tuple[float, float], socket: socket.socket):
+    def __init__(
+        self,
+        start_position: pygame.math.Vector2,
+        socket: socket.socket,
+        client_addr: tuple[Any, Any],
+    ):
         super().__init__()
         super(ABC, self).__init__(
             start_position, game_engine_constants.PLAYER_RADIUS, 0.05, 1500
@@ -28,6 +34,8 @@ class Player(SimulationObject, body.ConstantAccelerationBody):
         self.time_of_death = None
 
         self.socket = socket
+        self.tcp_addr = client_addr
+        self.udp_addr: tuple[Any, Any] | None = None
 
         self.rotation = 0
 
@@ -73,6 +81,9 @@ class Player(SimulationObject, body.ConstantAccelerationBody):
             num_frags=self.num_frags,
             color=self.color,
         )
+
+    def set_udp(self, udp_addr: tuple[Any, Any]) -> None:
+        self.udp_addr = udp_addr
 
     def update(self, input_message: PlayerStateMessage) -> None:
         self.movement_request = pygame.math.Vector2(input_message.delta_position)

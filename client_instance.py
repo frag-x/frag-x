@@ -19,14 +19,16 @@ import socket
 import map_loading
 import math
 from chatbox import ChatBox
-from typing import cast
+from typing import cast, Any
 import simulation_object.constants
 
 
 class ClientInstance:
     def __init__(
         self,
-        socket: socket.socket,
+        tcp_socket: socket.socket,
+        udp_socket: socket.socket,
+        server_addr: tuple[Any, Any],
         server_join_message: ServerJoinMessage,
         fullscreen: bool,
         frame_rate: int,
@@ -34,7 +36,9 @@ class ClientInstance:
     ):
         self._setup_pygame(fullscreen)
 
-        self.socket = socket
+        self.tcp_socket = tcp_socket
+        self.udp_socket = udp_socket
+        self.server_addr = server_addr
         self.player_id = server_join_message.player_id
         self.map_name = server_join_message.map_name
         self.frame_rate = frame_rate
@@ -135,7 +139,7 @@ class ClientInstance:
                         text_message = PlayerTextMessage(
                             player_id=self.player_id, text=text
                         )
-                        network.send(self.socket, text_message)
+                        network.send(self.tcp_socket, text_message)
 
                 elif event.key == pygame.K_ESCAPE and self.user_typing:
                     self.user_typing = False
@@ -179,7 +183,7 @@ class ClientInstance:
             map_vote=self.map_vote,
         )
 
-        network.send(self.socket, output_message)
+        network.sendto(self.udp_socket, self.server_addr, output_message)
 
     def process_input_message(self, input_message: ServerMessage) -> None:
         """

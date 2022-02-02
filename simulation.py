@@ -1,6 +1,6 @@
 from collections import Counter
 from queue import Queue
-from typing import cast
+from typing import cast, Any
 
 from comms.message import SimulationStateMessage
 from map_loading import BoundingWall
@@ -108,7 +108,9 @@ class Simulation:
             raise Exception("Object {object} not found while deregistering!")
         del target_dict[object.uuid]  # type: ignore
 
-    def add_player(self, client_socket: socket.socket = None) -> UUID:
+    def add_player(
+        self, client_socket: socket.socket = None, remote_addr: tuple[Any, Any] = None
+    ) -> UUID:
         """
         Add a player to the simulation, client_socket is optional for when
         you are running a simulation locally and you don't need to send out messages
@@ -117,10 +119,7 @@ class Simulation:
         :return:
         """
         spawn = random.choice(self.map.spawns)
-        player = Player(
-            spawn.position,
-            client_socket,
-        )
+        player = Player(spawn.position, client_socket, remote_addr)
         return player.uuid
 
     def remove_player(self, player: SimulationObject) -> None:

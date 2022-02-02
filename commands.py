@@ -71,7 +71,7 @@ class CommandRunner:
         text_message = PlayerTextMessage(
             player_id=self.client_instance.player_id, text=f"readied up"
         )
-        network.send(self.client_instance.socket, text_message)
+        network.send(self.client_instance.tcp_socket, text_message)
 
     def map_vote(self, args: list[str]) -> None:
         map_vote = args[0]
@@ -80,7 +80,7 @@ class CommandRunner:
         text_message = PlayerTextMessage(
             player_id=self.client_instance.player_id, text=f"voted for map {map_vote}"
         )
-        network.send(self.client_instance.socket, text_message)
+        network.send(self.client_instance.tcp_socket, text_message)
 
     def quit(self, _: Any) -> None:
         self.client_instance.quit()
@@ -88,4 +88,4 @@ class CommandRunner:
         text_message = PlayerTextMessage(
             player_id=self.client_instance.player_id, text=f"quit the game"
         )
-        network.send(self.client_instance.socket, text_message)
+        network.send(self.client_instance.tcp_socket, text_message)

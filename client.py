@@ -50,8 +50,8 @@ def parse_args() -> argparse.Namespace:
     return parser.parse_args()
 
 
-def server_listener(
-    socket: socket.socket,
+def tcp_listener(
+    tcp_socket: socket.socket,
     client_instance: ClientInstance,
 ) -> None:
     """
@@ -62,13 +62,30 @@ def server_listener(
     :return:
     """
     while True:  # TODO kill thread when client quits by checking flag
-        input_message = cast(message.ServerMessage, network.recv(socket))
+        input_message = cast(message.ServerMessage, network.recv(tcp_socket))
+        client_instance.process_input_message(input_message)
+
+
+def udp_listener(
+    udp_socket: socket.socket,
+    client_instance: ClientInstance,
+) -> None:
+    """
+    Waits for messages from the server and then processes them
+
+    :param socket: the connection to the server
+    :param client_instance: the instance of the client
+    :return:
+    """
+    while True:  # TODO kill thread when client quits by checking flag
+        input_message = cast(message.ServerMessage, network.recvfrom(udp_socket)[0])
         client_instance.process_input_message(input_message)
 
 
 def initialize_network(
-    ip_address: str, port: int
-) -> tuple[socket.socket, ServerJoinMessage]:
+    ip_address: str,
+    port: int,
+) -> tuple[socket.socket, ServerJoinMessage, socket.socket]:
     """
     Makes an initial connection with the server, returns the socket it is connected through
     and the join message from the server
@@ -76,13 +93,21 @@ def initialize_network(
     :param ip_address: the ip address of the server
     :param port: the port of the server
     """
-    server_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-    server_socket.connect((ip_address, port))
+    tcp_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    tcp_socket.connect((ip_address, port))
+    server_join_message = network.recv(tcp_socket)
 
-    server_join_message = network.recv(server_socket)
     if type(server_join_message) is message.ServerJoinMessage:
         print(f"You are player {server_join_message.player_id}")
-        return server_socket, server_join_message
+
+        udp_socket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+        network.sendto(
+            udp_socket,
+            (ip_address, port),
+            message.UDPSetMessage(server_join_message.player_id),
+        )
+
+        return tcp_socket, server_join_message, udp_socket
     else:
         raise message.UnknownMessageTypeError
 
@@ -93,22 +118,28 @@ def run_client(args: argparse.Namespace) -> None:
 
     :param args: command line arguments parsed by argparse
     """
-    server_socket, server_join_message = initialize_network(args.ip_address, args.port)
+    tcp_socket, server_join_message, udp_socket = initialize_network(
+        args.ip_address,
+        args.port,
+    )
 
     client_instance = ClientInstance(
-        server_socket,
+        tcp_socket,
+        udp_socket,
+        (args.ip_address, args.port),
         server_join_message,
         args.fullscreen,
         args.frame_rate,
         args.sensitivity,
     )
 
-    t = Thread(target=server_listener, args=(server_socket, client_instance))
+    t = Thread(target=tcp_listener, args=(tcp_socket, client_instance))
     t.start()
+    u = Thread(target=udp_listener, args=(udp_socket, client_instance))
+    u.start()
 
-    running = True
-    while running:
-        running = client_instance.step()
+    while client_instance.step():
+        pass
 
     pygame.quit()
 

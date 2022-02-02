@@ -12,20 +12,38 @@ from simulation import Simulation
 import global_simulation
 
 
-def listener(server_socket: socket.socket, state_queue: Queue[message.Message]) -> None:
+def tcp_listener(
+    tcp_socket: socket.socket, input_messages: Queue[message.Message]
+) -> None:
     while True:
-        client_socket, addr = server_socket.accept()
-        player_id = global_simulation.SIMULATION.add_player(client_socket)
+        client_socket, addr = tcp_socket.accept()
+        player_id = global_simulation.SIMULATION.add_player(client_socket, addr)
         network.send(
             client_socket,
             message.ServerJoinMessage(
-                player_id=player_id, map_name=global_simulation.SIMULATION.map_name
+                player_id=player_id,
+                map_name=global_simulation.SIMULATION.map_name,
             ),
         )
         print(f"Accepted connection from {addr}")
 
-        t = Thread(target=client_listener, args=(client_socket, state_queue))
+        t = Thread(target=client_listener, args=(client_socket, input_messages))
         t.start()
+
+
+def udp_listener(
+    udp_socket: socket.socket, input_messages: Queue[message.Message]
+) -> None:
+    while True:
+        msg, addr = network.recvfrom(udp_socket)
+        if type(msg) == message.UDPSetMessage:
+            if msg.player_id in global_simulation.SIMULATION.players:
+                # TODO: validate that the player is who they say they are
+                global_simulation.SIMULATION.players[msg.player_id].set_udp(addr)
+            else:
+                print(f"unknown player connecting via udp: {addr}")
+        else:
+            input_messages.put(msg)
 
 
 def client_listener(
@@ -33,22 +51,30 @@ def client_listener(
 ) -> None:
     while True:
         try:
-            input_messages.put(network.recv(socket))
+            message = network.recv(socket)
+            input_messages.put(message)
         except ConnectionResetError:
             exit()
 
 
-def server_messager(output_messages: Queue[message.Message]) -> None:
+def server_messager(
+    udp_socket: socket.socket,
+    output_messages: Queue[message.Message],
+) -> None:
     while True:
         if not output_messages.empty():
-            message = output_messages.get()
+            msg = output_messages.get()
             players = global_simulation.SIMULATION.get_players()
             for player in players:
-                try:
-                    network.send(player.socket, message)
-                except BrokenPipeError:
-                    print(f"Player {player} forcibly disconnected!")
-                    global_simulation.SIMULATION.remove_player(player)
+                if type(msg) == message.SimulationStateMessage:
+                    if player.udp_addr is not None:
+                        network.sendto(udp_socket, player.udp_addr, msg)
+                else:
+                    try:
+                        network.send(player.socket, msg)
+                    except BrokenPipeError:
+                        print(f"Player {player} forcibly disconnected!")
+                        global_simulation.SIMULATION.remove_player(player)
 
 
 def parse_args() -> argparse.Namespace:
@@ -72,15 +98,17 @@ def parse_args() -> argparse.Namespace:
     return parser.parse_args()
 
 
-def initialize_socket() -> socket.socket:
-    server_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+def initialize_sockets(args: argparse.Namespace) -> tuple[socket.socket, socket.socket]:
+    tcp_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     ip_address = "localhost" if args.local else ""
 
-    server_socket.bind((ip_address, args.port))
-    server_socket.listen()
+    tcp_socket.bind((ip_address, args.port))
+    tcp_socket.listen()
+    udp_socket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+    udp_socket.bind((ip_address, args.port))
     print(f"Server started on {(ip_address, args.port)}")
 
-    return server_socket
+    return (tcp_socket, udp_socket)
 
 
 def load_requested_map(
@@ -112,20 +140,32 @@ def run_server(args: argparse.Namespace) -> None:
 
     global_simulation.SIMULATION = Simulation(args.map, input_messages, output_messages)
 
-    server_socket = initialize_socket()
+    tcp_socket, udp_socket = initialize_sockets(args)
 
     tsa_t = Thread(
-        target=listener,
+        target=tcp_listener,
         args=(
-            server_socket,
+            tcp_socket,
             input_messages,
         ),
     )
     tsa_t.start()
 
+    usa_t = Thread(
+        target=udp_listener,
+        args=(
+            udp_socket,
+            input_messages,
+        ),
+    )
+    usa_t.start()
+
     gss_t = Thread(
         target=server_messager,
-        args=(output_messages,),
+        args=(
+            udp_socket,
+            output_messages,
+        ),
     )
     gss_t.start()
 

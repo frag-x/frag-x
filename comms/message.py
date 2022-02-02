@@ -60,6 +60,11 @@ class ServerJoinMessage(ServerMessage):
 
 
 @dataclass
+class UDPSetMessage(ServerMessage):
+    player_id: UUID
+
+
+@dataclass
 class ServerStatusMessage(ServerMessage):
     status: str
 

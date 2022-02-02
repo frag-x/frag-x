@@ -15,7 +15,6 @@ def _recv_exactly(socket: socket.socket, num_bytes: int) -> bytes:
 
 
 def send(socket: socket.socket, message: Message) -> None:
-    # print("sending:", message)
     bytes = pickle.dumps(message)
     num_message_bytes = len(bytes).to_bytes(4, "little")
 
@@ -23,7 +22,6 @@ def send(socket: socket.socket, message: Message) -> None:
 
 
 def sendto(socket: socket.socket, addr: tuple[Any, Any], message: Message) -> None:
-    # print("sending:", message, "to:", addr)
     bytes = pickle.dumps(message)
     socket.sendto(bytes, addr)
 
@@ -34,12 +32,10 @@ def recv(socket: socket.socket) -> Message:
 
     message_as_bytes = _recv_exactly(socket, num_message_bytes)
     message = pickle.loads(message_as_bytes)
-    # print("received:", message)
     return message
 
 
 def recvfrom(socket: socket.socket) -> tuple[Message, tuple[Any, Any]]:
     bytes, addr = socket.recvfrom(65507)
     message = pickle.loads(bytes)
-    # print("received:", message, "from:", addr)
     return message, addr

@@ -58,19 +58,23 @@ def client_listener(
 
 
 def server_messager(
-    udp_socket: socket.socket, output_messages: Queue[message.Message]
+    udp_socket: socket.socket,
+    output_messages: Queue[message.Message],
 ) -> None:
     while True:
         if not output_messages.empty():
-            message = output_messages.get()
+            msg = output_messages.get()
             players = global_simulation.SIMULATION.get_players()
             for player in players:
-                try:
+                if type(msg) == message.SimulationStateMessage:
                     if player.udp_addr is not None:
-                        network.sendto(udp_socket, player.udp_addr, message)
-                except BrokenPipeError:
-                    print(f"Player {player} forcibly disconnected!")
-                    global_simulation.SIMULATION.remove_player(player)
+                        network.sendto(udp_socket, player.udp_addr, msg)
+                else:
+                    try:
+                        network.send(player.socket, msg)
+                    except BrokenPipeError:
+                        print(f"Player {player} forcibly disconnected!")
+                        global_simulation.SIMULATION.remove_player(player)
 
 
 def parse_args() -> argparse.Namespace:

@@ -50,6 +50,22 @@ def parse_args() -> argparse.Namespace:
     return parser.parse_args()
 
 
+def tcp_listener(
+    tcp_socket: socket.socket,
+    client_instance: ClientInstance,
+) -> None:
+    """
+    Waits for messages from the server and then processes them
+
+    :param socket: the connection to the server
+    :param client_instance: the instance of the client
+    :return:
+    """
+    while True:  # TODO kill thread when client quits by checking flag
+        input_message = cast(message.ServerMessage, network.recv(tcp_socket))
+        client_instance.process_input_message(input_message)
+
+
 def udp_listener(
     udp_socket: socket.socket,
     client_instance: ClientInstance,
@@ -117,8 +133,10 @@ def run_client(args: argparse.Namespace) -> None:
         args.sensitivity,
     )
 
-    t = Thread(target=udp_listener, args=(udp_socket, client_instance))
+    t = Thread(target=tcp_listener, args=(tcp_socket, client_instance))
     t.start()
+    u = Thread(target=udp_listener, args=(udp_socket, client_instance))
+    u.start()
 
     while client_instance.step():
         pass

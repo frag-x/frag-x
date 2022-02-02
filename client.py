@@ -87,7 +87,7 @@ def initialize_network(
         udp_socket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
         network.sendto(
             udp_socket,
-            (ip_address, server_join_message.udp_port),
+            (ip_address, port),
             message.UDPSetMessage(server_join_message.player_id),
         )
 
@@ -110,7 +110,7 @@ def run_client(args: argparse.Namespace) -> None:
     client_instance = ClientInstance(
         tcp_socket,
         udp_socket,
-        (args.ip_address, server_join_message.udp_port),
+        (args.ip_address, args.port),
         server_join_message,
         args.fullscreen,
         args.frame_rate,

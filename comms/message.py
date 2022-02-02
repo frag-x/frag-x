@@ -57,7 +57,6 @@ class PlayerTextMessage(ClientMessage):
 class ServerJoinMessage(ServerMessage):
     player_id: UUID
     map_name: str
-    udp_port: int
 
 
 @dataclass

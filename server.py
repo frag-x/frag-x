@@ -13,7 +13,7 @@ import global_simulation
 
 
 def tcp_listener(
-    tcp_socket: socket.socket, udp_port: int, input_messages: Queue[message.Message]
+    tcp_socket: socket.socket, input_messages: Queue[message.Message]
 ) -> None:
     while True:
         client_socket, addr = tcp_socket.accept()
@@ -23,7 +23,6 @@ def tcp_listener(
             message.ServerJoinMessage(
                 player_id=player_id,
                 map_name=global_simulation.SIMULATION.map_name,
-                udp_port=udp_port,
             ),
         )
         print(f"Accepted connection from {addr}")
@@ -143,7 +142,6 @@ def run_server(args: argparse.Namespace) -> None:
         target=tcp_listener,
         args=(
             tcp_socket,
-            args.port,
             input_messages,
         ),
     )

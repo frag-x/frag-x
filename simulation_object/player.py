@@ -83,7 +83,8 @@ class Player(SimulationObject, body.ConstantAccelerationBody):
         )
 
     def set_udp(self, udp_addr: tuple[Any, Any]) -> None:
-        self.udp_addr = udp_addr
+        if self.udp_addr is None:
+            self.udp_addr = udp_addr
 
     def update(self, input_message: PlayerStateMessage) -> None:
         self.movement_request = pygame.math.Vector2(input_message.delta_position)
